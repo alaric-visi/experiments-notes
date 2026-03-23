@@ -1,7 +1,7 @@
-# Space Raiders
+# Space Invaders
 
 ## Overview
-Space Raiders is a robust HTML5 Canvas arcade game modeled directly after classic Space Invaders. It successfully implements the traditional mechanics of horizontal player movement, bullet collisions, and descending enemy formations, but distinguishes itself with an escalating, algorithmic "glitch" aesthetic that corrupts the visual output during gameplay.
+Space Invaders is a robust HTML5 Canvas arcade game modeled directly after classic Space Invaders. It successfully implements the traditional mechanics of horizontal player movement, bullet collisions, and descending enemy formations, but distinguishes itself with an escalating, algorithmic "glitch" aesthetic that corrupts the visual output during gameplay.
 
 ## Core Mechanisms
 
