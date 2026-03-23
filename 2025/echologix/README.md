@@ -1,7 +1,7 @@
-# EchoLogix: Fragments of Finn
+# EchoLogix
 
 ## Overview
-This project is an interactive, browser-based narrative terminal. It visually simulates a command-line interface progressively typing out a short sci-fi story. The application features auto-scrolling, programmatic text styling, and clipboard integration for copying the narrative.
+This project explores interactive digital narrative through multiple interfaces. It includes a simulated command-line interface progressively typing out a short sci-fi story (`fragments-of-finn.html`), a dedicated layout containing the wider EchoLogix lore (`stories.html`), and a custom interactive media player featuring AI avatars narrating the text (`videos.html`).
 
 ## Core Mechanisms
 
@@ -46,3 +46,39 @@ if (inQuote) {
 
 ### Accessibility and Utilities
 The class binds native browser events to detect scrolling (to properly disable auto-scrolling without fighting the user) and captures keyboard events (like `Ctrl+C` to copy the underlying text or `Space` to restart). It also pushes status updates to a hidden `aria-live` polite region for screen readers.
+
+### Narrative Navigation & Animation
+The `stories.html` page implements a responsive layout with a slide-out sidebar for mobile devices. It utilises the GSAP animation library, specifically the Flip plugin, to smoothly transition between different story sections without page reloads, adjusting opacity and vertical translation dynamically.
+
+```javascript
+Flip.from(state, {
+    duration: 0.6,
+    ease: "power1.inOut",
+    opacity: true,
+    scale: true,
+    onComplete() {
+        gsap.timeline({ defaults: { ease: "power2.out" } })
+            .to(incoming.querySelector("h2"), { opacity: 1, y: 0, duration: 0.45 })
+            // ... sequence for fading in paragraphs
+    }
+});
+```
+
+### Custom HTML5 Video Player
+The `videos.html` file features a fully bespoke media player interface overlaying a standard `<video>` element. Features include custom volume sliders, timeline scrubbing, fullscreen toggling, and programmatic switching between the 9 different story parts via data attributes. It includes its own custom CSS styling and floating interaction controls.
+
+```javascript
+function loadVideo(index) {
+    currentVideoIndex = index;
+    videoPlayer.src = videos[index];
+    currentVideoText.textContent = videoTitles[index];
+    
+    videoPlayer.load();
+    videoPlayer.addEventListener('loadeddata', function playAfterLoad() {
+        videoPlayer.play().then(() => {
+            isPlaying = true;
+            updatePlayPauseButton();
+        });
+    }, { once: true });
+}
+```
