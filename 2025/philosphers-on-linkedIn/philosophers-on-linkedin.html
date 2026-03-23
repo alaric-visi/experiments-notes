@@ -1,0 +1,490 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Philosophers On LinkedIn</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+            background: black;
+            min-height: 100vh;
+            padding: 20px;
+            line-height: 1.4;
+        }
+
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        .navigation {
+            background-color: white;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            margin-bottom: 20px;
+            padding: 15px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .nav-title {
+            font-weight: bold;
+            font-size: 20px;
+            color: #0a66c2;
+        }
+
+        .nav-buttons {
+            display: flex;
+            gap: 10px;
+        }
+
+        .nav-btn {
+            background-color: #0a66c2;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            padding: 8px 15px;
+            font-size: 14px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+
+        .nav-btn:hover {
+            background-color: #004182;
+        }
+
+        .linkedin-post {
+            background-color: white;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+            display: none;
+        }
+
+        .active-post {
+            display: block;
+        }
+
+        .post-header {
+            background-color: #0a66c2;
+            color: white;
+            padding: 12px 16px;
+            display: flex;
+            align-items: center;
+        }
+
+        .linkedin-logo {
+            font-weight: bold;
+            font-size: 24px;
+            margin-right: auto;
+        }
+
+        .header-icons {
+            display: flex;
+            gap: 16px;
+        }
+
+        .post-content {
+            padding: 16px;
+        }
+
+        .profile-section {
+            display: flex;
+            align-items: flex-start;
+            margin-bottom: 16px;
+        }
+
+        .profile-image {
+            width: 56px;
+            height: 56px;
+            border-radius: 50%;
+            margin-right: 12px;
+            overflow: hidden;
+        }
+
+        .profile-image img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .profile-info {
+            flex: 1;
+        }
+
+        .profile-name {
+            font-weight: 600;
+            font-size: 16px;
+            color: #000000e6;
+            margin-bottom: 2px;
+        }
+
+        .profile-title {
+            font-size: 14px;
+            color: #00000099;
+            margin-bottom: 2px;
+        }
+
+        .post-time {
+            font-size: 14px;
+            color: #00000099;
+        }
+
+        .follow-btn {
+            border: 1px solid #0a66c2;
+            color: #0a66c2;
+            background: transparent;
+            border-radius: 16px;
+            padding: 6px 16px;
+            font-weight: 600;
+            font-size: 14px;
+            cursor: pointer;
+        }
+
+        .post-text {
+            margin-bottom: 16px;
+        }
+
+        .post-title {
+            font-weight: 600;
+            font-size: 20px;
+            color: #000000e6;
+            margin-bottom: 8px;
+            line-height: 1.3;
+        }
+
+        .post-body {
+            font-size: 16px;
+            color: #000000e6;
+            margin-bottom: 8px;
+            line-height: 1.5;
+        }
+
+        .post-body p {
+            margin-bottom: 12px;
+        }
+
+        .hashtags {
+            color: #0a66c2;
+            font-weight: 600;
+            font-size: 14px;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <div class="navigation">
+            <div class="nav-buttons">
+                <button class="nav-btn" onclick="showPost(0)">Kierkegaard</button>
+                <button class="nav-btn" onclick="showPost(1)">Diderot</button>
+                <button class="nav-btn" onclick="showPost(2)">Barthes</button>
+                <button class="nav-btn" onclick="showPost(3)">Derrida</button>
+            </div>
+        </div>
+
+        <!-- Post 1: Søren Kierkegaard -->
+        <div class="linkedin-post active-post" id="post-0">
+            <div class="post-header">
+                <div class="linkedin-logo">in</div>
+                <div class="header-icons">
+                    <span>🔍</span>
+                    <span>👤</span>
+                </div>
+            </div>
+
+            <div class="post-content">
+                <div class="profile-section">
+                    <div class="profile-image">
+                        <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSSNMvqanxcNso8A98j3LUtTPVrklejUkNLTw&s"
+                            alt="Søren Kierkegaard">
+                    </div>
+                    <div class="profile-info">
+                        <div class="profile-name">Søren Kierkegaard</div>
+                        <div class="profile-title">Existential Philosopher / Leadership Consultant</div>
+                        <div class="post-time">1d • 🌍</div>
+                    </div>
+                    <button class="follow-btn">+ Follow</button>
+                </div>
+
+                <div class="post-text">
+                    <div class="post-title">Turn your employees into brand evangelists through deep misery and the
+                        contemplation of death</div>
+
+                    <div class="post-body">
+                        <p>First, invite your team to a 7AM. "Breakfast with Nothingness" stand-up. Over lukewarm
+                            coffee, quote The Sickness Unto Death and casually remind everyone that their CVs (and all
+                            human striving) are but a whisper in an indifferent universe.</p>
+
+                        <p>Watch the engagement scores spike as they realise quarterly KPIs are the only thing standing
+                            between them and the abyss.</p>
+
+                        <p>Next, introduce "Fear-and-Trembling Fridays." Replace casual dress with black turtlenecks and
+                            have each employee write a post about sacrificing their ego on the altar of the company
+                            vision.</p>
+
+                        <p>The paradox of faith? It's really just believing the roadmap won't change after next week's
+                            pivot.</p>
+
+                        <p>By Q3 you'll notice a 200% uplift in voluntary thought-leadership posts: nothing clarifies a
+                            personal brand like staring into the void.</p>
+
+                        <p>Track sentiment with our proprietary DREAD (Deep Reflection, Evangelism and Despair) index.
+                            Because if it can't be measured, did it even exist?</p>
+
+                        <p>Ready to transform existential angst into authentic advocacy? Comment "LEAP OF FAITH" below
+                            and I'll DM you the one-pager (no fear of missing out, only fear of being).</p>
+                    </div>
+
+                    <div class="hashtags">#Leadership #EmployeeExperience #ThoughtLeader #ExistentialHR</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Post 2: Denis Diderot -->
+        <div class="linkedin-post" id="post-1">
+            <div class="post-header">
+                <div class="linkedin-logo">in</div>
+                <div class="header-icons">
+                    <span>🔍</span>
+                    <span>👤</span>
+                </div>
+            </div>
+
+            <div class="post-content">
+                <div class="profile-section">
+                    <div class="profile-image">
+                        <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/f/fc/Denis_Diderot_by_Louis-Michel_van_Loo.jpg/250px-Denis_Diderot_by_Louis-Michel_van_Loo.jpg"
+                            alt="Denis Diderot">
+                    </div>
+                    <div class="profile-info">
+                        <div class="profile-name">Denis Diderot</div>
+                        <div class="profile-title">Chief Enlightenment / Knowledge Operations Futurist</div>
+                        <div class="post-time">2d • 📚</div>
+                    </div>
+                    <button class="follow-btn">+ Follow</button>
+                </div>
+
+                <div class="post-text">
+                    <div class="post-title">Stop Hoarding Knowledge in Silos. Start Encyclopédising Your Culture for
+                        Material Gains.</div>
+
+                    <div class="post-body">
+                        <p>First, gather your teams for a "Quarterly Enlightenment Salon." Over lukewarm chardonnay and
+                            artisanal cheese, task each department with writing a 10,000-word entry on their "function".
+                            But here's the twist: every verb must be cross-referenced with another team's glossary of
+                            suffering.</p>
+
+                        <p>Watch innovation velocity spike as Sales realises their "pipeline" is just a materialist
+                            metaphor for the great chain of being, and Engineering embraces that their Jira backlog is,
+                            in essence, a secular hell of their own making.</p>
+
+                        <p>Next, we replaced our OKRs with my "Tree of Human Knowledge." Memory and Reason are now our
+                            only KPIs. Imagination? That division was sunset last quarter after failing to demonstrate
+                            ROI. The result: a 300% increase in cross-functional synergy and a dramatic reduction in
+                            dogmatic thinking (just don't tell the C-suite).</p>
+
+                        <p>My proprietary "Dialogue & Dissent" framework ensures every all-hands meeting ends with a
+                            spirited debate on the nature of free will versus the quarterly budget. By embracing radical
+                            materialism, we've reduced our metaphysical overhead by 40% and eliminated legacy
+                            superstition from our tech stack.</p>
+
+                        <p>Track progress with our DIDEROT index: Dialogue, Interconnectedness, Dogma-Deletion,
+                            Encyclopédie entries, References, Operationalised philosophy and Thought-leadership
+                            velocity. As my aunt the nun never said: "We might swallow toads at this company but even
+                            so, we log them."</p>
+
+                        <p>Ready to challenge the dogma of traditional organisation design? Comment "MATERIAL GAINS"
+                            below and I'll DM you the scroll (it's 35 volumes, but the PDF is surprisingly lightweight).
+                        </p>
+                    </div>
+
+                    <div class="hashtags">#Leadership #EmployeeExperience #ThoughtLeader #ExistentialHR</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Post 3: Roland Barthes -->
+        <div class="linkedin-post" id="post-2">
+            <div class="post-header">
+                <div class="linkedin-logo">in</div>
+                <div class="header-icons">
+                    <span>🔍</span>
+                    <span>👤</span>
+                </div>
+            </div>
+
+            <div class="post-content">
+                <div class="profile-section">
+                    <div class="profile-image">
+                        <img src="https://www.the-tls.com/wp-content/uploads/2019/11/Barthes.jpg" alt="Roland Barthes">
+                    </div>
+                    <div class="profile-info">
+                        <div class="profile-name">Roland Barthes</div>
+                        <div class="profile-title">Chief Semiotics Officer / Narrative Deconstructionist</div>
+                        <div class="post-time">3d • 📝</div>
+                    </div>
+                    <button class="follow-btn">+ Follow</button>
+                </div>
+
+                <div class="post-text">
+                    <div class="post-title">The Death of the Brand Author: Why Your CEO's Vision is Just a Floating
+                        Signifier</div>
+
+                    <div class="post-body">
+                        <p>First, conduct a semiotic audit of your entire brand ecosystem. That logo? Not a symbol, but
+                            a signifier whose signified evaporated in Series B. Your brand guidelines? A prison house of
+                            meaning. Burn them and replace with my "Floating Signifier Framework". Watch as your design
+                            team realises the Nike swoosh means nothing and everything simultaneously. Market share
+                            follows.</p>
+
+                        <p>Next, kill the Author in your content strategy. Stop publishing polished CEO thought
+                            leadership (the Author-God is dead; his LinkedIn password died with him). Instead, leak
+                            internal Slack threads where the marketing intern questions the product's existence. Let
+                            your employees, your readers, construct the narrative. We saw a 400% uplift in "authentic
+                            advocacy" when we stopped telling people what to think and started giving them ambiguous
+                            bullet points in Garamond.</p>
+
+                        <p>Transform your website from "readerly" to "writerly". A readerly site tells customers what to
+                            do. Boring. A writerly site is a labyrinth of broken links, user-generated footnotes and
+                            CTAs that read "Submit?". Customers create their own meaning as they navigate. Time-on-site
+                            triples as they search for the exit. That is engagement.</p>
+
+                        <p>Introduce "Mythology Mondays". Instead of standups, gather your teams to analyse a piece of
+                            corporate comms as myth. That "Our Story" page? It is not history, it is ideology in a
+                            cardigan. We deconstructed our own careers page and found it was secretly telling
+                            candidates, "You too can transcend alienation through stock options." Brutal honesty
+                            increased applicant quality by 60%.</p>
+
+                        <p>Deploy the PUNCTUM framework: Piercing Unconscious Narrative Component That Unsettles
+                            Meaning. In every campaign, find the tiny detail that pierces the viewer (the typo in the
+                            CEO's name, the stock photo where everyone is pointing at nothing). That is your true brand
+                            message. Everything else is just studium, general interest. The punctum wounds, and wounded
+                            customers remember.</p>
+
+                        <p>Ditch your NPS for the "Pleasure of the Text" index. Are customers experiencing mere plaisir
+                            (comfortable satisfaction) or jouissance (disruptive, ecstatic confusion)? Aim for
+                            jouissance. A customer who is slightly disturbed by your onboarding flow is a customer who
+                            is thinking about your brand. That is loyalty.</p>
+
+                        <p>Ready to deconstruct your brand narrative? Comment "DEATH OF THE BRAND" below and I will DM
+                            you my Mythologies matrix. It is a 7x7 semiotic square, very elegant.</p>
+                    </div>
+
+                    <div class="hashtags">#Mythologies #BrandStrategy #DeathOfTheAuthor #Semiotics #CorporateCulture
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Post 4: Jacques Derrida -->
+        <div class="linkedin-post" id="post-3">
+            <div class="post-header">
+                <div class="linkedin-logo">in</div>
+                <div class="header-icons">
+                    <span>🔍</span>
+                    <span>👤</span>
+                </div>
+            </div>
+
+            <div class="post-content">
+                <div class="profile-section">
+                    <div class="profile-image">
+                        <img src="https://contemporarythinkers.org/jacques-derrida/wp-content/uploads/sites/40/2012/08/Derrida_Biography.jpg"
+                            alt="Jacques Derrida">
+                    </div>
+                    <div class="profile-info">
+                        <div class="profile-name">Jacques Derrida</div>
+                        <div class="profile-title">Chief Deconstruction Officer & Director of Aporetic Strategy</div>
+                        <div class="post-time">4d • 📜</div>
+                    </div>
+                    <button class="follow-btn">+ Follow</button>
+                </div>
+
+                <div class="post-text">
+                    <div class="post-title">Deconstructing Your Org Chart: Why Every Binary is a Violent Hierarchy and
+                        Your CEO is Logocentric</div>
+
+                    <div class="post-body">
+                        <p>First, audit the violent binaries embedded in your operating model. Vision versus execution.
+                            Strategy versus tactics. Product versus engineering. Each pairing privileges one term over
+                            the other, creating a metaphysics of presence where the CEO's voice is "present" and your
+                            Slack messages are merely supplementary trace elements.</p>
+
+                        <p>My "Différance-Driven Delivery" framework defers every decision by one sprint, revealing that
+                            your roadmap never arrives at a final meaning. It is just meaning postponed. Velocity
+                            increased by 400% when we realised we were never trying to ship features, only to signify
+                            the idea of shipping features.</p>
+
+                        <p>Next, eliminate logocentrism from your all-hands. The spoken word is not authentic presence;
+                            it is just another inscription. Ban live Q&A. Insist all questions are submitted in advance,
+                            translated into French, then back into English via Google Translate, then read aloud by a
+                            text-to-speech bot.</p>
+
+                        <p>This "supplement" reveals the lack that was already there: your employees never had
+                            questions, only performance anxiety about being seen to question. Engagement scores
+                            collapsed but authenticity skyrocketed.</p>
+
+                        <p>Identify the "supplement" in your value chain. Consultants are not additions; they reveal the
+                            abyss at the heart of your organisation that you pretended did not exist. Fire your entire
+                            strategy team and replace them with a single copy of Of Grammatology placed on an empty
+                            chair in the boardroom.</p>
+
+                        <p>The chair is now your most profitable employee. It says nothing, which is the only honest
+                            thing to be said about Q3.</p>
+
+                        <p>Deploy the DECONSTRUCT framework: Disruptive Epistemological Critique Over Normalised
+                            Structures To Reveal Undecidable Conceptual Tensions. Apply it to your brand guidelines. You
+                            will find that your primary colour is not blue; it is the trace of every colour your brand
+                            is not.</p>
+
+                        <p>Your logo is not a mark; it is the absent presence of every brand that never existed. Our
+                            rebrand consisted of deleting the logo entirely. Awareness went up. How? Because awareness
+                            is always already the awareness of absence.</p>
+
+                        <p>Replace your NPS with the "Trace" metric. Do not ask customers what they think. Ask them what
+                            they almost thought, then cancelled before thinking. That cancelled thought is your true
+                            brand equity. It is the "supplement" that makes the survey complete. We measured the trace
+                            and found our customers love us for qualities we never possessed. Bingo.</p>
+
+                        <p>Finally, remember there is no outside-text to your culture. That offsite in Provence? It is
+                            still inside the text. The escape room you built for team bonding? It is a text about
+                            escaping text, which is the most textual thing you could do.</p>
+
+                        <p>Stop trying to find the "real" culture beneath the "written" culture. There is only the
+                            written. Publish your internal political battles as blog posts. Transparency is not ethical;
+                            it is ontological necessity.</p>
+
+                        <p>Ready to embrace aporia as your operating principle? Comment "UNDECIDABILITY" below and I
+                            will DM you nothing, because the DM is already the absence of a message, and that is the
+                            most radical message of all.</p>
+                    </div>
+
+                    <div class="hashtags">#Deconstruction #CorporatePhilosophy #Différance #PostmodernLeadership</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function showPost(postIndex) {
+            const posts = document.querySelectorAll('.linkedin-post');
+            posts.forEach(post => {
+                post.classList.remove('active-post');
+            });
+
+            document.getElementById(`post-${postIndex}`).classList.add('active-post');
+        }
+    </script>
+</body>
+
+</html>

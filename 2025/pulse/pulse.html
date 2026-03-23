@@ -1,0 +1,780 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Capital & Subjectivity Terminal</title>
+    <style>
+        :root {
+            --bg-primary: #0a0a0a;
+            --bg-secondary: #32446D;
+            --text-primary: #C5EC6E;
+            --text-highlight: #FF6BC7;
+            --text-error: #FF8A8A;
+            --text-emphasis: #FFB380;
+            --accent-cursor: #F32AC4;
+            --accent-border: #9F563F;
+            --accent-scrollbar: #C63976;
+            --spacing-unit: 1.5rem;
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            * {
+                animation-duration: 0.01ms !important;
+                animation-iteration-count: 1 !important;
+                transition-duration: 0.01ms !important;
+            }
+
+            .cursor {
+                animation: none;
+                opacity: 1;
+            }
+
+            #copy-notification {
+                transition: none;
+            }
+        }
+
+        @media (max-width: 768px) {
+            :root {
+                --spacing-unit: 1rem;
+            }
+
+            #terminal-container {
+                padding: 1rem;
+            }
+
+            #terminal {
+                font-size: 16px;
+                max-width: 100%;
+                line-height: 1.4;
+            }
+
+            .paragraph {
+                padding: 0.75rem;
+                margin-bottom: 1rem;
+                border-left: 2px solid var(--accent-border);
+            }
+
+            #progress {
+                font-size: 13px;
+                right: 10px;
+                top: 10px;
+            }
+
+            #copy-notification {
+                top: 10px;
+                right: 10px;
+                left: 10px;
+                text-align: center;
+                font-size: 13px;
+                padding: 10px;
+            }
+        }
+
+        @media (min-width: 769px) {
+            #terminal-container {
+                padding: 2rem 3rem;
+            }
+
+            #terminal {
+                font-size: 18px;
+                max-width: none;
+                width: 100%;
+            }
+
+            .paragraph {
+                max-width: none;
+                margin-left: 0;
+                margin-right: 0;
+            }
+        }
+
+        @media (min-width: 1200px) {
+            #terminal-container {
+                padding: 3rem 4rem;
+            }
+
+            #terminal {
+                font-size: 19px;
+            }
+
+            .paragraph {
+                padding: 1.5rem;
+            }
+        }
+
+        .sr-only {
+            position: absolute;
+            width: 1px;
+            height: 1px;
+            padding: 0;
+            margin: -1px;
+            overflow: hidden;
+            clip: rect(0, 0, 0, 0);
+            white-space: nowrap;
+            border-width: 0;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background-color: var(--bg-primary);
+            color: var(--text-primary);
+            font-family: 'Courier New', Courier, 'Lucida Console', monospace;
+            line-height: 1.5;
+            overflow: hidden;
+            height: 100vh;
+            background: #0a0a0a;
+        }
+
+        #terminal-container {
+            height: 100vh;
+            overflow-y: auto;
+            background-color: var(--bg-primary);
+            position: relative;
+            background: #0a0a0a;
+        }
+
+        #terminal {
+            white-space: pre-wrap;
+            font-size: 18px;
+        }
+
+        .cursor {
+            display: inline-block;
+            width: 8px;
+            height: 1.2em;
+            background-color: var(--accent-cursor);
+            margin-left: 2px;
+            animation: blink 1.2s infinite;
+            vertical-align: baseline;
+        }
+
+        @keyframes blink {
+
+            0%,
+            50% {
+                opacity: 1;
+            }
+
+            51%,
+            100% {
+                opacity: 0;
+            }
+        }
+
+        .paragraph {
+            margin-bottom: var(--spacing-unit);
+            padding: 1rem;
+            border-left: 3px solid var(--accent-border);
+            background: rgba(50, 68, 109, 0.15);
+            border-radius: 0 8px 8px 0;
+        }
+
+        .highlight {
+            color: var(--text-highlight);
+            font-weight: bold;
+        }
+
+        .error {
+            color: var(--text-error);
+            font-weight: bold;
+        }
+
+        .emphasis {
+            color: var(--text-emphasis);
+        }
+
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: var(--bg-secondary);
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: var(--accent-scrollbar);
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--accent-cursor);
+        }
+
+        @media (max-width: 768px) {
+            ::-webkit-scrollbar {
+                display: none;
+            }
+
+            #terminal-container {
+                -webkit-overflow-scrolling: touch;
+            }
+        }
+
+        #copy-notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background-color: var(--accent-border);
+            color: var(--text-primary);
+            padding: 12px 18px;
+            border-radius: 4px;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+            pointer-events: none;
+            font-family: inherit;
+            font-size: 14px;
+            z-index: 1000;
+            border: 1px solid var(--accent-cursor);
+        }
+
+        #copy-notification.show {
+            opacity: 1;
+        }
+
+        #progress {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            color: var(--text-primary);
+            font-size: 14px;
+            background: rgba(10, 10, 10, 0.8);
+            padding: 4px 8px;
+            border-radius: 4px;
+            border: 1px solid var(--accent-border);
+            z-index: 50;
+            opacity: 0.7;
+            transition: opacity 0.3s ease;
+        }
+
+        #progress:hover {
+            opacity: 1;
+        }
+
+        @media (max-width: 768px) and (orientation: landscape) {
+            #terminal-container {
+                padding: 0.75rem;
+            }
+
+            #progress {
+                top: 10px;
+                right: 10px;
+                font-size: 12px;
+            }
+        }
+
+        @media (max-width: 360px) {
+            #terminal {
+                font-size: 15px;
+            }
+
+            .paragraph {
+                padding: 0.5rem;
+            }
+
+            #progress {
+                font-size: 11px;
+                padding: 3px 6px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div id="terminal-container" role="log" aria-live="polite" aria-label="Philosophical analysis terminal">
+        <div id="terminal"></div>
+    </div>
+
+    <div id="progress" role="status">Loading...</div>
+
+    <div id="copy-notification">Text copied to clipboard! Press Ctrl+C to copy</div>
+
+    <button id="restart-sr" class="sr-only">Press Space to restart text</button>
+
+    <script>
+        class TerminalAnimator {
+            constructor(config = {}) {
+                this.speed = config.speed || 60;
+                this.autoScroll = config.autoScroll ?? true;
+                this.batchSize = config.batchSize || 2;
+                this.paragraphs = [];
+                this.quoteRegions = [];
+                this.state = { currentPara: 0, currentChar: 0 };
+                this.isPaused = false;
+                this.userScrolled = false;
+                this.isTransitioning = false;
+                this.typingInterval = null;
+                this.scrollTimeout = null;
+                this.cursorElement = null;
+
+                this.elements = {
+                    terminal: document.getElementById('terminal'),
+                    container: document.getElementById('terminal-container'),
+                    copyNotification: document.getElementById('copy-notification'),
+                    progress: document.getElementById('progress')
+                };
+
+                const missingElements = Object.entries(this.elements)
+                    .filter(([key, element]) => !element)
+                    .map(([key]) => key);
+
+                if (missingElements.length > 0) {
+                    console.error('Missing required DOM elements:', missingElements);
+                    return;
+                }
+
+                this.storyText = `Capital prescribes an identity for every citizen long before self-reflection begins. Payroll numbers, social-media profiles and credit files crystallise a public persona that can be tracked, traded and disciplined. This persona is the object: a coded surface optimised for circulation in labour and consumer markets.
+
+Beneath that surface the subject persists as lived duration - sensations, doubts, flashes of memory - none of which fit neatly into occupational categories. It is immediate, mutable, and therefore unreliable from the standpoint of economic planning. Capital's administrative machinery treats this interior volatility as excess that must be translated into predictable behaviour.
+
+The translation proceeds through schedules, contracts and metrics that annex time. Paid labour sets the daily rhythm; unpaid self-branding fills the gaps. What is marketed as autonomy is in practice the obligation to keep the object up to date, to remain legible to algorithms that allocate opportunity.
+
+Yet the conversion is never complete. Experience leaks. Unquantified affects give rise to informal networks, half-legal hustles, sudden refusals. These residual energies expose a structural misalignment: the object is static, the subject dynamic. Capital depends on the object's stability but extracts value from the subject's creativity, forcing the two into constant friction.
+
+From another angle the same friction accelerates systemic change. Automated management, behavioural data and predictive credit attempt to anticipate desire, effectively writing the object's script in advance. But increased precision tightens feedback loops, amplifying minor errors into macro-level shocks. The subject, no longer simply alienated, becomes a stochastic threat: a source of noise that can tip entire platforms into crisis.
+
+The political question is whether that noise can be steered rather than suppressed. Strategies of withdrawal seek to reclaim time outside wage logic, whereas tactics of intensification push the system towards speeds that its control functions cannot stabilise. Both aim to open intervals where lived experience exceeds its commercial formatting.
+
+There is no final synthesis. The tension is constitutive: the subject guarantees unpredictability; the object guarantees exploitability. Any transformative project must work with that torsion, not resolve it. The task is to invent practices that let interior life diverge faster than the market can recapture it, while refusing the myth that a clean exit from social abstraction is possible.`;
+
+                this.init();
+                this.bindEvents();
+            }
+
+            init() {
+                this.reset();
+                this.preprocessText();
+                setTimeout(() => this.startTyping(), 500);
+            }
+
+            reset() {
+                clearInterval(this.typingInterval);
+                clearTimeout(this.scrollTimeout);
+                this.state = { currentPara: 0, currentChar: 0 };
+                this.isPaused = false;
+                this.userScrolled = false;
+                this.isTransitioning = false;
+                this.elements.terminal.innerHTML = '';
+                this.elements.progress.textContent = '0%';
+                this.cursorElement = null;
+            }
+
+            preprocessText() {
+
+                this.paragraphs = this.storyText.split('\n\n').map(p => p.trim()).filter(p => p.length > 0);
+
+                this.quoteRegions = this.paragraphs.map(p => this.findQuotedRegions(p));
+            }
+
+            findQuotedRegions(text) {
+                const regions = [];
+                if (!text) return regions;
+
+                let inQuote = false;
+                let start = -1;
+
+                for (let i = 0; i < text.length; i++) {
+                    if (text[i] === '"') {
+                        if (!inQuote) {
+                            start = i;
+                            inQuote = true;
+                        } else {
+                            regions.push([start, i]);
+                            inQuote = false;
+                        }
+                    }
+                }
+                return regions;
+            }
+
+            isInQuotedText(paraIndex, charIndex) {
+                if (!this.quoteRegions[paraIndex]) return false;
+                return this.quoteRegions[paraIndex].some(([start, end]) =>
+                    charIndex >= start && charIndex <= end
+                );
+            }
+
+            isKeyConcept(paraIndex, charIndex) {
+                const concepts = [
+                    'Capital',
+                    'object',
+                    'subject',
+                    'lived duration',
+                    'economic planning',
+                    'administrative machinery',
+                    'autonomy',
+                    'algorithms',
+                    'structural misalignment',
+                    'constant friction',
+                    'systemic change',
+                    'predictive credit',
+                    'stochastic threat',
+                    'political question',
+                    'strategies of withdrawal',
+                    'tactics of intensification',
+                    'commercial formatting',
+                    'final synthesis',
+                    'transformative project',
+                    'social abstraction'
+                ];
+
+                const text = this.paragraphs[paraIndex];
+                if (!text) return false;
+
+                for (const concept of concepts) {
+                    const idx = text.indexOf(concept);
+                    if (idx !== -1 && charIndex >= idx && charIndex < idx + concept.length) {
+                        return true;
+                    }
+                }
+                return false;
+            }
+
+            isCriticalTerm(paraIndex, charIndex) {
+                const terms = [
+                    'tracked, traded and disciplined',
+                    'excess',
+                    'predictable behaviour',
+                    'annex time',
+                    'unpaid self-branding',
+                    'legible to algorithms',
+                    'Experience leaks',
+                    'sudden refusals',
+                    'residual energies',
+                    'constant friction',
+                    'macro-level shocks',
+                    'steered rather than suppressed',
+                    'wage logic',
+                    'exceeds its commercial formatting',
+                    'no final synthesis',
+                    'constitutive tension',
+                    'interior life diverge',
+                    'clean exit'
+                ];
+
+                const text = this.paragraphs[paraIndex];
+                if (!text) return false;
+
+                for (const term of terms) {
+                    const idx = text.indexOf(term);
+                    if (idx !== -1 && charIndex >= idx && charIndex < idx + term.length) {
+                        return true;
+                    }
+                }
+                return false;
+            }
+
+            startTyping() {
+                if (this.paragraphs.length === 0) {
+                    console.error('No paragraphs to type');
+                    return;
+                }
+
+                const p = this.createParagraphElement(0);
+                this.elements.terminal.appendChild(p);
+
+                this.cursorElement = this.createCursorElement();
+                p.appendChild(this.cursorElement);
+
+                this.typingInterval = setInterval(() => this.typeNextBatch(), this.speed);
+            }
+
+            createParagraphElement(index) {
+                const p = document.createElement('div');
+                p.className = 'paragraph';
+                p.id = `paragraph-${index}`;
+                return p;
+            }
+
+            createCursorElement() {
+                const cursor = document.createElement('span');
+                cursor.className = 'cursor';
+                return cursor;
+            }
+
+            getParagraphElement(index) {
+                let element = document.getElementById(`paragraph-${index}`);
+                if (!element) {
+                    element = this.createParagraphElement(index);
+                    this.elements.terminal.appendChild(element);
+                }
+                return element;
+            }
+
+            typeNextBatch() {
+                if (this.isPaused || this.isTransitioning) return;
+
+                if (this.state.currentPara >= this.paragraphs.length) {
+                    this.complete();
+                    return;
+                }
+
+                const para = this.paragraphs[this.state.currentPara];
+                const paraEl = this.getParagraphElement(this.state.currentPara);
+
+                if (this.state.currentChar >= para.length) {
+                    this.moveToNextParagraph();
+                    return;
+                }
+
+                if (!paraEl) {
+                    console.error(`Paragraph element not found: paragraph-${this.state.currentPara}`);
+                    this.complete();
+                    return;
+                }
+
+                if (!this.cursorElement) {
+                    this.cursorElement = this.createCursorElement();
+                    paraEl.appendChild(this.cursorElement);
+                }
+
+                const remaining = para.length - this.state.currentChar;
+                const batchSize = Math.min(this.batchSize, remaining);
+                const textBatch = para.slice(this.state.currentChar, this.state.currentChar + batchSize);
+
+                const fragment = this.createStyledFragment(
+                    this.state.currentPara,
+                    this.state.currentChar,
+                    textBatch
+                );
+
+                paraEl.insertBefore(fragment, this.cursorElement);
+
+                this.state.currentChar += batchSize;
+                this.updateProgress();
+                this.handleAutoScroll();
+            }
+
+            moveToNextParagraph() {
+                this.isTransitioning = true;
+                this.state.currentPara++;
+                this.state.currentChar = 0;
+
+                if (this.state.currentPara >= this.paragraphs.length) {
+                    this.complete();
+                    this.isTransitioning = false;
+                    return;
+                }
+
+                clearInterval(this.typingInterval);
+
+                setTimeout(() => {
+                    const p = this.createParagraphElement(this.state.currentPara);
+                    this.elements.terminal.appendChild(p);
+
+                    if (this.cursorElement) {
+                        this.cursorElement.remove();
+                    }
+                    this.cursorElement = this.createCursorElement();
+                    p.appendChild(this.cursorElement);
+
+                    this.isTransitioning = false;
+
+                    this.typingInterval = setInterval(() => this.typeNextBatch(), this.speed);
+                }, 400);
+            }
+
+            createStyledFragment(paraIndex, startIdx, text) {
+                try {
+                    const fragment = document.createDocumentFragment();
+
+                    if (!text || text.length === 0) return fragment;
+                    if (!this.paragraphs[paraIndex]) {
+                        console.error(`Invalid paragraph index: ${paraIndex}`);
+                        return fragment;
+                    }
+
+                    let currentSpan = null;
+                    let currentClass = null;
+
+                    for (let i = 0; i < text.length; i++) {
+                        const char = text[i];
+                        const globalIdx = startIdx + i;
+
+                        const inQuote = this.isInQuotedText(paraIndex, globalIdx);
+                        let charClass = '';
+                        if (this.isKeyConcept(paraIndex, globalIdx)) {
+                            charClass = 'highlight';
+                        } else if (this.isCriticalTerm(paraIndex, globalIdx)) {
+                            charClass = 'error';
+                        } else if (inQuote) {
+                            charClass = 'emphasis';
+                        }
+
+                        if (!currentSpan || charClass !== currentClass) {
+                            if (currentSpan) {
+                                fragment.appendChild(currentSpan);
+                            }
+                            currentSpan = document.createElement('span');
+                            currentSpan.className = charClass;
+                            currentClass = charClass;
+                        }
+
+                        currentSpan.textContent += char;
+                    }
+
+                    if (currentSpan) {
+                        fragment.appendChild(currentSpan);
+                    }
+
+                    return fragment;
+                } catch (error) {
+                    console.error('Error creating styled fragment:', error);
+                    const fallback = document.createDocumentFragment();
+                    const span = document.createElement('span');
+                    span.textContent = text;
+                    fallback.appendChild(span);
+                    return fallback;
+                }
+            }
+
+            handleAutoScroll() {
+                if (!this.autoScroll || this.userScrolled) return;
+
+                const { container } = this.elements;
+                const distance = container.scrollHeight - container.scrollTop - container.clientHeight;
+
+                if (distance <= 100) {
+                    requestAnimationFrame(() => {
+                        container.scrollTop = container.scrollHeight;
+                    });
+                }
+            }
+
+            updateProgress() {
+                if (this.paragraphs.length === 0) return;
+
+                const totalParagraphs = this.paragraphs.length;
+                const currentProgress = (this.state.currentPara / totalParagraphs) * 100;
+                const paragraphProgress = (this.state.currentChar / this.paragraphs[this.state.currentPara]?.length || 1) * (100 / totalParagraphs);
+                const percent = Math.round(currentProgress + paragraphProgress);
+
+                this.elements.progress.textContent = `${Math.min(percent, 100)}%`;
+            }
+
+            complete() {
+                clearInterval(this.typingInterval);
+                if (this.cursorElement) {
+                    this.cursorElement.style.animation = 'blink 1.2s infinite';
+                }
+                this.elements.progress.textContent = 'Complete';
+            }
+
+            async copyToClipboard() {
+                try {
+                    await navigator.clipboard.writeText(this.storyText);
+                    this.showCopyNotification();
+                } catch (err) {
+                    console.error('Clipboard API failed:', err);
+                    this.fallbackCopy();
+                }
+            }
+
+            fallbackCopy() {
+                const textarea = document.createElement('textarea');
+                textarea.value = this.storyText;
+                textarea.style.position = 'fixed';
+                textarea.style.opacity = '0';
+                document.body.appendChild(textarea);
+                textarea.select();
+
+                try {
+                    document.execCommand('copy');
+                    this.showCopyNotification();
+                } catch (err) {
+                    console.error('Fallback copy failed:', err);
+                }
+
+                document.body.removeChild(textarea);
+            }
+
+            showCopyNotification() {
+                this.elements.copyNotification.classList.add('show');
+                setTimeout(() => {
+                    this.elements.copyNotification.classList.remove('show');
+                }, 2000);
+            }
+
+            announceToScreenReader(msg) {
+                const announcer = document.createElement('div');
+                announcer.setAttribute('role', 'status');
+                announcer.setAttribute('aria-live', 'polite');
+                announcer.className = 'sr-only';
+                announcer.textContent = msg;
+                document.body.appendChild(announcer);
+                setTimeout(() => announcer.remove(), 1000);
+            }
+
+            bindEvents() {
+                let scrollTimeout;
+                this.elements.container.addEventListener('scroll', () => {
+                    this.userScrolled = true;
+                    clearTimeout(scrollTimeout);
+                    scrollTimeout = setTimeout(() => {
+                        const distance = this.elements.container.scrollHeight -
+                            this.elements.container.scrollTop -
+                            this.elements.container.clientHeight;
+                        this.userScrolled = distance > 150;
+                    }, 100);
+                });
+
+                let touchStartY = 0;
+                this.elements.container.addEventListener('touchstart', (e) => {
+                    touchStartY = e.touches[0].clientY;
+                });
+
+                this.elements.container.addEventListener('touchmove', (e) => {
+                    if (Math.abs(e.touches[0].clientY - touchStartY) > 10) {
+                        this.userScrolled = true;
+                    }
+                });
+
+                document.addEventListener('keydown', async (e) => {
+                    if (e.ctrlKey && e.key === 'c') {
+                        e.preventDefault();
+                        await this.copyToClipboard();
+                    }
+
+                    if (e.code === 'Space' && !e.ctrlKey && !e.altKey) {
+                        e.preventDefault();
+                        this.init();
+                        this.announceToScreenReader('Text restarted');
+                    }
+                });
+
+                document.getElementById('restart-sr').addEventListener('click', () => {
+                    this.init();
+                });
+            }
+
+            destroy() {
+                clearInterval(this.typingInterval);
+                clearTimeout(this.scrollTimeout);
+                this.elements = null;
+            }
+        }
+
+        window.addEventListener('load', () => {
+            window.terminalAnimator = new TerminalAnimator({
+                speed: 60,
+                batchSize: 2,
+                autoScroll: true
+            });
+        });
+
+        window.addEventListener('beforeunload', () => {
+            if (window.terminalAnimator) {
+                window.terminalAnimator.destroy();
+            }
+        });
+    </script>
+</body>
+
+</html>

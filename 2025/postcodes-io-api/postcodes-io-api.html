@@ -1,0 +1,1049 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Postcodes.io API</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        *,
+        *::before,
+        *::after {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        :root {
+            --primary: #6F3449;
+            --primary-light: #8C4A63;
+            --primary-dark: #5A2A3A;
+            --secondary: #44C0AA;
+            --accent: #F0AD6E;
+            --info: #2E97F1;
+            --success: #C7FD93;
+            --text: #f8fafc;
+            --text-light: #cbd5e1;
+            --bg: #000000;
+            --surface: #1e293b;
+            --surface-light: #334155;
+            --border: #475569;
+            --shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+            --radius: 12px;
+            --radius-sm: 8px;
+            --transition: all 0.3s ease;
+        }
+
+        html,
+        body {
+            height: 100%;
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            line-height: 1.6;
+            color: var(--text);
+            background-color: var(--bg);
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        .search-container {
+            background: var(--surface);
+            border-radius: var(--radius);
+            padding: 2rem;
+            box-shadow: var(--shadow);
+            margin-bottom: 2rem;
+            border: 1px solid var(--border);
+        }
+
+        .search-box {
+            display: flex;
+            gap: 1rem;
+        }
+
+        .search-input {
+            flex: 1;
+            padding: 1rem 1.5rem;
+            border: 2px solid var(--border);
+            border-radius: var(--radius);
+            font-size: 1rem;
+            transition: var(--transition);
+            background: var(--surface-light);
+            color: var(--text);
+        }
+
+        .search-input:focus {
+            outline: none;
+            border-color: var(--secondary);
+            box-shadow: 0 0 0 3px rgba(68, 192, 170, 0.2);
+        }
+
+        .search-input::placeholder {
+            color: var(--text-light);
+        }
+
+        .search-btn {
+            padding: 1rem 1.5rem;
+            background: linear-gradient(135deg, var(--secondary), var(--info));
+            color: white;
+            border: none;
+            border-radius: var(--radius);
+            font-weight: 600;
+            cursor: pointer;
+            transition: var(--transition);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .search-btn:hover {
+            background: linear-gradient(135deg, var(--info), var(--secondary));
+            transform: translateY(-2px);
+            box-shadow: 0 6px 15px rgba(46, 151, 241, 0.4);
+        }
+
+        .endpoints-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .endpoint-card {
+            background: var(--surface);
+            border-radius: var(--radius);
+            padding: 1.5rem;
+            box-shadow: var(--shadow);
+            transition: var(--transition);
+            border-left: 4px solid var(--primary);
+            border: 1px solid var(--border);
+        }
+
+        .endpoint-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.4);
+            border-color: var(--secondary);
+        }
+
+        .endpoint-header {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            margin-bottom: 1rem;
+        }
+
+        .endpoint-icon {
+            width: 40px;
+            height: 40px;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+        }
+
+        .endpoint-title {
+            font-size: 1.2rem;
+            font-weight: 600;
+            color: var(--text);
+        }
+
+        .endpoint-description {
+            color: var(--text-light);
+            margin-bottom: 1.5rem;
+            font-size: 0.95rem;
+        }
+
+        .form-group {
+            margin-bottom: 1rem;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+            color: var(--text);
+            font-size: 0.9rem;
+        }
+
+        .form-control {
+            width: 100%;
+            padding: 0.75rem 1rem;
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
+            font-size: 0.95rem;
+            transition: var(--transition);
+            background: var(--surface-light);
+            color: var(--text);
+        }
+
+        .form-control:focus {
+            outline: none;
+            border-color: var(--secondary);
+            box-shadow: 0 0 0 3px rgba(68, 192, 170, 0.2);
+        }
+
+        .form-control::placeholder {
+            color: var(--text-light);
+        }
+
+        textarea.form-control {
+            min-height: 100px;
+            resize: vertical;
+        }
+
+        .btn-group {
+            display: flex;
+            gap: 0.75rem;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            padding: 0.75rem 1.25rem;
+            border: none;
+            border-radius: var(--radius-sm);
+            font-weight: 600;
+            font-size: 0.9rem;
+            cursor: pointer;
+            transition: var(--transition);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--primary), var(--primary-light));
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: linear-gradient(135deg, var(--primary-light), var(--primary));
+            transform: translateY(-2px);
+        }
+
+        .btn-secondary {
+            background: linear-gradient(135deg, var(--secondary), var(--info));
+            color: white;
+        }
+
+        .btn-secondary:hover {
+            background: linear-gradient(135deg, var(--info), var(--secondary));
+            transform: translateY(-2px);
+        }
+
+        .btn-accent {
+            background: linear-gradient(135deg, var(--accent), #F5C28A);
+            color: #333;
+        }
+
+        .btn-accent:hover {
+            background: linear-gradient(135deg, #F5C28A, var(--accent));
+            transform: translateY(-2px);
+        }
+
+        .btn-outline {
+            background: transparent;
+            color: var(--secondary);
+            border: 1px solid var(--secondary);
+        }
+
+        .btn-outline:hover {
+            background: rgba(68, 192, 170, 0.1);
+            transform: translateY(-2px);
+        }
+
+        .btn-sm {
+            padding: 0.5rem 1rem;
+            font-size: 0.85rem;
+        }
+
+        .coordinates-group {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+        }
+
+        .results-section {
+            margin-top: 3rem;
+        }
+
+        .section-title {
+            font-size: 1.5rem;
+            font-weight: 700;
+            margin-bottom: 1.5rem;
+            color: var(--text);
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .section-title i {
+            color: var(--secondary);
+        }
+
+        #results {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+            gap: 1.5rem;
+        }
+
+        .result-card {
+            background: var(--surface);
+            border-radius: var(--radius);
+            padding: 1.5rem;
+            box-shadow: var(--shadow);
+            border-top: 4px solid var(--primary);
+            border: 1px solid var(--border);
+        }
+
+        .result-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 1rem;
+        }
+
+        .result-title {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: var(--text);
+        }
+
+        .result-badge {
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            color: white;
+            padding: 0.25rem 0.75rem;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 600;
+        }
+
+        .result-content {
+            color: var(--text);
+        }
+
+        .result-content ul {
+            list-style: none;
+            padding-left: 0;
+        }
+
+        .result-content li {
+            padding: 0.5rem 0;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .result-content li:last-child {
+            border-bottom: none;
+        }
+
+        .result-content strong {
+            color: var(--text);
+            margin-right: 0.5rem;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 3rem;
+            color: var(--text-light);
+            grid-column: 1 / -1;
+        }
+
+        .empty-state i {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+            color: var(--border);
+        }
+
+        .empty-state h3 {
+            font-size: 1.5rem;
+            margin-bottom: 0.5rem;
+        }
+
+        footer {
+            text-align: center;
+            margin-top: 4rem;
+            padding: 2rem 0;
+            color: var(--text-light);
+            font-size: 0.9rem;
+            border-top: 1px solid var(--border);
+        }
+
+        .api-link {
+            color: var(--secondary);
+            text-decoration: none;
+            font-weight: 600;
+            transition: var(--transition);
+        }
+
+        .api-link:hover {
+            color: var(--accent);
+            text-decoration: underline;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 1rem;
+            }
+
+            .search-box {
+                flex-direction: column;
+            }
+
+            .endpoints-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .coordinates-group {
+                grid-template-columns: 1fr;
+            }
+
+            #results {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <div class="search-container">
+            <div class="search-box">
+                <input type="text" class="search-input" id="globalSearch"
+                    placeholder="Enter a postcode, outcode, or place name...">
+                <button class="search-btn" id="globalSearchBtn">
+                    <i class="fas fa-search"></i> Search
+                </button>
+            </div>
+        </div>
+
+        <div class="endpoints-grid">
+            <div class="endpoint-card">
+                <div class="endpoint-header">
+                    <div class="endpoint-icon">
+                        <i class="fas fa-map-pin"></i>
+                    </div>
+                    <div class="endpoint-title">Postcode Lookup</div>
+                </div>
+                <p class="endpoint-description">
+                    Look up detailed information for any UK postcode
+                </p>
+                <div class="form-group">
+                    <label for="postcodeInput">Postcode</label>
+                    <input type="text" class="form-control" id="postcodeInput" placeholder="e.g. SW1A 1AA">
+                </div>
+                <div class="btn-group">
+                    <button class="btn btn-primary btn-sm" id="lookupPostcodeBtn">
+                        <i class="fas fa-search"></i> Lookup
+                    </button>
+                    <button class="btn btn-secondary btn-sm" id="validatePostcodeBtn">
+                        <i class="fas fa-check"></i> Validate
+                    </button>
+                    <button class="btn btn-accent btn-sm" id="nearestPostcodeBtn">
+                        <i class="fas fa-location-arrow"></i> Nearest
+                    </button>
+                </div>
+            </div>
+
+            <div class="endpoint-card">
+                <div class="endpoint-header">
+                    <div class="endpoint-icon">
+                        <i class="fas fa-globe-europe"></i>
+                    </div>
+                    <div class="endpoint-title">Coordinate Search</div>
+                </div>
+                <p class="endpoint-description">
+                    Find postcodes near specific coordinates
+                </p>
+                <div class="coordinates-group">
+                    <div class="form-group">
+                        <label for="latitudeInput">Latitude</label>
+                        <input type="number" step="any" class="form-control" id="latitudeInput" placeholder="51.5074">
+                    </div>
+                    <div class="form-group">
+                        <label for="longitudeInput">Longitude</label>
+                        <input type="number" step="any" class="form-control" id="longitudeInput" placeholder="-0.1278">
+                    </div>
+                </div>
+                <div class="btn-group">
+                    <button class="btn btn-primary btn-sm" id="reverseGeocodeBtn">
+                        <i class="fas fa-map-marked-alt"></i> Reverse Geocode
+                    </button>
+                    <button class="btn btn-secondary btn-sm" id="reverseOutcodeBtn">
+                        <i class="fas fa-map"></i> Reverse Outcode
+                    </button>
+                </div>
+            </div>
+
+            <div class="endpoint-card">
+                <div class="endpoint-header">
+                    <div class="endpoint-icon">
+                        <i class="fas fa-map-marked"></i>
+                    </div>
+                    <div class="endpoint-title">Outcode Search</div>
+                </div>
+                <p class="endpoint-description">
+                    Look up information for postcode districts (outcodes)
+                </p>
+                <div class="form-group">
+                    <label for="outcodeInput">Outcode</label>
+                    <input type="text" class="form-control" id="outcodeInput" placeholder="e.g. SW1A">
+                </div>
+                <div class="btn-group">
+                    <button class="btn btn-primary btn-sm" id="lookupOutcodeBtn">
+                        <i class="fas fa-search"></i> Lookup Outcode
+                    </button>
+                    <button class="btn btn-accent btn-sm" id="nearestOutcodeBtn">
+                        <i class="fas fa-location-arrow"></i> Nearest Outcodes
+                    </button>
+                </div>
+            </div>
+
+            <div class="endpoint-card">
+                <div class="endpoint-header">
+                    <div class="endpoint-icon">
+                        <i class="fas fa-landmark"></i>
+                    </div>
+                    <div class="endpoint-title">Place Search</div>
+                </div>
+                <p class="endpoint-description">
+                    Find information about specific places in the UK
+                </p>
+                <div class="form-group">
+                    <label for="placeQueryInput">Place Name</label>
+                    <input type="text" class="form-control" id="placeQueryInput" placeholder="e.g. London">
+                </div>
+                <div class="btn-group">
+                    <button class="btn btn-primary btn-sm" id="queryPlaceBtn">
+                        <i class="fas fa-search"></i> Search Places
+                    </button>
+                    <button class="btn btn-secondary btn-sm" id="randomPlaceBtn">
+                        <i class="fas fa-random"></i> Random Place
+                    </button>
+                </div>
+            </div>
+
+            <div class="endpoint-card">
+                <div class="endpoint-header">
+                    <div class="endpoint-icon">
+                        <i class="fas fa-archive"></i>
+                    </div>
+                    <div class="endpoint-title">Bulk Operations</div>
+                </div>
+                <p class="endpoint-description">
+                    Process multiple postcodes or coordinates at once
+                </p>
+                <div class="form-group">
+                    <label for="bulkPostcodes">Postcodes (one per line)</label>
+                    <textarea class="form-control" id="bulkPostcodes" rows="3"
+                        placeholder="SW1A 1AA&#10;M1 1AE&#10;EH1 1QB"></textarea>
+                </div>
+                <div class="btn-group">
+                    <button class="btn btn-primary btn-sm" id="bulkLookupBtn">
+                        <i class="fas fa-search"></i> Bulk Lookup
+                    </button>
+                </div>
+            </div>
+
+            <div class="endpoint-card">
+                <div class="endpoint-header">
+                    <div class="endpoint-icon">
+                        <i class="fas fa-ban"></i>
+                    </div>
+                    <div class="endpoint-title">Terminated Postcodes</div>
+                </div>
+                <p class="endpoint-description">
+                    Look up information for terminated (disused) postcodes
+                </p>
+                <div class="form-group">
+                    <label for="terminatedInput">Terminated Postcode</label>
+                    <input type="text" class="form-control" id="terminatedInput" placeholder="e.g. AB1 0AA">
+                </div>
+                <div class="btn-group">
+                    <button class="btn btn-secondary btn-sm" id="terminatedLookupBtn">
+                        <i class="fas fa-search"></i> Lookup Terminated
+                    </button>
+                </div>
+            </div>
+
+            <div class="endpoint-card">
+                <div class="endpoint-header">
+                    <div class="endpoint-icon">
+                        <i class="fas fa-thistle"></i>
+                    </div>
+                    <div class="endpoint-title">Scottish Postcodes</div>
+                </div>
+                <p class="endpoint-description">
+                    Look up information for Scottish postcodes
+                </p>
+                <div class="form-group">
+                    <label for="scottishInput">Scottish Postcode</label>
+                    <input type="text" class="form-control" id="scottishInput" placeholder="e.g. EH1 2QZ">
+                </div>
+                <div class="btn-group">
+                    <button class="btn btn-accent btn-sm" id="scottishLookupBtn">
+                        <i class="fas fa-search"></i> Lookup Scottish
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <section class="results-section" id="results-section">
+            <h2 class="section-title">
+                <i class="fas fa-chart-bar"></i> Results
+            </h2>
+            <div id="results">
+                <div class="empty-state">
+                    <i class="fas fa-inbox"></i>
+                    <h3>No results yet</h3>
+                    <p>Use the search options above to explore UK postcode data</p>
+                </div>
+            </div>
+        </section>
+
+        <footer>
+            <p>Data provided by <a href="https://postcodes.io" target="_blank" class="api-link">Postcodes.io</a></p>
+        </footer>
+    </div>
+
+    <script>
+        (function () {
+            const API_BASE = "https://api.postcodes.io";
+
+            function escapeHTML(str) {
+                return str
+                    .replace(/&/g, "&amp;")
+                    .replace(/</g, "&lt;")
+                    .replace(/>/g, "&gt;")
+                    .replace(/"/g, "&quot;")
+                    .replace(/'/g, "&#039;");
+            }
+
+            function generateHTML(obj) {
+                if (obj === null || obj === undefined) {
+                    return '<span class="null">null</span>';
+                }
+                if (typeof obj !== "object") {
+                    return escapeHTML(String(obj));
+                }
+                if (Array.isArray(obj)) {
+                    const items = obj
+                        .map((item) => `<li>${generateHTML(item)}</li>`)
+                        .join("");
+                    return `<ul>${items}</ul>`;
+                }
+                const rows = Object.entries(obj)
+                    .map(
+                        ([key, value]) =>
+                            `<li><strong>${escapeHTML(key)}:</strong> ${generateHTML(value)}</li>`
+                    )
+                    .join("");
+                return `<ul>${rows}</ul>`;
+            }
+
+            function clearResults() {
+                const container = document.getElementById("results");
+                container.innerHTML = "";
+            }
+
+            function scrollToResults() {
+                const resultsSection = document.getElementById("results-section");
+                if (resultsSection) {
+                    resultsSection.scrollIntoView({
+                        behavior: 'smooth',
+                        block: 'start'
+                    });
+                }
+            }
+
+            function renderCard(title, data, type = "info") {
+                const container = document.getElementById("results");
+                if (container.querySelector('.empty-state')) {
+                    container.innerHTML = "";
+                }
+
+                const card = document.createElement("div");
+                card.className = "result-card";
+
+                const header = document.createElement("div");
+                header.className = "result-header";
+
+                const titleEl = document.createElement("div");
+                titleEl.className = "result-title";
+                titleEl.textContent = title;
+
+                const badge = document.createElement("div");
+                badge.className = "result-badge";
+                badge.textContent = type.charAt(0).toUpperCase() + type.slice(1);
+
+                header.appendChild(titleEl);
+                header.appendChild(badge);
+
+                const content = document.createElement("div");
+                content.className = "result-content";
+                content.innerHTML = generateHTML(data);
+
+                card.appendChild(header);
+                card.appendChild(content);
+                container.appendChild(card);
+
+                setTimeout(scrollToResults, 100);
+            }
+
+            function renderError(message) {
+                renderCard("Error", { message }, "error");
+            }
+
+            async function getJSON(url) {
+                const response = await fetch(url);
+                if (!response.ok) {
+                    throw new Error(`${response.status} ${response.statusText}`);
+                }
+                return await response.json();
+            }
+
+            async function postJSON(url, body) {
+                const response = await fetch(url, {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify(body)
+                });
+                if (!response.ok) {
+                    throw new Error(`${response.status} ${response.statusText}`);
+                }
+                return await response.json();
+            }
+
+            function setupEventListeners() {
+                document.getElementById("globalSearchBtn").addEventListener("click", () => {
+                    const query = document.getElementById("globalSearch").value.trim();
+                    if (!query) return;
+
+                    if (query.match(/^[A-Z]{1,2}\d[A-Z\d]? ?\d[A-Z]{2}$/i)) {
+                        document.getElementById("postcodeInput").value = query;
+                        lookupPostcode();
+                    } else if (query.match(/^[A-Z]{1,2}\d[A-Z\d]?$/i)) {
+                        document.getElementById("outcodeInput").value = query;
+                        lookupOutcode();
+                    } else {
+                        document.getElementById("placeQueryInput").value = query;
+                        queryPlace();
+                    }
+                });
+
+                document.getElementById("lookupPostcodeBtn").addEventListener("click", lookupPostcode);
+                document.getElementById("validatePostcodeBtn").addEventListener("click", validatePostcode);
+                document.getElementById("nearestPostcodeBtn").addEventListener("click", nearestPostcode);
+
+                document.getElementById("reverseGeocodeBtn").addEventListener("click", reverseGeocode);
+                document.getElementById("reverseOutcodeBtn").addEventListener("click", reverseOutcode);
+
+                document.getElementById("lookupOutcodeBtn").addEventListener("click", lookupOutcode);
+                document.getElementById("nearestOutcodeBtn").addEventListener("click", nearestOutcode);
+
+                document.getElementById("queryPlaceBtn").addEventListener("click", queryPlace);
+                document.getElementById("randomPlaceBtn").addEventListener("click", randomPlace);
+
+                document.getElementById("bulkLookupBtn").addEventListener("click", bulkLookup);
+
+                document.getElementById("terminatedLookupBtn").addEventListener("click", terminatedLookup);
+                document.getElementById("scottishLookupBtn").addEventListener("click", scottishLookup);
+            }
+
+            async function lookupPostcode() {
+                const postcode = document.getElementById("postcodeInput").value.trim();
+                if (!postcode) return;
+                clearResults();
+                try {
+                    const data = await getJSON(
+                        `${API_BASE}/postcodes/${encodeURIComponent(postcode)}`
+                    );
+                    if (data.status === 200) {
+                        renderCard(`Postcode: ${postcode.toUpperCase()}`, data.result);
+                    } else {
+                        renderError(data.error || `No data found for ${postcode}`);
+                    }
+                } catch (err) {
+                    renderError(err.message);
+                }
+            }
+
+            async function validatePostcode() {
+                const postcode = document.getElementById("postcodeInput").value.trim();
+                if (!postcode) return;
+                clearResults();
+                try {
+                    const data = await getJSON(
+                        `${API_BASE}/postcodes/${encodeURIComponent(postcode)}/validate`
+                    );
+                    if (typeof data.result === "boolean") {
+                        renderCard(`Validate Postcode: ${postcode.toUpperCase()}`, {
+                            postcode: postcode.toUpperCase(),
+                            valid: data.result
+                        });
+                    } else {
+                        renderError("Unexpected validation response");
+                    }
+                } catch (err) {
+                    renderError(err.message);
+                }
+            }
+
+            async function nearestPostcode() {
+                const postcode = document.getElementById("postcodeInput").value.trim();
+                if (!postcode) return;
+                clearResults();
+                try {
+                    const url = new URL(
+                        `${API_BASE}/postcodes/${encodeURIComponent(postcode)}/nearest`
+                    );
+                    url.searchParams.set("limit", "10");
+                    const data = await getJSON(url.toString());
+                    if (
+                        data.status === 200 &&
+                        Array.isArray(data.result) &&
+                        data.result.length
+                    ) {
+                        data.result.forEach((item, idx) => {
+                            renderCard(`Nearest ${idx + 1}: ${item.postcode}`, item);
+                        });
+                    } else {
+                        renderError(`No nearest postcodes found for '${postcode}'.`);
+                    }
+                } catch (err) {
+                    renderError(err.message);
+                }
+            }
+
+            async function reverseGeocode() {
+                const lat = document.getElementById("latitudeInput").value.trim();
+                const lon = document.getElementById("longitudeInput").value.trim();
+                if (!lat || !lon) return;
+                clearResults();
+                try {
+                    const url = new URL(`${API_BASE}/postcodes`);
+                    url.searchParams.set("lat", lat);
+                    url.searchParams.set("lon", lon);
+                    url.searchParams.set("limit", "10");
+                    url.searchParams.set("radius", "200");
+                    const data = await getJSON(url.toString());
+                    if (
+                        data.status === 200 &&
+                        Array.isArray(data.result) &&
+                        data.result.length
+                    ) {
+                        data.result.forEach((item, idx) => {
+                            renderCard(`Reverse Geocode ${idx + 1}: ${item.postcode}`, item);
+                        });
+                    } else {
+                        renderError("No postcodes found for the provided coordinates.");
+                    }
+                } catch (err) {
+                    renderError(err.message);
+                }
+            }
+
+            async function reverseOutcode() {
+                const lat = document.getElementById("latitudeInput").value.trim();
+                const lon = document.getElementById("longitudeInput").value.trim();
+                if (!lat || !lon) return;
+                clearResults();
+                try {
+                    const url = new URL(`${API_BASE}/outcodes`);
+                    url.searchParams.set("lat", lat);
+                    url.searchParams.set("lon", lon);
+                    url.searchParams.set("limit", "10");
+                    url.searchParams.set("radius", "5000");
+                    const data = await getJSON(url.toString());
+                    if (
+                        data.status === 200 &&
+                        Array.isArray(data.result) &&
+                        data.result.length
+                    ) {
+                        data.result.forEach((item, idx) => {
+                            renderCard(`Reverse Outcode ${idx + 1}: ${item.outcode}`, item);
+                        });
+                    } else {
+                        renderError("No outcodes found for the provided coordinates.");
+                    }
+                } catch (err) {
+                    renderError(err.message);
+                }
+            }
+
+            async function lookupOutcode() {
+                const outcode = document.getElementById("outcodeInput").value.trim();
+                if (!outcode) return;
+                clearResults();
+                try {
+                    const data = await getJSON(
+                        `${API_BASE}/outcodes/${encodeURIComponent(outcode)}`
+                    );
+                    if (data.status === 200) {
+                        renderCard(`Outcode: ${outcode.toUpperCase()}`, data.result);
+                    } else {
+                        renderError(
+                            data.error || `No data found for outcode '${outcode}'.`
+                        );
+                    }
+                } catch (err) {
+                    renderError(err.message);
+                }
+            }
+
+            async function nearestOutcode() {
+                const outcode = document.getElementById("outcodeInput").value.trim();
+                if (!outcode) return;
+                clearResults();
+                try {
+                    const url = new URL(
+                        `${API_BASE}/outcodes/${encodeURIComponent(outcode)}/nearest`
+                    );
+                    url.searchParams.set("limit", "10");
+                    const data = await getJSON(url.toString());
+                    if (
+                        data.status === 200 &&
+                        Array.isArray(data.result) &&
+                        data.result.length
+                    ) {
+                        data.result.forEach((item, idx) => {
+                            renderCard(`Nearest Outcode ${idx + 1}: ${item.outcode}`, item);
+                        });
+                    } else {
+                        renderError(`No nearest outcodes found for '${outcode}'.`);
+                    }
+                } catch (err) {
+                    renderError(err.message);
+                }
+            }
+
+            async function queryPlace() {
+                const query = document.getElementById("placeQueryInput").value.trim();
+                if (!query) return;
+                clearResults();
+                try {
+                    const url = new URL(`${API_BASE}/places`);
+                    url.searchParams.set("q", query);
+                    url.searchParams.set("limit", "20");
+                    const data = await getJSON(url.toString());
+                    if (
+                        data.status === 200 &&
+                        Array.isArray(data.result) &&
+                        data.result.length
+                    ) {
+                        data.result.forEach((item, idx) => {
+                            const heading = item.place_name
+                                ? item.place_name
+                                : `Place ${idx + 1}`;
+                            renderCard(heading, item);
+                        });
+                    } else {
+                        renderError(`No places found matching '${query}'.`);
+                    }
+                } catch (err) {
+                    renderError(err.message);
+                }
+            }
+
+            async function randomPlace() {
+                clearResults();
+                try {
+                    const data = await getJSON(`${API_BASE}/random/places`);
+                    if (data.status === 200) {
+                        renderCard("Random Place", data.result);
+                    } else {
+                        renderError("Failed to retrieve random place.");
+                    }
+                } catch (err) {
+                    renderError(err.message);
+                }
+            }
+
+            async function bulkLookup() {
+                const textarea = document.getElementById("bulkPostcodes");
+                const lines = textarea.value
+                    .split(/\n|,/)
+                    .map((s) => s.trim())
+                    .filter(Boolean);
+                if (!lines.length) return;
+                if (lines.length > 100) {
+                    renderError("Bulk lookup is limited to 100 postcodes.");
+                    return;
+                }
+                clearResults();
+                try {
+                    const data = await postJSON(`${API_BASE}/postcodes`, {
+                        postcodes: lines
+                    });
+                    if (data.status === 200 && Array.isArray(data.result)) {
+                        data.result.forEach((item, idx) => {
+                            const title = item.query;
+                            if (item.result) {
+                                renderCard(`Bulk Result for ${title}`, item.result);
+                            } else {
+                                renderCard(`Bulk Result for ${title}`, { error: "Not found" });
+                            }
+                        });
+                    } else {
+                        renderError("Unexpected bulk lookup response.");
+                    }
+                } catch (err) {
+                    renderError(err.message);
+                }
+            }
+
+            async function terminatedLookup() {
+                const postcode = document.getElementById("terminatedInput").value.trim();
+                if (!postcode) return;
+                clearResults();
+                try {
+                    const data = await getJSON(
+                        `${API_BASE}/terminated_postcodes/${encodeURIComponent(postcode)}`
+                    );
+                    if (data.status === 200) {
+                        renderCard(
+                            `Terminated Postcode: ${postcode.toUpperCase()}`,
+                            data.result
+                        );
+                    } else {
+                        renderError(data.error || `No terminated data for '${postcode}'.`);
+                    }
+                } catch (err) {
+                    renderError(err.message);
+                }
+            }
+
+            async function scottishLookup() {
+                const postcode = document.getElementById("scottishInput").value.trim();
+                if (!postcode) return;
+                clearResults();
+                try {
+                    const data = await getJSON(
+                        `${API_BASE}/scotland/postcodes/${encodeURIComponent(postcode)}`
+                    );
+                    if (data.status === 200) {
+                        renderCard(
+                            `Scottish Postcode: ${postcode.toUpperCase()}`,
+                            data.result
+                        );
+                    } else {
+                        renderError(data.error || `No Scottish data for '${postcode}'.`);
+                    }
+                } catch (err) {
+                    renderError(err.message);
+                }
+            }
+
+            document.addEventListener("DOMContentLoaded", setupEventListeners);
+        })();
+    </script>
+</body>
+
+</html>

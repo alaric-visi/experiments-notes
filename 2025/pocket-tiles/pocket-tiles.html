@@ -1,0 +1,574 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Pocket Tiles</title>
+    <style>
+        :root {
+            --bg: #000000;
+            --walkway: #00b33b;
+            --tile-edge: #141414;
+            --stone-1: #ffffff;
+            --stone-2: #e9e9e9;
+            --stone-3: #cfcfcf;
+            --stone-4: #9a9a9a;
+            --stone-5: #6f6f6f;
+        }
+
+        html,
+        body {
+            height: 100%;
+        }
+
+        body {
+            margin: 0;
+            place-items: center;
+            overflow: hidden;
+            font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+            background: var(--walkway);
+        }
+
+        canvas {
+            display: block;
+            width: 100vw;
+            height: 100vh;
+        }
+
+        .hint {
+            position: fixed;
+            inset: auto 12px 12px auto;
+            z-index: 2;
+            padding: 0.45rem 0.6rem;
+            border-radius: 10px;
+            backdrop-filter: blur(6px);
+            background: rgba(255, 255, 255, 0.7);
+            color: #1b3b09;
+            font-size: 0.9rem;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.12);
+        }
+
+        @media (max-width: 768px) {
+            .hint {
+                display: none;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <canvas id="mosaic"></canvas>
+    <div class="hint">Space: pause • R: reshuffle</div>
+
+    <script>
+        (() => {
+            const canvas = document.getElementById("mosaic");
+            const ctx = canvas.getContext("2d");
+            ctx.imageSmoothingEnabled = false;
+
+            const MOBILE_BREAKPOINT = 768;
+            const isMobile = () => window.innerWidth <= MOBILE_BREAKPOINT;
+
+            function getConfig() {
+                const mobile = isMobile();
+                return {
+                    gap: mobile ? 4 : 6,
+                    targetCell: mobile ? 100 : 150,
+                    tileMargin: mobile ? 0.08 : 0.06,
+                    density: mobile ? 0.0006 : 0.0008,
+                    stone: {
+                        min: mobile ? 5 : 6,
+                        max: mobile ? 12 : 16
+                    },
+                    physics: {
+                        speedMin: mobile ? 15 : 18,
+                        speedMax: mobile ? 60 : 72,
+                        accel: mobile ? 15 : 18,
+                        restitution: 0.96
+                    },
+                    fpsCap: 60,
+                    addTiles: mobile ? 4 : 6,
+                    minCellSize: mobile ? 40 : 60
+                };
+            }
+
+            let config = getConfig();
+
+            function fitCanvas() {
+                const dpr = Math.max(1, Math.min(2, window.devicePixelRatio || 1));
+                const { innerWidth: w, innerHeight: h } = window;
+                canvas.width = Math.floor(w * dpr);
+                canvas.height = Math.floor(h * dpr);
+                canvas.style.width = w + "px";
+                canvas.style.height = h + "px";
+                ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+            }
+
+            function makeRng(seed = (Math.random() * 1e9) >>> 0) {
+                let s = seed >>> 0;
+                return Object.assign(
+                    () => ((s = (s * 1664525 + 1013904223) >>> 0), (s >>> 0) / 4294967296),
+                    { seed }
+                );
+            }
+
+            function roundRectPath(c, x, y, w, h, r) {
+                r = Math.min(r, w * 0.5, h * 0.5);
+                c.beginPath();
+                c.moveTo(x + r, y);
+                c.arcTo(x + w, y, x + w, y + h, r);
+                c.arcTo(x + w, y + h, x, y + h, r);
+                c.arcTo(x, y + h, x, y, r);
+                c.arcTo(x, y, x + w, y, r);
+                c.closePath();
+            }
+            const css = (name) =>
+                getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+            const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+            const lerp = (a, b, t) => a + (b - a) * t;
+
+            const PALETTE = [
+                "#ffffff",
+                "#ededed",
+                "#cfcfcf",
+                "#ff3b30",
+                "#ff9f0a",
+                "#ffcc00",
+                "#34c759",
+                "#30d158",
+                "#0a84ff",
+                "#64d2ff",
+                "#af52de",
+                "#bf5af2",
+                "#ff2d55",
+                "#ff375f"
+            ];
+
+            let rng = makeRng();
+            let grid,
+                tiles = [],
+                running = true,
+                lastTs = 0,
+                currentConfig = config;
+
+            function baselineCounts(W, H, g, cell) {
+                const nx0 = Math.max(2, Math.floor((W + g) / (cell + g)));
+                const ny0 = Math.max(2, Math.floor((H + g) / (cell + g)));
+                return { nx0, ny0 };
+            }
+
+            function chooseCounts(W, H, g, cell, add) {
+                const { nx0, ny0 } = baselineCounts(W, H, g, cell);
+                const targetTiles = nx0 * ny0 + add;
+                const aspect = W / H;
+                let best = null;
+
+                const range = isMobile() ? 6 : 8;
+
+                for (let nx = Math.max(2, nx0 - range); nx <= nx0 + range; nx++) {
+                    for (let ny = Math.max(2, ny0 - range); ny <= ny0 + range; ny++) {
+                        if (nx * ny < targetTiles) continue;
+                        const cw = (W - (nx + 1) * g) / nx;
+                        const ch = (H - (ny + 1) * g) / ny;
+                        const side = Math.floor(Math.min(cw, ch));
+
+                        if (side <= currentConfig.minCellSize) continue;
+
+                        const totalW = nx * side + (nx + 1) * g;
+                        const totalH = ny * side + (ny + 1) * g;
+                        const leftoverX = W - totalW;
+                        const leftoverY = H - totalH;
+                        if (leftoverX < 0 || leftoverY < 0) continue;
+
+                        const ar = nx / ny;
+                        const arCost = Math.abs(ar - aspect);
+                        const sizeCost = Math.abs(side - cell) / Math.max(1, cell);
+
+                        const maxMargin = isMobile() ? 8 : 5;
+                        const penaltyX = leftoverX > maxMargin ? (leftoverX - maxMargin) * 500 : 0;
+                        const penaltyY = leftoverY > maxMargin ? (leftoverY - maxMargin) * 500 : 0;
+
+                        const movementSpaceBonus = side > (currentConfig.stone.max * 3) ? -0.5 : 0;
+
+                        const cost = arCost + sizeCost * 0.6 + penaltyX + penaltyY + movementSpaceBonus;
+
+                        if (
+                            !best ||
+                            cost < best.cost ||
+                            (cost === best.cost && nx * ny < best.nx * best.ny)
+                        ) {
+                            best = { nx, ny, side, cost, leftoverX, leftoverY };
+                        }
+                    }
+                }
+
+                if (!best) {
+                    const nx = Math.max(2, nx0);
+                    const ny = Math.max(2, ny0);
+                    const cw = (W - (nx + 1) * g) / nx;
+                    const ch = (H - (ny + 1) * g) / ny;
+                    const side = Math.max(currentConfig.minCellSize, Math.floor(Math.min(cw, ch)));
+                    const totalW = nx * side + (nx + 1) * g;
+                    const totalH = ny * side + (ny + 1) * g;
+                    const leftoverX = Math.max(0, W - totalW);
+                    const leftoverY = Math.max(0, H - totalH);
+                    best = { nx, ny, side, cost: 999, leftoverX, leftoverY };
+                }
+                return best;
+            }
+
+            function buildGrid() {
+                const W = window.innerWidth;
+                const H = window.innerHeight;
+
+                currentConfig = getConfig();
+                const g = currentConfig.gap;
+
+                const { nx, ny, side, leftoverX, leftoverY } = chooseCounts(
+                    W,
+                    H,
+                    g,
+                    currentConfig.targetCell,
+                    currentConfig.addTiles
+                );
+
+                const cellW = side;
+                const cellH = side;
+                const totalW = nx * cellW + (nx + 1) * g;
+                const totalH = ny * cellH + (ny + 1) * g;
+
+                const maxMargin = isMobile() ? 8 : 5;
+                const leftMargin = Math.min(maxMargin, Math.floor(leftoverX / 2));
+                const rightMargin = leftoverX - leftMargin;
+                const topMargin = Math.min(maxMargin, Math.floor(leftoverY / 2));
+                const bottomMargin = leftoverY - topMargin;
+
+                const offsetX = leftMargin;
+                const offsetY = topMargin;
+
+                grid = { nx, ny, cellW, cellH, g, offsetX, offsetY };
+
+                tiles = [];
+
+                for (let j = 0; j < ny; j++) {
+                    for (let i = 0; i < nx; i++) {
+                        const tileSeed =
+                            ((i + 1) * 73856093) ^ ((j + 1) * 19349663) ^ (rng.seed | 0);
+                        tiles.push(makePhysicsTile(cellW, cellH, tileSeed));
+                    }
+                }
+
+                console.log(`Grid: ${nx}x${ny}, Cell: ${cellW}x${cellH}, Tiles: ${tiles.length}`);
+            }
+
+            function makePhysicsTile(w, h, seed) {
+                const r = makeRng(seed >>> 0);
+                const c = document.createElement("canvas");
+                c.width = Math.max(1, Math.floor(w));
+                c.height = Math.max(1, Math.floor(h));
+                const t = c.getContext("2d");
+                t.imageSmoothingEnabled = false;
+
+                const mX = w * currentConfig.tileMargin;
+                const mY = h * currentConfig.tileMargin;
+                const innerW = w - 2 * mX;
+                const innerH = h - 2 * mY;
+
+                const stonesPerTile = Math.max(
+                    18,
+                    Math.floor(innerW * innerH * currentConfig.density)
+                );
+
+                const stones = [];
+                for (let k = 0; k < stonesPerTile; k++) {
+                    const sw = r() * (currentConfig.stone.max - currentConfig.stone.min) + currentConfig.stone.min;
+                    const sh = r() * (currentConfig.stone.max - currentConfig.stone.min) + currentConfig.stone.min;
+                    const rad = Math.min(sw, sh) * 0.5;
+
+                    const minOffset = rad + 1;
+                    const maxX = innerW - sw - 1;
+                    const maxY = innerH - sh - 1;
+
+                    if (maxX <= minOffset || maxY <= minOffset) continue;
+
+                    let cx = Math.floor(r() * (innerW - sw - 2 * minOffset) + mX + sw * 0.5 + minOffset) + 0.5;
+                    let cy = Math.floor(r() * (innerH - sh - 2 * minOffset) + mY + sh * 0.5 + minOffset) + 0.5;
+
+                    const choose = r();
+                    const fill =
+                        choose < 0.1
+                            ? [css("--stone-1"), css("--stone-2"), css("--stone-3")][
+                            Math.floor(r() * 3)
+                            ]
+                            : PALETTE[Math.floor(r() * PALETTE.length)];
+
+                    const size = (sw + sh) * 0.5;
+                    const rel = clamp(
+                        (size - currentConfig.stone.min) / (currentConfig.stone.max - currentConfig.stone.min),
+                        0,
+                        1
+                    );
+                    const baseSpeed = lerp(
+                        currentConfig.physics.speedMax,
+                        currentConfig.physics.speedMin,
+                        rel
+                    );
+                    const theta = r() * Math.PI * 2;
+                    let vx = Math.cos(theta) * baseSpeed;
+                    let vy = Math.sin(theta) * baseSpeed;
+                    const phx = r() * Math.PI * 2;
+                    const phy = r() * Math.PI * 2;
+
+                    const minCX = mX + rad + 2;
+                    const minCY = mY + rad + 2;
+                    const maxCX = w - mX - rad - 2;
+                    const maxCY = h - mY - rad - 2;
+
+                    stones.push({
+                        cx,
+                        cy,
+                        w: sw,
+                        h: sh,
+                        r: rad,
+                        fill,
+                        vx,
+                        vy,
+                        baseSpeed,
+                        phx,
+                        phy,
+                        minCX,
+                        minCY,
+                        maxCX,
+                        maxCY
+                    });
+                }
+
+                const CELL = Math.max(20, Math.min(30, currentConfig.stone.max * 1.5));
+                function hash(x, y) {
+                    return ((x / CELL) | 0) + "," + ((y / CELL) | 0);
+                }
+
+                function step(dt, time) {
+                    const accel = currentConfig.physics.accel;
+
+                    for (const s of stones) {
+                        s.vx += Math.sin(time * 0.8 + s.phx) * accel * dt;
+                        s.vy += Math.cos(time * 0.7 + s.phy) * accel * dt;
+
+                        const spd = Math.hypot(s.vx, s.vy);
+                        if (spd > s.baseSpeed) {
+                            const k = s.baseSpeed / spd;
+                            s.vx *= k;
+                            s.vy *= k;
+                        }
+
+                        s.cx += s.vx * dt;
+                        s.cy += s.vy * dt;
+
+                        if (s.cx < s.minCX) {
+                            s.cx = s.minCX;
+                            s.vx = Math.abs(s.vx) * currentConfig.physics.restitution;
+                        } else if (s.cx > s.maxCX) {
+                            s.cx = s.maxCX;
+                            s.vx = -Math.abs(s.vx) * currentConfig.physics.restitution;
+                        }
+                        if (s.cy < s.minCY) {
+                            s.cy = s.minCY;
+                            s.vy = Math.abs(s.vy) * currentConfig.physics.restitution;
+                        } else if (s.cy > s.maxCY) {
+                            s.cy = s.maxCY;
+                            s.vy = -Math.abs(s.vy) * currentConfig.physics.restitution;
+                        }
+                    }
+
+                    const map = new Map();
+                    for (let i = 0; i < stones.length; i++) {
+                        const s = stones[i];
+                        const key = hash(s.cx, s.cy);
+                        if (!map.has(key)) map.set(key, []);
+                        map.get(key).push(i);
+                    }
+
+                    const checked = new Set();
+                    for (let i = 0; i < stones.length; i++) {
+                        const s1 = stones[i];
+                        const ix = (s1.cx / CELL) | 0;
+                        const iy = (s1.cy / CELL) | 0;
+
+                        for (let dx = -1; dx <= 1; dx++) {
+                            for (let dy = -1; dy <= 1; dy++) {
+                                const key = (ix + dx) + "," + (iy + dy);
+                                const arr = map.get(key);
+                                if (!arr) continue;
+
+                                for (const j of arr) {
+                                    if (j <= i) continue;
+                                    const s2 = stones[j];
+                                    const id = i + "-" + j;
+                                    if (checked.has(id)) continue;
+                                    checked.add(id);
+
+                                    const dxC = s2.cx - s1.cx;
+                                    const dyC = s2.cy - s1.cy;
+                                    const dist2 = dxC * dxC + dyC * dyC;
+                                    const minD = s1.r + s2.r;
+
+                                    if (dist2 > minD * minD || dist2 === 0) continue;
+
+                                    const dist = Math.sqrt(dist2) || 0.0001;
+                                    const nx = dxC / dist;
+                                    const ny = dyC / dist;
+
+                                    const overlap = minD - dist;
+                                    const half = overlap * 0.5;
+                                    s1.cx -= nx * half;
+                                    s1.cy -= ny * half;
+                                    s2.cx += nx * half;
+                                    s2.cy += ny * half;
+
+                                    const v1n = s1.vx * nx + s1.vy * ny;
+                                    const v2n = s2.vx * nx + s2.vy * ny;
+                                    const p = v1n - v2n;
+                                    const restit = currentConfig.physics.restitution;
+
+                                    s1.vx -= (1 + restit) * p * nx * 0.5;
+                                    s1.vy -= (1 + restit) * p * ny * 0.5;
+                                    s2.vx += (1 + restit) * p * nx * 0.5;
+                                    s2.vy += (1 + restit) * p * ny * 0.5;
+
+                                    s1.cx = clamp(s1.cx, s1.minCX, s1.maxCX);
+                                    s1.cy = clamp(s1.cy, s1.minCY, s1.maxCY);
+                                    s2.cx = clamp(s2.cx, s2.minCX, s2.maxCX);
+                                    s2.cy = clamp(s2.cy, s2.minCY, s2.maxCY);
+                                }
+                            }
+                        }
+                    }
+
+                    for (const s of stones) {
+                        s.cx = Math.round(s.cx * 2) / 2;
+                        s.cy = Math.round(s.cy * 2) / 2;
+                    }
+                }
+
+                function render() {
+                    const wInt = Math.floor(w);
+                    const hInt = Math.floor(h);
+                    t.clearRect(0, 0, wInt, hInt);
+
+                    t.fillStyle = "#000000";
+                    t.strokeStyle = css("--tile-edge");
+                    t.lineWidth = 1;
+                    roundRectPath(t, 0.5, 0.5, w - 1, h - 1, 5);
+                    t.fill();
+                    t.stroke();
+
+                    t.strokeStyle = "#0b0b0b";
+                    t.lineWidth = 0.8;
+                    for (const s of stones) {
+                        const x = s.cx - s.w * 0.5;
+                        const y = s.cy - s.h * 0.5;
+                        t.fillStyle = s.fill;
+                        roundRectPath(t, x, y, s.w, s.h, Math.min(s.w, s.h) * 0.35);
+                        t.fill();
+                        t.stroke();
+                    }
+                }
+
+                return { canvas: c, step, render, stones };
+            }
+
+            function drawBackground() {
+                const W = window.innerWidth;
+                const H = window.innerHeight;
+                ctx.fillStyle = css("--walkway");
+                ctx.fillRect(0, 0, W, H);
+            }
+
+            function drawTiles(dt, time) {
+                if (!grid) return;
+
+                const { nx, ny, cellW, cellH, g, offsetX, offsetY } = grid;
+                let idx = 0;
+                for (let j = 0; j < ny; j++) {
+                    for (let i = 0; i < nx; i++) {
+                        const tile = tiles[idx++];
+                        const baseX = offsetX + g + i * (cellW + g);
+                        const baseY = offsetY + g + j * (cellH + g);
+                        tile.step(dt, time);
+                        tile.render();
+                        ctx.drawImage(tile.canvas, Math.round(baseX), Math.round(baseY));
+                    }
+                }
+            }
+
+            function frame(ts) {
+                if (!running) return;
+                const minDelta = 1000 / currentConfig.fpsCap;
+                const delta = lastTs ? ts - lastTs : minDelta;
+                if (delta < minDelta) {
+                    requestAnimationFrame(frame);
+                    return;
+                }
+                const dt = Math.min(0.05, delta / 1000);
+                lastTs = ts;
+
+                const t = ts * 0.001;
+                drawBackground();
+                drawTiles(dt, t);
+                requestAnimationFrame(frame);
+            }
+
+            function rebuild() {
+                fitCanvas();
+                buildGrid();
+                lastTs = 0;
+                running = true;
+                requestAnimationFrame(frame);
+            }
+
+            let resizeTimeout;
+            window.addEventListener("resize", () => {
+                clearTimeout(resizeTimeout);
+                resizeTimeout = setTimeout(rebuild, 150);
+            });
+
+            window.addEventListener("orientationchange", () => {
+                setTimeout(rebuild, 300);
+            });
+
+            window.addEventListener("keydown", (e) => {
+                if (e.code === "Space") {
+                    e.preventDefault();
+                    running = !running;
+                    if (running) {
+                        lastTs = 0;
+                        requestAnimationFrame(frame);
+                    }
+                }
+                if (e.key.toLowerCase() === "r") {
+                    rng = makeRng();
+                    rebuild();
+                }
+            });
+
+            canvas.addEventListener("touchstart", (e) => {
+                e.preventDefault();
+                running = !running;
+                if (running) {
+                    lastTs = 0;
+                    requestAnimationFrame(frame);
+                }
+            });
+
+            document.body.addEventListener("touchmove", (e) => {
+                e.preventDefault();
+            }, { passive: false });
+
+            rebuild();
+        })();
+    </script>
+</body>
+
+</html>

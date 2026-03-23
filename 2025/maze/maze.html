@@ -1,0 +1,707 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Maze - A* Algorithm</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: #000000;
+            color: #e2e8f0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            padding: 16px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            width: 100%;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .header {
+            display: flex;
+            justify-content: flex-end;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+
+        .controls {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            background: #1e293b;
+            border: 1px solid #334155;
+            color: #e2e8f0;
+            padding: 10px 16px;
+            font-family: inherit;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            border-radius: 6px;
+            transition: all 0.2s;
+        }
+
+        .btn:hover {
+            background: #334155;
+            border-color: #475569;
+        }
+
+        .btn:active {
+            transform: scale(0.98);
+        }
+
+        .btn-primary {
+            background: #3b82f6;
+            border-color: #3b82f6;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #2563eb;
+        }
+
+        .status-bar {
+            background: #1a1a1a;
+            border-radius: 6px;
+            padding: 12px 16px;
+            margin-bottom: 20px;
+            font-size: 14px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .status {
+            color: #38bdf8;
+            font-weight: 500;
+        }
+
+        .stats {
+            display: flex;
+            gap: 16px;
+        }
+
+        .stat {
+            display: flex;
+            gap: 6px;
+            align-items: center;
+        }
+
+        .stat-label {
+            color: #94a3b8;
+            font-size: 12px;
+        }
+
+        .stat-value {
+            color: #e2e8f0;
+            font-weight: 500;
+            font-size: 14px;
+        }
+
+        .maze-container {
+            flex: 1;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: #1a1a1a;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+            overflow: hidden;
+            min-height: 500px;
+        }
+
+        .maze {
+            border-radius: 4px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+            image-rendering: -webkit-optimize-contrast;
+            image-rendering: crisp-edges;
+            image-rendering: pixelated;
+        }
+
+        @media (max-width: 768px) {
+            body {
+                padding: 12px 16px;
+            }
+
+            .header {
+                justify-content: center;
+                margin-bottom: 15px;
+            }
+
+            .controls {
+                width: 100%;
+                gap: 8px;
+            }
+
+            .btn {
+                flex: 1;
+                min-width: 110px;
+                padding: 8px 12px;
+                font-size: 13px;
+            }
+
+            .status-bar {
+                flex-direction: column;
+                align-items: flex-start;
+                margin-bottom: 15px;
+                padding: 10px 12px;
+            }
+
+            .stats {
+                width: 100%;
+                justify-content: space-between;
+                gap: 12px;
+            }
+
+            .maze-container {
+                padding: 12px 15px;
+                margin-bottom: 15px;
+                min-height: 400px;
+            }
+
+            .stat-label,
+            .stat-value {
+                font-size: 11px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            body {
+                padding: 8px 12px;
+            }
+
+            .header {
+                margin-bottom: 12px;
+            }
+
+            .controls {
+                gap: 6px;
+            }
+
+            .btn {
+                min-width: 100px;
+                padding: 6px 10px;
+                font-size: 12px;
+            }
+
+            .status-bar {
+                margin-bottom: 12px;
+                padding: 8px 10px;
+            }
+
+            .maze-container {
+                padding: 8px 10px;
+                margin-bottom: 12px;
+                min-height: 350px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="controls">
+                <button class="btn btn-primary" onclick="generateMaze()">Generate Maze</button>
+                <button class="btn" onclick="solveMaze()">Find Path</button>
+                <button class="btn" onclick="clearSolution()">Clear Path</button>
+                <button class="btn" onclick="resetMaze()">Reset</button>
+            </div>
+        </div>
+
+        <div class="status-bar">
+            <div class="status" id="status">Ready - Generate a maze to begin</div>
+            <div class="stats">
+                <div class="stat">
+                    <div class="stat-label">Size:</div>
+                    <div class="stat-value" id="dimensions">100×100</div>
+                </div>
+                <div class="stat">
+                    <div class="stat-label">Generated:</div>
+                    <div class="stat-value" id="genTime">0.00s</div>
+                </div>
+                <div class="stat">
+                    <div class="stat-label">Path:</div>
+                    <div class="stat-value" id="solutionLength">-</div>
+                </div>
+                <div class="stat">
+                    <div class="stat-label">Solved:</div>
+                    <div class="stat-value" id="solveTime">0.00s</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="maze-container">
+            <canvas id="mazeCanvas" class="maze"></canvas>
+        </div>
+    </div>
+
+    <script>
+        let gameState = {
+            maze: [],
+            solution: [],
+            isAnimating: false
+        };
+
+        const canvas = document.getElementById("mazeCanvas");
+        const ctx = canvas.getContext("2d");
+        const MAZE_SIZE = 100;
+        let CELL_SIZE = 0;
+
+        function calculateOptimalSize() {
+            const container = document.querySelector('.maze-container');
+            const containerWidth = container.clientWidth - 40;
+            const containerHeight = container.clientHeight - 40;
+
+            const maxCellSizeByWidth = Math.floor(containerWidth / MAZE_SIZE);
+            const maxCellSizeByHeight = Math.floor(containerHeight / MAZE_SIZE);
+
+            return Math.max(2, Math.min(maxCellSizeByWidth, maxCellSizeByHeight));
+        }
+
+        function resizeCanvas() {
+            CELL_SIZE = calculateOptimalSize();
+            canvas.width = MAZE_SIZE * CELL_SIZE;
+            canvas.height = MAZE_SIZE * CELL_SIZE;
+
+            if (gameState.maze && gameState.maze.length > 0) {
+                drawMaze();
+            }
+        }
+
+        let resizeTimeout;
+        window.addEventListener("resize", () => {
+            clearTimeout(resizeTimeout);
+            resizeTimeout = setTimeout(resizeCanvas, 100);
+        });
+
+        window.addEventListener("load", () => {
+            resizeCanvas();
+            generateMaze();
+        });
+
+        function drawMaze() {
+            if (!ctx || !canvas) return;
+
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            if (!gameState.maze || gameState.maze.length === 0) return;
+
+            for (let i = 0; i < MAZE_SIZE; i++) {
+                for (let j = 0; j < MAZE_SIZE; j++) {
+                    const x = j * CELL_SIZE;
+                    const y = i * CELL_SIZE;
+
+                    switch (gameState.maze[i][j]) {
+                        case 1:
+                            ctx.fillStyle = "#334155";
+                            ctx.fillRect(x, y, CELL_SIZE, CELL_SIZE);
+                            break;
+                        case 0:
+                            ctx.fillStyle = "#1e293b";
+                            ctx.fillRect(x, y, CELL_SIZE, CELL_SIZE);
+                            break;
+                        case 2:
+                            ctx.fillStyle = "#10b981";
+                            ctx.fillRect(x, y, CELL_SIZE, CELL_SIZE);
+                            break;
+                        case 3:
+                            ctx.fillStyle = "#ef4444";
+                            ctx.fillRect(x, y, CELL_SIZE, CELL_SIZE);
+                            break;
+                        case 4:
+                            ctx.fillStyle = "#f59e0b";
+                            ctx.fillRect(x, y, CELL_SIZE, CELL_SIZE);
+                            break;
+                        case 5:
+                            ctx.fillStyle = "#3b82f6";
+                            ctx.fillRect(x, y, CELL_SIZE, CELL_SIZE);
+                            break;
+                        case 6:
+                            ctx.fillStyle = "#8b5cf6";
+                            ctx.fillRect(x, y, CELL_SIZE, CELL_SIZE);
+                            break;
+                    }
+                }
+            }
+        }
+
+        async function generateMaze() {
+            if (gameState.isAnimating) return;
+
+            gameState.isAnimating = true;
+            const startTime = performance.now();
+            updateStatus("Generating maze...");
+
+            gameState.maze = Array(MAZE_SIZE)
+                .fill()
+                .map(() => Array(MAZE_SIZE).fill(1));
+
+            const stack = [];
+            const start = [1, 1];
+            gameState.maze[start[0]][start[1]] = 6;
+            stack.push(start);
+
+            const directions = [
+                [0, 2],
+                [2, 0],
+                [0, -2],
+                [-2, 0]
+            ];
+
+            let steps = 0;
+            let cellsCarved = 1;
+            const totalCellsToCarve = Math.floor((MAZE_SIZE - 1) / 2) * Math.floor((MAZE_SIZE - 1) / 2);
+            const maxSteps = MAZE_SIZE * MAZE_SIZE * 2;
+
+            while (stack.length > 0 && steps < maxSteps) {
+                steps++;
+
+                const current = stack[stack.length - 1];
+                const neighbors = [];
+
+                for (const [dx, dy] of directions) {
+                    const nx = current[0] + dx;
+                    const ny = current[1] + dy;
+
+                    if (
+                        nx > 0 &&
+                        nx < MAZE_SIZE - 1 &&
+                        ny > 0 &&
+                        ny < MAZE_SIZE - 1 &&
+                        gameState.maze[nx][ny] === 1
+                    ) {
+                        neighbors.push([nx, ny]);
+                    }
+                }
+
+                if (neighbors.length > 0) {
+                    const next = neighbors[Math.floor(Math.random() * neighbors.length)];
+                    const wallX = (current[0] + next[0]) / 2;
+                    const wallY = (current[1] + next[1]) / 2;
+
+                    gameState.maze[wallX][wallY] = 6;
+                    gameState.maze[next[0]][next[1]] = 6;
+
+                    drawMaze();
+                    await new Promise((resolve) => setTimeout(resolve, 0));
+
+                    gameState.maze[wallX][wallY] = 0;
+                    gameState.maze[next[0]][next[1]] = 0;
+                    gameState.maze[current[0]][current[1]] = 0;
+
+                    stack.push(next);
+                    cellsCarved++;
+
+                    const progress = Math.min(100, Math.floor((cellsCarved / totalCellsToCarve) * 100));
+                    updateStatus(`Generating maze... (${progress}%)`);
+                } else {
+                    gameState.maze[current[0]][current[1]] = 0;
+                    stack.pop();
+                }
+
+                if (steps % 5 === 0) {
+                    drawMaze();
+                    await new Promise((resolve) => setTimeout(resolve, 0));
+                }
+            }
+
+            let endX, endY;
+            let foundValidEnd = false;
+
+            for (let i = MAZE_SIZE - 2; i > 1 && !foundValidEnd; i--) {
+                for (let j = MAZE_SIZE - 2; j > 1 && !foundValidEnd; j--) {
+                    if (gameState.maze[i][j] === 0) {
+                        if (isConnectedToStart(i, j)) {
+                            endX = i;
+                            endY = j;
+                            foundValidEnd = true;
+                        }
+                    }
+                }
+            }
+
+            if (!foundValidEnd && stack.length > 0) {
+                const lastCell = stack[stack.length - 1];
+                endX = lastCell[0];
+                endY = lastCell[1];
+            } else if (!foundValidEnd) {
+                endX = MAZE_SIZE - 2;
+                endY = MAZE_SIZE - 2;
+                gameState.maze[endX][endY] = 0;
+            }
+
+            gameState.maze[1][1] = 2;
+            gameState.maze[endX][endY] = 3;
+
+            const endTime = performance.now();
+            updateElement("genTime", ((endTime - startTime) / 1000).toFixed(2) + "s");
+            updateElement("solutionLength", "-");
+            updateElement("solveTime", "0.00s");
+
+            drawMaze();
+            updateStatus("Maze generated successfully");
+            gameState.isAnimating = false;
+        }
+
+        function isConnectedToStart(x, y) {
+            const visited = new Set();
+            const queue = [[1, 1]];
+            visited.add("1,1");
+
+            const directions = [
+                [0, 1], [1, 0], [0, -1], [-1, 0]
+            ];
+
+            while (queue.length > 0) {
+                const [cx, cy] = queue.shift();
+
+                if (cx === x && cy === y) {
+                    return true;
+                }
+
+                for (const [dx, dy] of directions) {
+                    const nx = cx + dx;
+                    const ny = cy + dy;
+
+                    if (
+                        nx >= 0 && nx < MAZE_SIZE &&
+                        ny >= 0 && ny < MAZE_SIZE &&
+                        gameState.maze[nx][ny] === 0 &&
+                        !visited.has(`${nx},${ny}`)
+                    ) {
+                        visited.add(`${nx},${ny}`);
+                        queue.push([nx, ny]);
+                    }
+                }
+            }
+
+            return false;
+        }
+
+        async function solveMaze() {
+            if (gameState.maze.length === 0 || gameState.isAnimating) return;
+
+            gameState.isAnimating = true;
+            const startTime = performance.now();
+            updateStatus("Finding path...");
+
+            clearSolution();
+
+            let start = [1, 1];
+            let end = null;
+
+            for (let i = 0; i < MAZE_SIZE; i++) {
+                for (let j = 0; j < MAZE_SIZE; j++) {
+                    if (gameState.maze[i][j] === 3) {
+                        end = [i, j];
+                        break;
+                    }
+                }
+                if (end) break;
+            }
+
+            if (!end) {
+                updateStatus("Error: No end point found");
+                gameState.isAnimating = false;
+                return;
+            }
+
+            const openSet = [start];
+            const cameFrom = new Map();
+            const gScore = new Map();
+            const fScore = new Map();
+
+            gScore.set(start.toString(), 0);
+            fScore.set(start.toString(), heuristic(start, end));
+
+            const directions = [
+                [0, 1],
+                [1, 0],
+                [0, -1],
+                [-1, 0]
+            ];
+
+            let exploredCount = 0;
+
+            while (openSet.length > 0) {
+                let current = openSet[0];
+                let currentIndex = 0;
+
+                for (let i = 1; i < openSet.length; i++) {
+                    if (fScore.get(openSet[i].toString()) < fScore.get(current.toString())) {
+                        current = openSet[i];
+                        currentIndex = i;
+                    }
+                }
+
+                if (current[0] === end[0] && current[1] === end[1]) {
+                    const path = [];
+                    let temp = current;
+
+                    while (cameFrom.has(temp.toString())) {
+                        path.unshift(temp);
+                        temp = cameFrom.get(temp.toString());
+                    }
+                    path.unshift(start);
+
+                    await animateSolution(path);
+
+                    const endTime = performance.now();
+                    updateElement("solutionLength", path.length.toString());
+                    updateElement(
+                        "solveTime",
+                        ((endTime - startTime) / 1000).toFixed(2) + "s"
+                    );
+                    updateStatus(`Path found with ${path.length} steps`);
+                    gameState.isAnimating = false;
+                    return;
+                }
+
+                openSet.splice(currentIndex, 1);
+
+                for (const [dx, dy] of directions) {
+                    const neighbor = [current[0] + dx, current[1] + dy];
+
+                    if (
+                        neighbor[0] < 0 ||
+                        neighbor[0] >= MAZE_SIZE ||
+                        neighbor[1] < 0 ||
+                        neighbor[1] >= MAZE_SIZE ||
+                        gameState.maze[neighbor[0]][neighbor[1]] === 1
+                    ) {
+                        continue;
+                    }
+
+                    const tentativeGScore = gScore.get(current.toString()) + 1;
+
+                    if (
+                        !gScore.has(neighbor.toString()) ||
+                        tentativeGScore < gScore.get(neighbor.toString())
+                    ) {
+                        cameFrom.set(neighbor.toString(), current);
+                        gScore.set(neighbor.toString(), tentativeGScore);
+                        fScore.set(
+                            neighbor.toString(),
+                            tentativeGScore + heuristic(neighbor, end)
+                        );
+
+                        if (
+                            !openSet.some(
+                                (node) => node[0] === neighbor[0] && node[1] === neighbor[1]
+                            )
+                        ) {
+                            openSet.push(neighbor);
+
+                            if (gameState.maze[neighbor[0]][neighbor[1]] === 0) {
+                                gameState.maze[neighbor[0]][neighbor[1]] = 5;
+                                exploredCount++;
+
+                                drawMaze();
+                                await new Promise((resolve) => setTimeout(resolve, 1));
+                            }
+                        }
+                    }
+                }
+            }
+
+            updateStatus("No path found - maze is unsolvable");
+            gameState.isAnimating = false;
+        }
+
+        function heuristic(a, b) {
+            return Math.abs(a[0] - b[0]) + Math.abs(a[1] - b[1]);
+        }
+
+        async function animateSolution(path) {
+            updateStatus("Visualizing path...");
+
+            for (let i = 1; i < path.length - 1; i++) {
+                const [row, col] = path[i];
+                gameState.maze[row][col] = 4;
+
+                drawMaze();
+                await new Promise((resolve) => setTimeout(resolve, 15));
+            }
+
+            drawMaze();
+        }
+
+        function clearSolution() {
+            if (gameState.isAnimating) return;
+
+            for (let i = 0; i < MAZE_SIZE; i++) {
+                for (let j = 0; j < MAZE_SIZE; j++) {
+                    if (
+                        gameState.maze[i] &&
+                        (gameState.maze[i][j] === 4 || gameState.maze[i][j] === 5)
+                    ) {
+                        gameState.maze[i][j] = 0;
+                    }
+                }
+            }
+
+            for (let i = 0; i < MAZE_SIZE; i++) {
+                for (let j = 0; j < MAZE_SIZE; j++) {
+                    if (gameState.maze[i][j] === 2) {
+                    } else if (gameState.maze[i][j] === 3) {
+                    }
+                }
+            }
+
+            drawMaze();
+            updateStatus("Path cleared");
+            updateElement("solutionLength", "-");
+            updateElement("solveTime", "0.00s");
+        }
+
+        function resetMaze() {
+            if (gameState.isAnimating) return;
+
+            gameState.maze = [];
+            gameState.solution = [];
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            updateStatus("Reset - Generate a new maze");
+
+            updateElement("genTime", "0.00s");
+            updateElement("solutionLength", "-");
+            updateElement("solveTime", "0.00s");
+        }
+
+        function updateStatus(message) {
+            const statusElement = document.getElementById("status");
+            if (statusElement) {
+                statusElement.textContent = message;
+            }
+        }
+
+        function updateElement(id, value) {
+            const element = document.getElementById(id);
+            if (element) {
+                element.textContent = value;
+            }
+        }
+    </script>
+</body>
+
+</html>
