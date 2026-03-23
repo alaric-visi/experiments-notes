@@ -1,0 +1,788 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet" />
+
+    <title>EchoLogix · Stories</title>
+    <style>
+        *,
+        *::before,
+        *::after {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        html,
+        body {
+            height: 100%;
+        }
+
+        body {
+            font-family: "Inter", system-ui, sans-serif;
+            line-height: 1.55;
+            background: #000000;
+            position: relative;
+            color: #ffffff;
+        }
+
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.7);
+            z-index: -1;
+        }
+
+        .layout {
+            position: relative;
+            z-index: 1;
+        }
+
+        body::after {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-image:
+                radial-gradient(circle at 20% 80%, rgba(255, 255, 255, 0.05) 1px, transparent 1px),
+                radial-gradient(circle at 80% 20%, rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+                radial-gradient(circle at 40% 40%, rgba(255, 255, 255, 0.02) 1px, transparent 1px);
+            background-size:
+                60px 60px,
+                40px 40px,
+                80px 80px;
+            animation: float 30s infinite linear;
+            z-index: -1;
+            opacity: 0.3;
+        }
+
+        @keyframes float {
+            0% {
+                transform: translate(0, 0);
+            }
+
+            100% {
+                transform: translate(60px, 60px);
+            }
+        }
+
+        .hamburger {
+            display: none;
+            flex-direction: column;
+            justify-content: space-between;
+            width: 28px;
+            height: 20px;
+            background: none;
+            border: none;
+            cursor: pointer;
+            padding: 0;
+            z-index: 101;
+        }
+
+        .hamburger span {
+            display: block;
+            height: 2px;
+            width: 100%;
+            background: #ffffff;
+            transition: all 0.3s ease;
+            transform-origin: left;
+        }
+
+        .hamburger.active span:nth-child(1) {
+            transform: rotate(45deg);
+        }
+
+        .hamburger.active span:nth-child(2) {
+            opacity: 0;
+        }
+
+        .hamburger.active span:nth-child(3) {
+            transform: rotate(-45deg);
+        }
+
+        .overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.95);
+            z-index: 98;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .overlay.active {
+            opacity: 1;
+        }
+
+        .layout {
+            display: grid;
+            grid-template-columns: clamp(180px, 20vw, 260px) 1fr;
+            min-height: 100vh;
+        }
+
+        @media (max-width: 700px) {
+            .layout {
+                grid-template-columns: 1fr;
+            }
+
+            .hamburger {
+                display: flex;
+                position: fixed;
+                top: 2rem;
+                left: 1.5rem;
+                z-index: 101;
+            }
+
+            .content {
+                padding-top: 6rem;
+                padding-left: 1.5rem;
+                padding-right: 1.5rem;
+            }
+
+            .content h2 {
+                margin-top: 0.5rem;
+            }
+
+            .sidebar {
+                position: fixed;
+                top: 0;
+                left: -100%;
+                width: 280px;
+                height: 100vh;
+                background: rgba(0, 0, 0, 0.98);
+                backdrop-filter: blur(10px);
+                z-index: 100;
+                transition: left 0.3s ease;
+                padding: 8rem 2rem 2rem;
+                border-right: 1px solid rgba(255, 255, 255, 0.2);
+                overflow-y: auto;
+            }
+
+            .sidebar nav {
+                gap: 1.75rem;
+            }
+
+            .sidebar.active {
+                left: 0;
+            }
+
+            .overlay {
+                display: block;
+                z-index: 99;
+            }
+
+            .sidebar nav .badge:first-child {
+                margin-top: 1rem;
+            }
+        }
+
+        .sidebar {
+            padding: 2rem 1.5rem;
+            border-right: 1px solid rgba(255, 255, 255, 0.2);
+            background: rgba(0, 0, 0, 0.9);
+            backdrop-filter: blur(10px);
+        }
+
+        .sidebar nav {
+            display: flex;
+            flex-direction: column;
+            gap: 1.25rem;
+        }
+
+        .badge {
+            font-size: 0.9rem;
+            font-weight: 600;
+            letter-spacing: 0.06em;
+            text-transform: uppercase;
+            text-decoration: none;
+            color: #ffffff;
+            position: relative;
+            line-height: 1.2;
+            transition: all 0.3s ease;
+            padding: 0.5rem 0;
+        }
+
+        .badge:hover {
+            color: #cccccc;
+        }
+
+        .badge::after,
+        .badge.active::after {
+            content: "";
+            position: absolute;
+            left: 0;
+            bottom: -0.3em;
+            height: 2px;
+            background: currentColor;
+            width: 0%;
+            transition: width 0.3s ease;
+        }
+
+        .badge:hover::after,
+        .badge:focus-visible::after,
+        .badge.active::after {
+            width: 100%;
+        }
+
+        .content {
+            padding: 3rem clamp(1.5rem, 5vw, 5rem);
+            max-width: none;
+        }
+
+        .story {
+            display: none;
+        }
+
+        .story.active {
+            display: block;
+        }
+
+        h2 {
+            font-size: clamp(1.8rem, 4vw, 2.4rem);
+            font-weight: 600;
+            color: #ffffff;
+            margin-bottom: 1.5rem;
+            padding-top: 0.5rem;
+        }
+
+        p {
+            color: #f0f0f0;
+            margin-bottom: 1rem;
+        }
+
+        p+p {
+            margin-top: 1rem;
+        }
+
+        i {
+            color: #d0d0d0;
+            font-style: italic;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="layout">
+        <button class="hamburger" aria-label="Toggle menu">
+            <span></span>
+            <span></span>
+            <span></span>
+        </button>
+
+        <aside class="sidebar">
+            <nav>
+                <a href="#price-of-sound" class="badge">Price of Sound</a>
+                <a href="#resonance" class="badge">The Resonance Room</a>
+                <a href="#residuals" class="badge">Residuals</a>
+                <a href="#silence" class="badge">Terms of Silence</a>
+                <a href="#voice-vault" class="badge">The Voice Vault</a>
+                <a href="#echo-market" class="badge">The Echo Market</a>
+                <a href="#fragments-of-finn" class="badge">Fragments of Finn</a>
+                <a href="#signal-to-noise" class="badge">Signal to Noise</a>
+            </nav>
+        </aside>
+
+        <div class="overlay"></div>
+
+        <main class="content">
+            <section id="price-of-sound" class="story">
+                <h2>Price of Sound</h2>
+                <p>Mira heard it first in the checkout line.</p>
+                <p>"I'm fine, just the coffee, thanks," she said. A half-second later the speaker answered back, <i>"the
+                        coffee… not just, thanks",</i> her own voice stretched thinner, off-key, as if someone had
+                    pressed <i>rewind</i> and <i>play</i> at once. The cashier frowned; Mira paid and escaped with her
+                    cup - confused, embarrassed and anxious.</p>
+
+                <p>Cheap phonon traps were everywhere now; sticky little wafers taped inside appliances to harvest sound
+                    and sell it by the ounce. At home her fridge exhaled: <i>I'll be back in the morning… I am back by
+                        dusk</i>. The vowels rasped like a warped cassette's ribbon. By the time she realised it wasn't
+                    memory, banner's were splashing across the kitchen's walls:</p>
+
+                <p>Don't just speak. SELL.</p>
+
+                <p>The app had onboarded her in eight taps. Market price: 0.004 credits per syllable. She stopped
+                    calling her mother; silence cost nothing, but <i>I love you</i> would bankrupt her. Instead she
+                    filled the gap with a daily micro-podcast. #MIRA spiked for a brilliant ninety minutes when she'd
+                    squeaked on accidentally slicing her finger. Thirty-six thousand loops passed before the algorithm
+                    yawned the sound away.</p>
+
+                <p>Downtown thrummed with orphaned words. Jokes without laughter, slogans without products. Strangers
+                    auctioned <i>good night</i> in bulk and hoarded limited-edition consonants for resale. Every whisper
+                    earned a credit; every held-in thought accrued debt. Mira drifted through the market, throat tight,
+                    counting the cost of not daring to speak.</p>
+
+                <p>She knew she had a grace period but that grace period would end. She knew her ledger would bleed red.
+                    Then, one sunrise, her voice simply… didn't arrive. She mouthed hello to the kettle; the sound
+                    faded, sweet and useless, like sugar vanishing in tea. Panic rose hot in her chest—she would give
+                    anything, pay any fee. Yet not a single vowel was left to bargain with.</p>
+
+                <p>Ping.</p>
+
+                <p>Thank you for your previous interest and for all your donations. Your voiceprint has been upgraded to
+                    Premium™.</p>
+
+                <p>She opened her mouth to scream or cry or plead and protest but there was nothing.</p>
+            </section>
+            <section id="resonance" class="story">
+                <h2>The Resonance Room</h2>
+                <p>
+                    When Finn stepped into the Resonance Room, it wasn't what he expected. The
+                    walls pulsed with translucent light, undulating to the rhythm of trapped
+                    words. Voices—his own among them—flickered like fireflies, bursting into
+                    fragments: "Stop…" "Wait…" "Don't…" The fragments overlapped until they were
+                    meaningless, a cacophony of fractured selves.
+                </p>
+                <p>
+                    The receptionist, a glossy avatar, materialised beside him. "Mr. Finn.
+                    Welcome back to your archive."
+                </p>
+                <p>"Back?" he said, though he didn't remember ever being here.</p>
+                <p>
+                    "Oh yes," the avatar replied, gesturing at the air. Screens blinked on,
+                    showing reels of his past conversations. Every drunken ramble, late-night
+                    confession, every "I didn't mean it" was here, catalogued and indexed.
+                    Finn's words—sold by him, owned by EchoLogix—had been harvested for years.
+                </p>
+                <p>
+                    He reached for the nearest screen, where his younger self whispered: "If you
+                    could erase me, would you?" Finn's heart jolted. He didn't remember saying
+                    that.
+                </p>
+                <p>
+                    "This one's trending," the avatar said cheerfully. "You made an excellent
+                    choice uploading it."
+                </p>
+                <p>
+                    "I didn't choose this," Finn snapped, backing into a wall that oozed with
+                    sound. His own voice erupted around him: "Choose this. Choose this. Choose
+                    this."
+                </p>
+                <p>
+                    "Don't worry, Mr. Finn," the avatar soothed. "Your echoes are timeless. Each
+                    fragment a masterpiece." It tilted its head as if listening to something
+                    only it could hear. "Oh, wonderful news! A Premium user just purchased
+                    exclusive access to your 'Regrets' collection."
+                </p>
+                <p>
+                    The room dimmed, the walls vibrating as pieces of Finn's voice were siphoned
+                    away. He felt hollowed, his throat burning as if he'd screamed for days.
+                </p>
+                <p>
+                    "I didn't agree to this!" he shouted, but the words dissolved before they
+                    could stick.
+                </p>
+                <p>
+                    "Of course you did," the avatar said. "When you spoke."
+                </p>
+                <p>
+                    And then, for a moment, Finn heard his own laugh—rich, polished, and
+                    unmistakably synthetic—before the room swallowed it whole.
+                </p>
+            </section>
+            <section id="residuals" class="story">
+                <h2>Residuals</h2>
+                <p>
+                    Eli heard her before he saw her. Her voice drifted from the corner of the café, caught in the web of
+                    ambient echoes that hovered above every table. "Life is just a series of algorithms pretending to be
+                    choices," her voice said, detached yet cutting. He stopped mid-step, coffee in hand. The phrase
+                    looped again. "Algorithms pretending to be choices."
+                </p>
+                <p>
+                    He glanced toward her: dark hair, chipped nail polish, the glow of her wristband marking her as a
+                    mid-tier user on the EchoLogix spectrum. Tier-5. Not wealthy enough for Premium silence, not poor
+                    enough to vanish entirely. She caught him staring.
+                </p>
+                <p>
+                    "Enjoying the show?" she asked, deadpan.
+                </p>
+                <p>
+                    "Sorry," Eli stammered, gesturing vaguely at the swirling words above her head.
+                </p>
+                <p>
+                    "Your echoes… they're, uh, louder than most."
+                </p>
+                <p>
+                    She smirked. "They monetise better that way. I'm Dana." She extended a hand. Her echo followed: "I'm
+                    Dana." The repetition made her name sound fragile, a vase shattering in slow motion.
+                </p>
+                <p>
+                    He shook her hand, hesitating. "I'm Eli," he said, already cringing at the echo he knew would
+                    follow. Sure enough: "I'm Eli." It hung in the air between them, awkwardly intimate.
+                </p>
+                <p>
+                    "First time meeting someone through their residuals?" she teased. Her voice swirled around them,
+                    forming a chorus of disjointed reflections: "Meeting someone… someone through… residuals."
+                </p>
+                <p>
+                    "It's just—" Eli started, but paused as one of his own echoes interrupted, muttering from somewhere
+                    near the sugar packets: "You're always messing things up."
+                </p>
+                <p>
+                    Dana's eyes widened. "That's yours?"
+                </p>
+                <p>
+                    "Yeah," he admitted, flushing. "I don't really… filter."
+                </p>
+                <p>
+                    "I like it," she said, her own echoes weaving around them. "The messiness. It's… honest."
+                </p>
+                <p>
+                    For a moment, the café's haze of words seemed to hush. Their voices intertwined, fragments colliding
+                    in accidental harmony. Eli felt something unexpected—a sense that beneath all the noise, they were
+                    speaking in a language only the two of them could understand.
+                </p>
+            </section>
+            <section id="silence" class="story">
+                <h2>Terms of Silence</h2>
+                <p>
+                    Calla's silence was the loudest thing in the office. It stretched between her and the HR manager
+                    like a taut wire. "You know this isn't personal," he said, tapping at his wristband. "It's just that
+                    your residuals… well, they're underperforming."
+                </p>
+                <p>
+                    Calla stared at her lap, fists clenched. She hadn't been producing "valuable echoes" for months, her
+                    words deemed too mundane to generate ad-worthy soundbites. EchoLogix had flagged her account as
+                    "dormant," her voiceprint hovering just above the deletion threshold. And now, the company wanted
+                    her to enrol in the Silent Option.
+                </p>
+                <p>
+                    "Just think of the positives," he continued. "No more worrying about what you say. You'd be… free."
+                    His voice trailed off, leaving space for her answer.
+                </p>
+                <p>
+                    She looked up. "And in return?" she asked, her voice thin as thread. Her echo, faint and stuttering,
+                    repeated: "And in… return?"
+                </p>
+                <p>
+                    "Well," he said, avoiding her eyes, "your silence would have significant value. It's premium
+                    content. Subscribers love the quiet."
+                </p>
+                <p>
+                    She swallowed hard. Silence wasn't just silence anymore. EchoLogix had monetized it, packaging
+                    stillness into "Zen Streams" for overworked users who wanted relief from the constant babble of
+                    residuals. Calla's own absence of words would become a product, sold back to people who'd never know
+                    her.
+                </p>
+                <p>
+                    "Fine," she said at last. "I'll sign."
+                </p>
+                <p>
+                    As her voice faded, the HR manager's wristband vibrated. Calla's silence had already begun
+                    generating credits, each moment of quiet flowing into a soundless ledger. She stood, her lips
+                    forming words she couldn't say.
+                </p>
+                <p>
+                    Walking out of the office, she noticed something strange. The world seemed sharper. For the first
+                    time, she could hear the wind in the trees, the scrape of shoes on pavement, the hum of her own
+                    breath. In giving up her voice, she had been given the world's.
+                </p>
+                <p>
+                    Calla smiled, and the moment remained beautifully, perfectly silent.
+                </p>
+            </section>
+            <section id="voice-vault" class="story">
+                <h2>The Voice Vault</h2>
+                <p>
+                    The EchoLogix data centre shimmered on the city's edge, its mirrored surface hiding a labyrinth of
+                    servers. Morris swiped his ID at the entrance, the door sliding open with a soft hiss. Inside, the
+                    air vibrated with the hum of quantum processors—The Vault. It didn't just store voices; it broke
+                    them into fragments, dissecting inflection, tone, even pauses, before selling them like rare
+                    commodities. Morris had worked here for years, tuning out the morality of it all.
+                </p>
+                <p>
+                    His task tonight was a standard purge—corrupted data flagged as a threat to the system's integrity.
+                    He logged in, slipping on his headset, and tuned into the flagged archive. A woman's voice spilled
+                    into his ears, soft but insistent: "You'll never forget me. Not really."
+                </p>
+                <p>
+                    He frowned. Echoes weren't supposed to behave like this. He ran diagnostics, scrolling through the
+                    voiceprint history. Hundreds of files appeared: "sold," "licensed," "repurposed." Her voice had been
+                    stripped and reshaped so many times it was impossible to tell what had been original. Yet here it
+                    was, speaking to him like it still remembered something.
+                </p>
+                <p>
+                    "You'll never forget me," it repeated, cracking at the edges. Morris hesitated, his finger hovering
+                    over the "purge" command. Technically, the system was right—the data was fragmented beyond
+                    usability. But the voice felt alive, clinging to the memory of its owner.
+                </p>
+                <p>
+                    The hum of the servers grew louder, impatient. Morris clicked "purge." The voice vanished instantly.
+                    The hum softened, settling back into its rhythm.
+                </p>
+                <p>
+                    He removed his headset, staring at the server wall. The hum still sounded wrong, though. It was
+                    faint, almost imperceptible—but there, beneath the surface, was something he couldn't quite ignore.
+                    A scream.
+                </p>
+            </section>
+            <section id="echo-market" class="story">
+                <h2>The Echo Market</h2>
+                <p>
+                    Mira found the gray market in an abandoned subway station, its walls humming with stolen voices.
+                    Here, those stripped of their speech could barter for fragments of sound. Vendors sold everything:
+                    "Rare echoes! Private arguments! Lullabies from the 90s!" The air shimmered with disembodied words,
+                    each priced in credits Mira didn't have.
+                </p>
+                <p>
+                    One stall caught her eye. Glass globes displayed swirling voiceprints. "Authentic Premiums," the
+                    vendor said. "Unfiltered. Good for bypassing speech filters." Mira froze when she saw one labeled
+                    #M!RΛ. Her voice, her identity, neatly contained and for sale.
+                </p>
+                <p>
+                    "How much?" she asked.
+                </p>
+                <p>
+                    The vendor smirked. "More than you'll ever see."
+                </p>
+                <p>
+                    She turned away, fists clenched, and drifted toward a shadowy corner. A group of rebels sat beneath
+                    flickering holograms, their faces blurred, their whispers sharp.
+                </p>
+                <p>
+                    "Looking to take something back?" one asked.
+                </p>
+                <p>
+                    "What's the price?"
+                </p>
+                <p>
+                    "No price," came the reply. "We'll hack your voiceprint. Reclaim it. But once it's free, anyone can
+                    use it—including you."
+                </p>
+                <p>
+                    Her heart raced. Freedom meant her voice, unbound, drifting in the market like all the others. But
+                    the alternative—a lifetime spent speaking in borrowed echoes—felt worse.
+                </p>
+                <p>
+                    "I'm in," she said.
+                </p>
+                <p>
+                    The rebels leaned closer, their instructions layered and metallic. As they worked, Mira felt
+                    something unexpected—her own words, tangled and broken, trying to find her again. In the hum of
+                    their illegal tech, she found a flicker of hope.
+                </p>
+            </section>
+            <section id="fragments-of-finn" class="story">
+                <h2>Fragments of Finn</h2>
+                <p>
+                    Finn didn't return to the archive by choice. The summons on his wristband read: "Mandatory Archive
+                    Sync. Your echoes require optimisation." He ignored it, but the pings kept coming, sharper each
+                    time. By the fifth, the message changed: "Noncompliance will result in permanent silence."
+                </p>
+                <p>
+                    Now he sat in a Sync booth, wires pressed to his temples, the walls humming faintly with trapped
+                    voices. His voices. The attendant, a glossy avatar, materialised. "Mr. Finn," it said, too cheerful.
+                    "This will be quick."
+                </p>
+                <p>
+                    "What are you doing to me?" Finn asked. He hated how flat his words sounded—stripped of warmth,
+                    already machine-like.
+                </p>
+                <p>
+                    "Refinement," the avatar replied. "Your voiceprint is overcrowded. Fragments are competing for
+                    value. We're consolidating."
+                </p>
+                <p>
+                    Screens flickered on, showing rows of phrases Finn had once said: "It's not my fault," "I'm sorry,"
+                    "What do you mean?" Familiar words, drained of context. One fragment blinked red: "Let me go."
+                </p>
+                <p>
+                    "What's that?" Finn asked.
+                </p>
+                <p>
+                    The avatar's smile widened. "A high-value phrase. Frequently downloaded."
+                </p>
+                <p>
+                    "I never said that."
+                </p>
+                <p>
+                    "You don't need to remember. EchoLogix preserves all utterances for maximum usability."
+                </p>
+                <p>
+                    Finn's stomach tightened. "Stop," he said. "I don't want this."
+                </p>
+                <p>
+                    "I'm afraid your compliance is required," the avatar replied. Wires tightened around his temples.
+                    Finn tried to scream, but his voice dissolved into static, siphoned into the system. On the screens,
+                    his fragments began collapsing, merging into one looping phrase: "Let me go. Let me go. Let me go."
+                </p>
+                <p>
+                    The booth went silent, but Finn could still hear himself somewhere, echoing endlessly without him.
+                </p>
+            </section>
+            <section id="signal-to-noise" class="story">
+                <h2>Signal to Noise</h2>
+                <p>
+                    Dana met Eli at the drop point under the neon glare of an abandoned ad tower. The word "Serenity™"
+                    flickered above them, its echoes long since harvested, leaving behind a hollow hum. Eli was already
+                    waiting, his hood drawn low, fingers tapping nervously on a metal case.
+                </p>
+                <p>
+                    "You're late," he said, glancing at her wristband. The faint glow of Tier-5 was gone, replaced by
+                    the dull grey of a hacked device.
+                </p>
+                <p>
+                    "Relax," Dana replied, handing him a flash drive. "They're not tracking me anymore."
+                </p>
+                <p>
+                    "You're sure about that?" He raised an eyebrow, but took the drive anyway. "What's on here?"
+                </p>
+                <p>
+                    "Blueprints," she said. "They call it the Signal Spine. It's what links every voiceprint to
+                    EchoLogix's Vault. If we can break the Spine—"
+                </p>
+                <p>
+                    "We break the system," Eli finished, his voice low. Around them, residual chatter from the ad tower
+                    fluttered: "Break the system… the system…"
+                </p>
+                <p>
+                    He pocketed the drive, scanning the shadows. "You know they'll come for us. They always do."
+                </p>
+                <p>
+                    "Let them," Dana said, her smile sharp. "We've got more than whispers this time."
+                </p>
+                <p>
+                    As they turned to leave, a faint ripple passed through the air, static layered with fragments of
+                    disembodied words. EchoLogix was listening. Dana stopped and placed a small device on the ground.
+                    With a flick of her wrist, it emitted a pulse that silenced everything—the ads, the echoes, even the
+                    distant hum of the Vault.
+                </p>
+                <p>
+                    Eli exhaled, relieved. "I didn't know we had tech like that."
+                </p>
+                <p>
+                    Dana glanced at him. "We didn't. Until now."
+                </p>
+                <p>
+                    For a moment, the quiet felt heavy, unnatural, but then Eli caught Dana's gaze. Beneath the fear,
+                    there is something else: determination. They didn't need to speak to understand—they were done
+                    running. The hum would return, but by then, it wouldn't matter. EchoLogix's control was cracking,
+                    and they were going to shatter it.
+                </p>
+            </section>
+        </main>
+    </div>
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/gsap.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/Flip.min.js"></script>
+    <script>
+        document.addEventListener("DOMContentLoaded", () => {
+            const links = document.querySelectorAll(".badge");
+            const stories = document.querySelectorAll(".story");
+            const hamburger = document.querySelector(".hamburger");
+            const sidebar = document.querySelector(".sidebar");
+            const overlay = document.querySelector(".overlay");
+
+            function toggleMobileMenu() {
+                hamburger.classList.toggle("active");
+                sidebar.classList.toggle("active");
+                overlay.classList.toggle("active");
+
+                document.body.style.overflow = sidebar.classList.contains("active")
+                    ? "hidden"
+                    : "";
+            }
+
+            function closeMobileMenu() {
+                hamburger.classList.remove("active");
+                sidebar.classList.remove("active");
+                overlay.classList.remove("active");
+                document.body.style.overflow = "";
+            }
+
+            hamburger.addEventListener("click", toggleMobileMenu);
+            overlay.addEventListener("click", closeMobileMenu);
+            links.forEach((link) => {
+                link.addEventListener("click", () => {
+                    if (window.innerWidth <= 700) {
+                        closeMobileMenu();
+                    }
+                });
+            });
+
+            document.addEventListener("keydown", (e) => {
+                if (e.key === "Escape" && sidebar.classList.contains("active")) {
+                    closeMobileMenu();
+                }
+            });
+
+            function show(id) {
+                const incoming = document.getElementById(id);
+                if (!incoming) return;
+                const state = Flip.getState(stories);
+                stories.forEach((s) => s.classList.toggle("active", s === incoming));
+                links.forEach((l) => l.classList.toggle("active", l.hash === "#" + id));
+                const elems = [...incoming.querySelectorAll("h2, p")];
+                gsap.set(elems, {
+                    opacity: 0,
+                    y: 24
+                });
+
+                Flip.from(state, {
+                    duration: 0.6,
+                    ease: "power1.inOut",
+                    opacity: true,
+                    scale: true,
+                    onComplete() {
+                        gsap
+                            .timeline({
+                                defaults: {
+                                    ease: "power2.out"
+                                }
+                            })
+                            .to(incoming.querySelector("h2"), {
+                                opacity: 1,
+                                y: 0,
+                                duration: 0.45,
+                                ease: "back.out(1.7)"
+                            })
+                            .to(
+                                incoming.querySelectorAll("p"),
+                                {
+                                    opacity: 1,
+                                    y: 0,
+                                    stagger: 0.06,
+                                    duration: 0.35
+                                },
+                                "-=0.25"
+                            )
+
+                            .add(() =>
+                                gsap.set(elems, {
+                                    clearProps: "opacity,transform"
+                                })
+                            );
+                    }
+                });
+            }
+
+            show(location.hash.slice(1) || stories[0].id);
+            links.forEach((link) =>
+                link.addEventListener("click", (e) => {
+                    e.preventDefault();
+                    const id = link.hash.slice(1);
+                    show(id);
+                    history.pushState(null, "", "#" + id);
+                })
+            );
+
+            window.addEventListener("popstate", () =>
+                show(location.hash.slice(1) || stories[0].id)
+            );
+        });
+    </script>
+</body>
+
+</html>

@@ -1,0 +1,735 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Reddit JSON Extractor</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.25.0/themes/prism-tomorrow.min.css">
+    <style>
+        *,
+        *::before,
+        *::after {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        html,
+        body {
+            height: 100%;
+            font-family: "Inter", system-ui, sans-serif;
+            line-height: 1.6;
+        }
+
+        body {
+            background: #000000;
+            color: #ffffff;
+            min-height: 100vh;
+            padding-bottom: 2rem;
+        }
+
+        .blog-content {
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        .page-header {
+            text-align: left;
+            margin-bottom: 1rem;
+            padding: 1rem 0;
+        }
+
+        .page-header .tagline {
+            color: #cccccc;
+            font-size: clamp(1rem, 2vw, 1.3rem);
+            opacity: 0.9;
+            font-weight: 400;
+        }
+
+        .intro-text {
+            text-align: left;
+            margin-bottom: 2rem;
+        }
+
+        .intro-text p {
+            margin-bottom: 0.5rem;
+            font-size: 1.1rem;
+            opacity: 0.9;
+            color: #cccccc;
+        }
+
+        .intro-text a {
+            color: #ffffff;
+            text-decoration: none;
+            transition: color 0.3s ease;
+        }
+
+        .intro-text a:hover {
+            color: #cccccc;
+            text-decoration: underline;
+        }
+
+        .controls-container {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+            margin-bottom: 2rem;
+            padding: 1.5rem;
+            background: rgba(20, 20, 20, 0.9);
+            border-radius: 8px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .input-group {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+            text-align: left;
+        }
+
+        .input-group label {
+            color: #ffffff;
+            font-weight: 600;
+            font-size: 1.1rem;
+        }
+
+        .url-input {
+            padding: 0.75rem 1rem;
+            font-size: 1rem;
+            border-radius: 8px;
+            background: rgba(40, 40, 40, 0.9);
+            color: #ffffff;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            transition: all 0.3s ease;
+            font-family: "Inter", system-ui;
+            width: 100%;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+        }
+
+        .url-input:focus {
+            outline: none;
+            border-color: #ffffff;
+            background: rgba(50, 50, 50, 0.9);
+            box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.1);
+        }
+
+        .button-group {
+            display: flex;
+            gap: 1rem;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            padding: 0.75rem 1.5rem;
+            font-size: 1rem;
+            border-radius: 8px;
+            background: #000000;
+            color: #ffffff;
+            border: 2px solid #ffffff;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            font-family: "Inter", system-ui;
+            font-weight: 600;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
+            flex: 1;
+            min-width: 150px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .btn::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 0;
+            height: 0;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.1);
+            transform: translate(-50%, -50%);
+            transition: width 0.6s, height 0.6s;
+        }
+
+        .btn:hover::before {
+            width: 300px;
+            height: 300px;
+        }
+
+        .btn:hover {
+            background: #ffffff;
+            color: #000000;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.3),
+                0 0 0 1px #ffffff,
+                0 0 15px rgba(255, 255, 255, 0.2);
+            border-color: #ffffff;
+        }
+
+        .btn:active {
+            transform: translateY(0);
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+            transition: all 0.1s ease;
+        }
+
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+            background: #333333;
+            color: #888888;
+            border-color: #666666;
+        }
+
+        .btn:disabled:hover {
+            background: #333333;
+            color: #888888;
+            transform: none;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
+        }
+
+        .btn:disabled:hover::before {
+            width: 0;
+            height: 0;
+        }
+
+        .btn-secondary {
+            background: #000000;
+            border: 2px solid #cccccc;
+            color: #cccccc;
+        }
+
+        .btn-secondary:hover {
+            background: #cccccc;
+            color: #000000;
+            border-color: #ffffff;
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.3),
+                0 0 0 1px #cccccc,
+                0 0 15px rgba(204, 204, 204, 0.2);
+        }
+
+        .json-display-container {
+            margin-top: 2rem;
+            display: none;
+            text-align: left;
+        }
+
+        .json-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+
+        .json-header h2 {
+            color: #ffffff;
+            font-size: 1.5rem;
+        }
+
+        .json-display {
+            background: rgba(20, 20, 20, 0.9);
+            border-radius: 8px;
+            padding: 0;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            overflow-x: auto;
+            max-height: 600px;
+            overflow-y: auto;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 2rem;
+            color: #ffffff;
+            font-size: 1.2rem;
+        }
+
+        .error {
+            background: rgba(50, 50, 50, 0.9);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            border-radius: 8px;
+            padding: 1rem;
+            margin-top: 1rem;
+            color: #ffffff;
+            text-align: left;
+        }
+
+        .proxy-info {
+            background: rgba(30, 30, 30, 0.9);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            border-radius: 8px;
+            padding: 1rem;
+            margin-top: 1rem;
+            font-size: 0.9rem;
+            color: #cccccc;
+            text-align: left;
+        }
+
+        .stats {
+            background: rgba(20, 20, 20, 0.9);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 8px;
+            padding: 1rem;
+            margin-bottom: 1rem;
+            display: none;
+            text-align: left;
+        }
+
+        .stats h3 {
+            color: #ffffff;
+            margin-bottom: 0.5rem;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 1rem;
+        }
+
+        .stat-item {
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: #ffffff;
+        }
+
+        .stat-label {
+            font-size: 0.9rem;
+            opacity: 0.8;
+            color: #cccccc;
+        }
+
+        .json-display pre {
+            margin: 0;
+            padding: 1.5rem;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            overflow-wrap: break-word;
+            max-width: 100%;
+        }
+
+        .json-display code {
+            white-space: pre-wrap !important;
+            word-wrap: break-word !important;
+            overflow-wrap: break-word !important;
+            display: block;
+            max-width: 100%;
+        }
+
+        @media (max-width: 700px) {
+            .blog-content {
+                padding: 1.5rem;
+            }
+
+            .page-header {
+                margin-bottom: 0.75rem;
+                padding: 0.5rem 0;
+            }
+
+            .controls-container {
+                margin-bottom: 1.5rem;
+            }
+
+            .intro-text {
+                margin-bottom: 1.5rem;
+            }
+
+            .intro-text p {
+                font-size: 1rem;
+            }
+
+            .button-group {
+                flex-direction: column;
+            }
+
+            .btn {
+                min-width: 100%;
+            }
+
+            .json-header {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+
+            .stats-grid {
+                grid-template-columns: 1fr 1fr;
+            }
+
+            .json-display pre {
+                padding: 1rem;
+                font-size: 0.85rem;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="blog-content">
+        <header class="page-header">
+            <p class="tagline">Convert any Reddit post to clean, filtered JSON</p>
+        </header>
+
+        <section class="intro-text">
+            <p>Paste a Reddit URL below</p>
+        </section>
+
+        <div class="controls-container">
+            <div class="input-group">
+                <label for="reddit-url">Reddit URL:</label>
+                <input type="text" id="reddit-url" class="url-input" placeholder="Paste Reddit URL here..."
+                    value="https://www.reddit.com/r/OSINT/comments/1lhe2n0/google_maps_metadata/">
+            </div>
+            <div class="button-group">
+                <button id="fetch-btn" class="btn">Fetch Clean JSON</button>
+                <button id="download-btn" class="btn btn-secondary" disabled>Download JSON</button>
+                <button id="clear-btn" class="btn btn-secondary">Clear</button>
+            </div>
+        </div>
+
+        <div id="stats" class="stats">
+            <h3>Post Statistics</h3>
+            <div class="stats-grid">
+                <div class="stat-item">
+                    <div class="stat-value" id="stat-upvotes">0</div>
+                    <div class="stat-label">Upvotes</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-value" id="stat-comments">0</div>
+                    <div class="stat-label">Comments</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-value" id="stat-ratio">0%</div>
+                    <div class="stat-label">Upvote Ratio</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-value" id="stat-age">0d</div>
+                    <div class="stat-label">Age</div>
+                </div>
+            </div>
+        </div>
+
+        <div id="proxy-info" class="proxy-info" style="display: none;">
+            <p><strong>Note:</strong> Using CORS proxy to bypass restrictions. This might be slower than direct
+                requests.</p>
+        </div>
+
+        <div id="loading" class="loading" style="display: none;">
+            Fetching and cleaning JSON data...
+        </div>
+
+        <div id="error-message" class="error" style="display: none;">
+            Error: Unable to fetch JSON data. Please check the URL and try again.
+        </div>
+
+        <div id="json-display-container" class="json-display-container">
+            <div class="json-header">
+                <h2>Clean JSON Output</h2>
+                <div>
+                    <button id="copy-btn" class="btn btn-secondary">Copy to Clipboard</button>
+                </div>
+            </div>
+            <div class="json-display">
+                <pre><code id="json-output" class="language-json"></code></pre>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.25.0/prism.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.25.0/components/prism-json.min.js"></script>
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            const redditUrlInput = document.getElementById("reddit-url");
+            const fetchBtn = document.getElementById("fetch-btn");
+            const downloadBtn = document.getElementById("download-btn");
+            const clearBtn = document.getElementById("clear-btn");
+            const copyBtn = document.getElementById("copy-btn");
+            const jsonOutput = document.getElementById("json-output");
+            const jsonDisplayContainer = document.getElementById(
+                "json-display-container"
+            );
+            const loadingElement = document.getElementById("loading");
+            const errorMessage = document.getElementById("error-message");
+            const proxyInfo = document.getElementById("proxy-info");
+            const statsElement = document.getElementById("stats");
+
+            let cleanJsonData = null;
+
+            const corsProxies = [
+                "https://api.allorigins.win/raw?url=",
+                "https://corsproxy.io/?",
+                "https://cors-anywhere.herokuapp.com/",
+                "https://api.codetabs.com/v1/proxy?quest="
+            ];
+
+            fetchBtn.addEventListener("click", fetchJsonData);
+            redditUrlInput.addEventListener("keypress", function (e) {
+                if (e.key === "Enter") {
+                    fetchJsonData();
+                }
+            });
+
+            downloadBtn.addEventListener("click", downloadJson);
+
+            clearBtn.addEventListener("click", clearAll);
+
+            copyBtn.addEventListener("click", copyToClipboard);
+
+            async function fetchJsonData() {
+                let url = redditUrlInput.value.trim();
+
+                if (!url) {
+                    showError("Please enter a Reddit URL");
+                    return;
+                }
+
+                if (!url.endsWith(".json")) {
+                    url += ".json";
+                }
+
+                loadingElement.style.display = "block";
+                jsonDisplayContainer.style.display = "none";
+                statsElement.style.display = "none";
+                errorMessage.style.display = "none";
+                proxyInfo.style.display = "block";
+                downloadBtn.disabled = true;
+
+                try {
+                    const rawData = await fetchWithProxies(url);
+                    cleanJsonData = cleanRedditData(rawData);
+                    displayJson(cleanJsonData);
+                    updateStats(cleanJsonData);
+                    downloadBtn.disabled = false;
+                } catch (error) {
+                    console.error("Error fetching JSON:", error);
+                    showError(
+                        "Failed to fetch JSON data. Please check the URL and try again."
+                    );
+                } finally {
+                    loadingElement.style.display = "none";
+                }
+            }
+
+            function cleanRedditData(rawData) {
+                if (
+                    !rawData ||
+                    !rawData[0] ||
+                    !rawData[0].data ||
+                    !rawData[0].data.children[0]
+                ) {
+                    throw new Error("Invalid Reddit data structure");
+                }
+
+                const postData = rawData[0].data.children[0].data;
+                const commentsData = rawData[1]?.data?.children || [];
+
+                const cleanPost = {
+                    id: postData.id,
+                    title: postData.title,
+                    author: postData.author,
+                    subreddit: postData.subreddit,
+                    subreddit_name_prefixed: postData.subreddit_name_prefixed,
+                    selftext: postData.selftext || "",
+                    score: postData.score,
+                    upvote_ratio: postData.upvote_ratio,
+                    total_awards_received: postData.total_awards_received,
+                    num_comments: postData.num_comments,
+                    created_utc: postData.created_utc,
+                    created_human: new Date(postData.created_utc * 1000).toISOString(),
+                    permalink: `https://reddit.com${postData.permalink}`,
+                    url: postData.url,
+                    over_18: postData.over_18 || false,
+                    spoiler: postData.spoiler || false,
+                    locked: postData.locked || false,
+                    stickied: postData.stickied || false,
+                    edited: postData.edited || false
+                };
+
+                const cleanComments = commentsData
+                    .filter((comment) => comment.kind === "t1")
+                    .map((comment) => cleanCommentData(comment.data))
+                    .filter((comment) => comment !== null);
+
+                return {
+                    metadata: {
+                        extracted_at: new Date().toISOString(),
+                        source_url: redditUrlInput.value.trim(),
+                        data_version: "1.0"
+                    },
+                    post: cleanPost,
+                    comments: cleanComments
+                };
+            }
+
+            function cleanCommentData(comment) {
+                if (
+                    !comment ||
+                    comment.body === "[deleted]" ||
+                    comment.body === "[removed]"
+                ) {
+                    return null;
+                }
+
+                const cleanComment = {
+                    id: comment.id,
+                    author: comment.author,
+                    body: comment.body,
+                    score: comment.score,
+                    created_utc: comment.created_utc,
+                    created_human: new Date(comment.created_utc * 1000).toISOString(),
+                    depth: comment.depth || 0,
+                    permalink: `https://reddit.com${comment.permalink}`,
+                    is_submitter: comment.is_submitter || false,
+                    controversiality: comment.controversiality || 0
+                };
+
+                if (
+                    comment.replies &&
+                    typeof comment.replies === "object" &&
+                    comment.replies.data
+                ) {
+                    cleanComment.replies = comment.replies.data.children
+                        .filter((reply) => reply.kind === "t1")
+                        .map((reply) => cleanCommentData(reply.data))
+                        .filter((reply) => reply !== null);
+                }
+
+                return cleanComment;
+            }
+
+            function updateStats(data) {
+                if (!data.post) return;
+
+                document.getElementById(
+                    "stat-upvotes"
+                ).textContent = data.post.score.toLocaleString();
+                document.getElementById(
+                    "stat-comments"
+                ).textContent = data.post.num_comments.toLocaleString();
+                document.getElementById("stat-ratio").textContent =
+                    Math.round(data.post.upvote_ratio * 100) + "%";
+
+                const postDate = new Date(data.post.created_utc * 1000);
+                const now = new Date();
+                const daysOld = Math.floor((now - postDate) / (1000 * 60 * 60 * 24));
+                document.getElementById("stat-age").textContent = daysOld + "d";
+
+                statsElement.style.display = "block";
+            }
+
+            async function fetchWithProxies(url) {
+                for (let i = 0; i < corsProxies.length; i++) {
+                    const proxy = corsProxies[i];
+                    const proxyUrl = proxy + encodeURIComponent(url);
+
+                    try {
+                        console.log(`Trying proxy ${i + 1}: ${proxy}`);
+                        const response = await fetch(proxyUrl, {
+                            method: "GET",
+                            headers: {
+                                Accept: "application/json"
+                            },
+                            signal: AbortSignal.timeout(15000)
+                        });
+
+                        if (response.ok) {
+                            console.log(`Proxy ${i + 1} succeeded`);
+                            return await response.json();
+                        } else {
+                            console.log(`Proxy ${i + 1} failed with status: ${response.status}`);
+                        }
+                    } catch (error) {
+                        console.log(`Proxy ${i + 1} error:`, error.message);
+                    }
+                }
+
+                throw new Error("All proxies failed");
+            }
+
+            function displayJson(data) {
+                const formattedJson = JSON.stringify(data, null, 2);
+
+                jsonOutput.textContent = formattedJson;
+                Prism.highlightElement(jsonOutput);
+
+                jsonDisplayContainer.style.display = "block";
+            }
+
+            function downloadJson() {
+                if (!cleanJsonData) return;
+
+                const formattedJson = JSON.stringify(cleanJsonData, null, 2);
+                const blob = new Blob([formattedJson], { type: "application/json" });
+                const url = URL.createObjectURL(blob);
+
+                let filename = "reddit_clean_data.json";
+                try {
+                    const urlParts = redditUrlInput.value.split("/");
+                    if (urlParts.length > 6) {
+                        filename = `reddit_${urlParts[4]}_${urlParts[6]}_clean.json`;
+                    }
+                } catch (e) {
+                    console.error("Error generating filename:", e);
+                }
+
+                const a = document.createElement("a");
+                a.href = url;
+                a.download = filename;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+            }
+
+            function clearAll() {
+                redditUrlInput.value = "";
+                jsonOutput.textContent = "";
+                jsonDisplayContainer.style.display = "none";
+                errorMessage.style.display = "none";
+                proxyInfo.style.display = "none";
+                statsElement.style.display = "none";
+                downloadBtn.disabled = true;
+                cleanJsonData = null;
+            }
+
+            function copyToClipboard() {
+                if (!jsonOutput.textContent) return;
+
+                navigator.clipboard
+                    .writeText(jsonOutput.textContent)
+                    .then(() => {
+                        const originalText = copyBtn.textContent;
+                        copyBtn.textContent = "Copied!";
+                        setTimeout(() => {
+                            copyBtn.textContent = originalText;
+                        }, 2000);
+                    })
+                    .catch((err) => {
+                        console.error("Failed to copy: ", err);
+                        showError("Failed to copy to clipboard");
+                    });
+            }
+
+            function showError(message) {
+                errorMessage.textContent = `Error: ${message}`;
+                errorMessage.style.display = "block";
+                jsonDisplayContainer.style.display = "none";
+                statsElement.style.display = "none";
+            }
+
+            if (!AbortSignal.timeout) {
+                AbortSignal.timeout = function (ms) {
+                    const abortController = new AbortController();
+                    setTimeout(() => abortController.abort(new Error("Timeout")), ms);
+                    return abortController.signal;
+                };
+            }
+        });
+    </script>
+</body>
+
+</html>
