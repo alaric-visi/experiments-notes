@@ -1,0 +1,930 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Glome 1</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: radial-gradient(circle at center, #001100, #000800, #000000);
+            overflow: hidden;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            touch-action: manipulation;
+        }
+
+        #canvas {
+            display: block;
+            background: transparent;
+            cursor: crosshair;
+        }
+
+        #canvas:active {
+            cursor: grabbing;
+        }
+
+        .control-panel {
+            position: fixed;
+            top: 10px;
+            right: 10px;
+            background: rgba(0, 0, 0, 0.92);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5), 0 1px 2px rgba(255, 255, 255, 0.05);
+            padding: 16px;
+            color: #ffffff;
+            font-size: 13px;
+            max-width: 280px;
+            z-index: 1000;
+            letter-spacing: 0.3px;
+            backdrop-filter: blur(10px);
+            border-radius: 8px;
+            transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .control-panel:hover {
+            border-color: rgba(255, 255, 255, 0.25);
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.6), 0 2px 4px rgba(255, 255, 255, 0.08);
+        }
+
+        .control-group {
+            margin-bottom: 16px;
+        }
+
+        .control-group:last-child {
+            margin-bottom: 0;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 6px;
+            font-weight: 500;
+            color: #ffffff;
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        input[type="range"] {
+            width: 100%;
+            height: 4px;
+            background: rgba(255, 255, 255, 0.15);
+            outline: none;
+            -webkit-appearance: none;
+            appearance: none;
+            border-radius: 2px;
+            cursor: pointer;
+        }
+
+        input[type="range"]::-webkit-slider-thumb {
+            appearance: none;
+            width: 16px;
+            height: 16px;
+            background: #ffffff;
+            cursor: pointer;
+            border-radius: 50%;
+            border: 2px solid #000000;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+            transition: all 0.2s ease;
+        }
+
+        input[type="range"]::-webkit-slider-thumb:hover {
+            background: #f5f5f5;
+            transform: scale(1.1);
+        }
+
+        input[type="range"]::-moz-range-thumb {
+            width: 16px;
+            height: 16px;
+            background: #ffffff;
+            cursor: pointer;
+            border-radius: 50%;
+            border: 2px solid #000000;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+        }
+
+        .button-group {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        button {
+            flex: 1;
+            min-width: 70px;
+            padding: 10px 12px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            background: rgba(255, 255, 255, 0.1);
+            color: #ffffff;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            font-size: 11px;
+            text-transform: uppercase;
+            font-family: inherit;
+            border-radius: 4px;
+            letter-spacing: 0.5px;
+            backdrop-filter: blur(5px);
+        }
+
+        button:hover {
+            background: rgba(255, 255, 255, 0.2);
+            border-color: rgba(255, 255, 255, 0.3);
+            transform: translateY(-1px);
+        }
+
+        button:active {
+            background: rgba(255, 255, 255, 0.15);
+            transform: translateY(0);
+        }
+
+        .value-display {
+            font-size: 11px;
+            color: rgba(255, 255, 255, 0.7);
+            text-align: right;
+            margin-top: 4px;
+            font-family: 'SF Mono', Monaco, 'Courier New', monospace;
+            letter-spacing: 0.5px;
+        }
+
+        .mobile-menu-toggle {
+            position: fixed;
+            top: 10px;
+            right: 10px;
+            width: 48px;
+            height: 48px;
+            background: rgba(0, 0, 0, 0.92);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            color: #ffffff;
+            font-size: 20px;
+            cursor: pointer;
+            z-index: 1001;
+            display: none;
+            justify-content: center;
+            align-items: center;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5), 0 1px 2px rgba(255, 255, 255, 0.05);
+            border-radius: 8px;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            backdrop-filter: blur(10px);
+            font-weight: 300;
+        }
+
+        .mobile-menu-toggle:hover {
+            background: rgba(0, 0, 0, 0.95);
+            border-color: rgba(255, 255, 255, 0.25);
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.6), 0 2px 4px rgba(255, 255, 255, 0.08);
+            transform: translateY(-1px);
+        }
+
+        .mobile-menu-toggle.active {
+            background: rgba(255, 255, 255, 0.1);
+            border-color: rgba(255, 255, 255, 0.3);
+        }
+
+        @media (max-width: 768px) {
+            .mobile-menu-toggle {
+                display: flex;
+            }
+
+            .control-panel {
+                position: fixed;
+                top: 10px;
+                right: 10px;
+                left: 10px;
+                max-width: none;
+                padding: 20px;
+                font-size: 14px;
+                background: rgba(0, 0, 0, 0.96);
+                backdrop-filter: blur(20px);
+                transform: translateY(-120%);
+                opacity: 0;
+                pointer-events: none;
+                z-index: 999;
+                border-width: 1px;
+                box-shadow: 0 8px 32px rgba(0, 0, 0, 0.8), 0 2px 8px rgba(255, 255, 255, 0.05);
+            }
+
+            .control-panel.mobile-open {
+                transform: translateY(0);
+                opacity: 1;
+                pointer-events: all;
+            }
+
+            .control-group {
+                margin-bottom: 20px;
+            }
+
+            button {
+                font-size: 12px;
+                padding: 12px 14px;
+                min-width: 80px;
+            }
+
+            .button-group {
+                gap: 10px;
+            }
+
+            input[type="range"] {
+                height: 6px;
+            }
+
+            input[type="range"]::-webkit-slider-thumb {
+                width: 20px;
+                height: 20px;
+            }
+
+            input[type="range"]::-moz-range-thumb {
+                width: 20px;
+                height: 20px;
+            }
+
+            label {
+                font-size: 13px;
+                margin-bottom: 8px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .control-panel {
+                padding: 16px;
+            }
+
+            .control-group {
+                margin-bottom: 16px;
+            }
+
+            button {
+                font-size: 11px;
+                padding: 10px 12px;
+                min-width: 70px;
+            }
+
+            .button-group {
+                gap: 8px;
+            }
+
+            label {
+                font-size: 12px;
+            }
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .control-group {
+            animation: fadeIn 0.3s ease-out backwards;
+        }
+
+        .control-group:nth-child(1) {
+            animation-delay: 0.05s;
+        }
+
+        .control-group:nth-child(2) {
+            animation-delay: 0.1s;
+        }
+
+        .control-group:nth-child(3) {
+            animation-delay: 0.15s;
+        }
+
+        .control-group:nth-child(4) {
+            animation-delay: 0.2s;
+        }
+
+        .control-group:nth-child(5) {
+            animation-delay: 0.25s;
+        }
+    </style>
+</head>
+
+<body>
+    <canvas id="canvas"></canvas>
+
+    <button class="mobile-menu-toggle" id="mobileMenuToggle" aria-label="Toggle menu">
+        ☰
+    </button>
+
+    <div class="control-panel" id="controlPanel">
+        <div class="control-group">
+            <label>Rotation Speed</label>
+            <input type="range" id="rotationSpeed" min="0.1" max="3" value="1" step="0.1">
+            <div class="value-display" id="rotationValue">1.0</div>
+        </div>
+
+        <div class="control-group">
+            <label>Pulse Intensity</label>
+            <input type="range" id="pulseIntensity" min="0.1" max="2" value="2" step="0.1">
+            <div class="value-display" id="pulseValue">2.0</div>
+        </div>
+
+        <div class="control-group">
+            <label>Sphere Detail</label>
+            <input type="range" id="sphereDetail" min="6" max="16" value="10" step="1">
+            <div class="value-display" id="sphereValue">10</div>
+        </div>
+
+        <div class="control-group">
+            <label>Trail Length</label>
+            <input type="range" id="trailLength" min="0.7" max="0.95" value="0.8" step="0.05">
+            <div class="value-display" id="trailValue">0.80</div>
+        </div>
+
+        <div class="control-group">
+            <div class="button-group">
+                <button onclick="resetRotation()">Reset</button>
+                <button onclick="toggleGrid()">Grid</button>
+                <button onclick="togglePause()">Pause</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+
+        const mobileMenuToggle = document.getElementById('mobileMenuToggle');
+        const controlPanel = document.getElementById('controlPanel');
+
+        let isDragging = false;
+        let lastTouchX = 0;
+        let lastTouchY = 0;
+
+        let animationId;
+        let isPaused = false;
+        let time = 0;
+
+        let rotationSpeed = 1;
+        let pulseIntensity = 2;
+        let gridDensity = 80;
+        let sphereDetail = 10;
+        let trailLength = 0.8;
+        let showGrid = true;
+
+        let gridBursts = new Map();
+        const burstDuration = 60;
+
+        let rotXY = 0, rotXZ = 0, rotXW = 0, rotYZ = 0, rotYW = 0, rotZW = 0;
+
+        let colorOffset = 0;
+        const neonColors = [
+            '#00ff00', '#00ff41', '#41ff00', '#00ff88',
+            '#88ff00', '#00ffaa', '#aaffaa', '#66ff66'
+        ];
+
+        function toggleMobileMenu() {
+            controlPanel.classList.toggle('mobile-open');
+            mobileMenuToggle.classList.toggle('active');
+
+            if (controlPanel.classList.contains('mobile-open')) {
+                mobileMenuToggle.textContent = '✕';
+            } else {
+                mobileMenuToggle.textContent = '☰';
+            }
+        }
+
+        function closeMobileMenu() {
+            controlPanel.classList.remove('mobile-open');
+            mobileMenuToggle.classList.remove('active');
+            mobileMenuToggle.textContent = '☰';
+        }
+
+        document.addEventListener('click', (e) => {
+            if (window.innerWidth <= 768) {
+                const isClickInsideMenu = controlPanel.contains(e.target);
+                const isClickOnToggle = mobileMenuToggle.contains(e.target);
+
+                if (!isClickInsideMenu && !isClickOnToggle && controlPanel.classList.contains('mobile-open')) {
+                    closeMobileMenu();
+                }
+            }
+        });
+
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape' && controlPanel.classList.contains('mobile-open')) {
+                closeMobileMenu();
+            }
+        });
+
+        function resizeCanvas() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        }
+
+        function point4D(x, y, z, w) {
+            return { x, y, z, w };
+        }
+
+        function rotateXY(p, angle) {
+            const cos = Math.cos(angle);
+            const sin = Math.sin(angle);
+            return point4D(
+                cos * p.x - sin * p.y,
+                sin * p.x + cos * p.y,
+                p.z, p.w
+            );
+        }
+
+        function rotateXZ(p, angle) {
+            const cos = Math.cos(angle);
+            const sin = Math.sin(angle);
+            return point4D(
+                cos * p.x - sin * p.z,
+                p.y,
+                sin * p.x + cos * p.z,
+                p.w
+            );
+        }
+
+        function rotateXW(p, angle) {
+            const cos = Math.cos(angle);
+            const sin = Math.sin(angle);
+            return point4D(
+                cos * p.x - sin * p.w,
+                p.y, p.z,
+                sin * p.x + cos * p.w
+            );
+        }
+
+        function project4Dto3D(p) {
+            const distance = 4;
+            const w = 1 / (distance - p.w);
+            return {
+                x: p.x * w,
+                y: p.y * w,
+                z: p.z * w
+            };
+        }
+
+        function project3Dto2D(p) {
+            const distance = 1.0;
+            const scale = Math.min(canvas.width, canvas.height) * 0.9;
+            const z = 1 / (distance - p.z);
+            return {
+                x: canvas.width / 2 + p.x * scale * z,
+                y: canvas.height / 2 + p.y * scale * z,
+                depth: p.z
+            };
+        }
+
+        function drawHexagon(x, y, size) {
+            ctx.beginPath();
+            for (let i = 0; i < 6; i++) {
+                const angle = (i * Math.PI) / 3;
+                const hx = x + Math.cos(angle) * size;
+                const hy = y + Math.sin(angle) * size;
+                if (i === 0) {
+                    ctx.moveTo(hx, hy);
+                } else {
+                    ctx.lineTo(hx, hy);
+                }
+            }
+            ctx.closePath();
+        }
+
+        function getHexGridPosition(row, col) {
+            const hexWidth = gridDensity;
+            const hexHeight = gridDensity * Math.sqrt(3) / 2;
+            const x = col * hexWidth * 0.75;
+            const y = row * hexHeight + (col % 2) * hexHeight / 2;
+            return { x, y };
+        }
+
+        function getNearestHexNode(x, y) {
+            const hexWidth = gridDensity;
+            const hexHeight = gridDensity * Math.sqrt(3) / 2;
+
+            const col = Math.round(x / (hexWidth * 0.75));
+            const row = Math.round((y - (col % 2) * hexHeight / 2) / hexHeight);
+
+            const hexPos = getHexGridPosition(row, col);
+
+            let closestDist = Infinity;
+            let closestPos = hexPos;
+
+            for (let dr = -1; dr <= 1; dr++) {
+                for (let dc = -1; dc <= 1; dc++) {
+                    const testPos = getHexGridPosition(row + dr, col + dc);
+                    const dist = Math.sqrt((x - testPos.x) ** 2 + (y - testPos.y) ** 2);
+                    if (dist < closestDist) {
+                        closestDist = dist;
+                        closestPos = testPos;
+                    }
+                }
+            }
+
+            return { pos: closestPos, distance: closestDist };
+        }
+
+        function checkNodeCollision(x, y) {
+            const hexResult = getNearestHexNode(x, y);
+            const distance = hexResult.distance;
+
+            if (distance < gridDensity * 0.4) {
+                const nodeKey = `${hexResult.pos.x.toFixed(0)},${hexResult.pos.y.toFixed(0)}`;
+                if (!gridBursts.has(nodeKey)) {
+                    gridBursts.set(nodeKey, {
+                        x: hexResult.pos.x,
+                        y: hexResult.pos.y,
+                        frame: 0,
+                        intensity: 1,
+                        color: getNeonColor(Math.random() * neonColors.length)
+                    });
+                }
+            }
+        }
+
+        function updateBursts() {
+            for (let [key, burst] of gridBursts) {
+                burst.frame++;
+                burst.intensity = Math.max(0, 1 - (burst.frame / burstDuration));
+
+                if (burst.frame >= burstDuration) {
+                    gridBursts.delete(key);
+                }
+            }
+        }
+
+        function drawBursts() {
+            for (let [key, burst] of gridBursts) {
+                const size = 15 + (1 - burst.intensity) * 25;
+                const alpha = burst.intensity;
+
+                for (let ring = 0; ring < 3; ring++) {
+                    const ringSize = size + ring * 8;
+                    const ringAlpha = alpha * (1 - ring * 0.25);
+
+                    ctx.strokeStyle = `rgba(0, 255, 0, ${ringAlpha})`;
+                    ctx.lineWidth = 3 - ring * 0.5;
+                    ctx.shadowColor = '#00ff00';
+                    ctx.shadowBlur = 10;
+                    drawHexagon(burst.x, burst.y, ringSize);
+                    ctx.stroke();
+                    ctx.shadowBlur = 0;
+                }
+
+                const coreSize = 4 + Math.sin(time * 12) * 2;
+                ctx.fillStyle = `rgba(255, 255, 255, ${alpha})`;
+                ctx.shadowColor = '#00ff00';
+                ctx.shadowBlur = 15;
+                drawHexagon(burst.x, burst.y, coreSize);
+                ctx.fill();
+                ctx.shadowBlur = 0;
+            }
+        }
+
+        function getGridInfluence(x, y) {
+            const hexResult = getNearestHexNode(x, y);
+            const distance = hexResult.distance;
+
+            const maxDistance = gridDensity * 0.6;
+            const influence = Math.max(0, 1 - (distance / maxDistance));
+            return influence * influence;
+        }
+
+        function getNeonColor(index) {
+            const colorIndex = Math.floor((index + colorOffset) % neonColors.length);
+            return neonColors[colorIndex];
+        }
+
+        function createGlomePoints() {
+            const points = [];
+            const radius = 1;
+
+            for (let i = 0; i < sphereDetail; i++) {
+                for (let j = 0; j < Math.ceil(sphereDetail * 0.8); j++) {
+                    const phi1 = (i / sphereDetail) * Math.PI * 2;
+                    const phi2 = (j / Math.ceil(sphereDetail * 0.8)) * Math.PI;
+
+                    const x = radius * Math.cos(phi1) * Math.sin(phi2);
+                    const y = radius * Math.sin(phi1) * Math.sin(phi2);
+                    const z = radius * Math.cos(phi2);
+                    const w = radius * Math.sin(phi1 + phi2) * 0.5;
+
+                    points.push(point4D(x, y, z, w));
+                }
+            }
+
+            return points;
+        }
+
+        function drawGrid() {
+            if (!showGrid) return;
+
+            const hexSize = gridDensity * 0.25;
+            const hexWidth = gridDensity;
+            const hexHeight = gridDensity * Math.sqrt(3) / 2;
+
+            ctx.strokeStyle = 'rgba(0, 255, 0, 0.2)';
+            ctx.lineWidth = 1;
+
+            const cols = Math.ceil(canvas.width / (hexWidth * 0.75)) + 2;
+            const rows = Math.ceil(canvas.height / hexHeight) + 2;
+
+            for (let row = -1; row < rows; row++) {
+                for (let col = -1; col < cols; col++) {
+                    const pos = getHexGridPosition(row, col);
+                    if (pos.x > -hexWidth && pos.x < canvas.width + hexWidth &&
+                        pos.y > -hexHeight && pos.y < canvas.height + hexHeight) {
+
+                        drawHexagon(pos.x, pos.y, hexSize);
+                        ctx.stroke();
+                    }
+                }
+            }
+
+            const nodeSize = 2 + Math.sin(time * 3) * 0.8;
+            let nodeIndex = 0;
+
+            for (let row = -1; row < rows; row++) {
+                for (let col = -1; col < cols; col++) {
+                    const pos = getHexGridPosition(row, col);
+                    if (pos.x > -hexWidth && pos.x < canvas.width + hexWidth &&
+                        pos.y > -hexHeight && pos.y < canvas.height + hexHeight) {
+
+                        const color = getNeonColor(nodeIndex + time * 2);
+                        ctx.fillStyle = color;
+                        ctx.shadowColor = color;
+                        ctx.shadowBlur = 8;
+
+                        ctx.beginPath();
+                        ctx.arc(pos.x, pos.y, nodeSize, 0, Math.PI * 2);
+                        ctx.fill();
+                        ctx.shadowBlur = 0;
+
+                        nodeIndex++;
+                    }
+                }
+            }
+        }
+
+        function animate() {
+            if (isPaused) {
+                animationId = requestAnimationFrame(animate);
+                return;
+            }
+
+            time += 0.02 * rotationSpeed;
+            colorOffset += 0.05 * rotationSpeed;
+
+            rotXY += 0.008 * rotationSpeed;
+            rotXZ += 0.012 * rotationSpeed;
+            rotXW += 0.006 * rotationSpeed;
+            rotYZ += 0.010 * rotationSpeed;
+            rotYW += 0.007 * rotationSpeed;
+            rotZW += 0.009 * rotationSpeed;
+
+            ctx.fillStyle = `rgba(0, 8, 0, ${1 - trailLength})`;
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            updateBursts();
+
+            drawGrid();
+
+            drawBursts();
+
+            const glomePoints = createGlomePoints();
+            const transformedPoints = glomePoints.map((p, index) => {
+                let point = p;
+
+                const pulse = 1 + Math.sin(time * 2 + index * 0.1) * 0.1 * pulseIntensity;
+                point = point4D(point.x * pulse, point.y * pulse, point.z * pulse, point.w * pulse);
+
+                point = rotateXY(point, rotXY);
+                point = rotateXZ(point, rotXZ);
+                point = rotateXW(point, rotXW);
+
+                const p3d = project4Dto3D(point);
+                const p2d = project3Dto2D(p3d);
+
+                return { ...p2d, originalIndex: index };
+            });
+
+            transformedPoints.sort((a, b) => a.depth - b.depth);
+
+            transformedPoints.forEach(point => {
+                checkNodeCollision(point.x, point.y);
+
+                const influence = getGridInfluence(point.x, point.y);
+
+                const baseSize = 1 + (1 - point.depth) * 3;
+                const size = baseSize + influence * 4;
+                const alpha = 0.6 + influence * 0.4;
+
+                const color = getNeonColor(point.originalIndex);
+                ctx.fillStyle = color.replace(')', `, ${alpha})`);
+
+                ctx.shadowColor = color;
+                ctx.shadowBlur = 3 + influence * 6;
+
+                ctx.beginPath();
+                ctx.arc(point.x, point.y, size, 0, Math.PI * 2);
+                ctx.fill();
+
+                ctx.shadowBlur = 0;
+            });
+
+            if (transformedPoints.length < 80) {
+                ctx.strokeStyle = 'rgba(0, 255, 0, 0.15)';
+                ctx.lineWidth = 1;
+
+                for (let i = 0; i < transformedPoints.length - 1; i += 3) {
+                    const p1 = transformedPoints[i];
+                    const p2 = transformedPoints[i + 1];
+
+                    const distance = Math.sqrt((p1.x - p2.x) ** 2 + (p1.y - p2.y) ** 2);
+
+                    if (distance < 30) {
+                        const alpha = Math.max(0, 1 - distance / 30) * 0.15;
+                        ctx.strokeStyle = `rgba(0, 255, 0, ${alpha})`;
+
+                        ctx.beginPath();
+                        ctx.moveTo(p1.x, p1.y);
+                        ctx.lineTo(p2.x, p2.y);
+                        ctx.stroke();
+                    }
+                }
+            }
+
+            animationId = requestAnimationFrame(animate);
+        }
+
+        document.getElementById('rotationSpeed').addEventListener('input', (e) => {
+            rotationSpeed = parseFloat(e.target.value);
+            document.getElementById('rotationValue').textContent = rotationSpeed.toFixed(1);
+        });
+
+        document.getElementById('pulseIntensity').addEventListener('input', (e) => {
+            pulseIntensity = parseFloat(e.target.value);
+            document.getElementById('pulseValue').textContent = pulseIntensity.toFixed(1);
+        });
+
+        document.getElementById('sphereDetail').addEventListener('input', (e) => {
+            sphereDetail = parseInt(e.target.value);
+            document.getElementById('sphereValue').textContent = sphereDetail;
+        });
+
+        document.getElementById('trailLength').addEventListener('input', (e) => {
+            trailLength = parseFloat(e.target.value);
+            document.getElementById('trailValue').textContent = trailLength.toFixed(2);
+        });
+
+        mobileMenuToggle.addEventListener('click', toggleMobileMenu);
+
+        function resetRotation() {
+            rotXY = rotXZ = rotXW = rotYZ = rotYW = rotZW = 0;
+            time = 0;
+
+            if (window.innerWidth <= 768) {
+                closeMobileMenu();
+            }
+        }
+
+        function toggleGrid() {
+            showGrid = !showGrid;
+            const gridButton = document.querySelector('button[onclick="toggleGrid()"]');
+            gridButton.textContent = showGrid ? 'Grid' : 'No Grid';
+
+            if (window.innerWidth <= 768) {
+                closeMobileMenu();
+            }
+        }
+
+        function togglePause() {
+            isPaused = !isPaused;
+            const pauseButton = document.querySelector('button[onclick="togglePause()"]');
+            pauseButton.textContent = isPaused ? 'Play' : 'Pause';
+
+            if (window.innerWidth <= 768) {
+                closeMobileMenu();
+            }
+        }
+
+        canvas.addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            isDragging = true;
+            const touch = e.touches[0];
+            lastTouchX = touch.clientX;
+            lastTouchY = touch.clientY;
+
+            if (window.innerWidth <= 768 && controlPanel.classList.contains('mobile-open')) {
+                closeMobileMenu();
+            }
+        });
+
+        canvas.addEventListener('touchmove', (e) => {
+            e.preventDefault();
+            if (!isDragging) return;
+
+            const touch = e.touches[0];
+            const deltaX = (touch.clientX - lastTouchX) * 0.01;
+            const deltaY = (touch.clientY - lastTouchY) * 0.01;
+
+            rotXY += deltaX;
+            rotXZ += deltaY;
+
+            lastTouchX = touch.clientX;
+            lastTouchY = touch.clientY;
+        });
+
+        canvas.addEventListener('touchend', (e) => {
+            e.preventDefault();
+            isDragging = false;
+        });
+
+        canvas.addEventListener('mousedown', (e) => {
+            isDragging = true;
+            lastTouchX = e.clientX;
+            lastTouchY = e.clientY;
+        });
+
+        canvas.addEventListener('mousemove', (e) => {
+            if (!isDragging) return;
+
+            const deltaX = (e.clientX - lastTouchX) * 0.01;
+            const deltaY = (e.clientY - lastTouchY) * 0.01;
+
+            rotXY += deltaX;
+            rotXZ += deltaY;
+
+            lastTouchX = e.clientX;
+            lastTouchY = e.clientY;
+        });
+
+        canvas.addEventListener('mouseup', () => {
+            isDragging = false;
+        });
+
+        canvas.addEventListener('click', (e) => {
+            checkNodeCollision(e.clientX, e.clientY);
+
+            if (window.innerWidth <= 768 && controlPanel.classList.contains('mobile-open')) {
+                closeMobileMenu();
+            }
+        });
+
+        window.addEventListener('resize', () => {
+            resizeCanvas();
+
+            if (window.innerWidth <= 768 && controlPanel.classList.contains('mobile-open')) {
+                closeMobileMenu();
+            }
+        });
+
+        resizeCanvas();
+        animate();
+
+        window.addEventListener('keydown', (e) => {
+            switch (e.key) {
+                case ' ':
+                    e.preventDefault();
+                    togglePause();
+                    break;
+                case 'r':
+                case 'R':
+                    resetRotation();
+                    break;
+                case 'g':
+                case 'G':
+                    toggleGrid();
+                    break;
+                case 'm':
+                case 'M':
+                case 'Escape':
+                    if (window.innerWidth <= 768) {
+                        toggleMobileMenu();
+                    }
+                    break;
+                case 'ArrowUp':
+                    rotationSpeed = Math.min(3, rotationSpeed + 0.1);
+                    document.getElementById('rotationSpeed').value = rotationSpeed;
+                    document.getElementById('rotationValue').textContent = rotationSpeed.toFixed(1);
+                    break;
+                case 'ArrowDown':
+                    rotationSpeed = Math.max(0.1, rotationSpeed - 0.1);
+                    document.getElementById('rotationSpeed').value = rotationSpeed;
+                    document.getElementById('rotationValue').textContent = rotationSpeed.toFixed(1);
+                    break;
+            }
+        });
+
+        if (window.innerWidth <= 768) {
+            closeMobileMenu();
+        }
+    </script>
+</body>
+
+</html>

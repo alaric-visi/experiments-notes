@@ -1,0 +1,833 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Glome 2</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: linear-gradient(135deg, #1a0033, #000011, #330011);
+            overflow: hidden;
+            font-family: 'Courier New', monospace;
+            touch-action: manipulation;
+        }
+
+        #canvas {
+            display: block;
+            background: transparent;
+            cursor: crosshair;
+            image-rendering: pixelated;
+        }
+
+        #canvas:active {
+            cursor: grabbing;
+        }
+
+        .control-panel {
+            position: fixed;
+            top: 10px;
+            right: 10px;
+            background: rgba(0, 0, 0, 0.85);
+            border: 2px solid #ff00ff;
+            box-shadow: 0 0 10px #ff00ff;
+            padding: 12px;
+            color: #ff00ff;
+            font-size: 11px;
+            max-width: 250px;
+            z-index: 1000;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            border-radius: 8px;
+        }
+
+        .control-group {
+            margin-bottom: 10px;
+        }
+
+        .control-group:last-child {
+            margin-bottom: 0;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 4px;
+            font-weight: bold;
+            color: #00ffff;
+            text-shadow: 2px 2px 0px rgba(0, 0, 0, 1), 0 0 5px #00ffff;
+        }
+
+        label::before {
+            content: "◆";
+            margin-right: 4px;
+            color: #ffff00;
+        }
+
+        input[type="range"] {
+            width: 100%;
+            height: 8px;
+            background: linear-gradient(90deg, #ff0080, #8000ff, #0080ff, #00ff80, #ff8000);
+            outline: none;
+            -webkit-appearance: none;
+            appearance: none;
+            border: 1px solid #ffffff;
+            border-radius: 4px;
+        }
+
+        input[type="range"]::-webkit-slider-thumb {
+            appearance: none;
+            width: 16px;
+            height: 16px;
+            background: #ffffff;
+            cursor: pointer;
+            border: 2px solid #000000;
+            border-radius: 50%;
+        }
+
+        input[type="range"]::-moz-range-thumb {
+            width: 16px;
+            height: 16px;
+            background: #ffffff;
+            cursor: pointer;
+            border: 2px solid #000000;
+            border-radius: 50%;
+        }
+
+        .button-group {
+            display: flex;
+            gap: 6px;
+            flex-wrap: wrap;
+        }
+
+        button {
+            flex: 1;
+            min-width: 50px;
+            padding: 6px 8px;
+            border: 2px solid #00ff00;
+            background: rgba(0, 0, 0, 0.8);
+            color: #00ff00;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            font-size: 9px;
+            text-transform: uppercase;
+            font-family: 'Courier New', monospace;
+            border-radius: 4px;
+        }
+
+        button:hover {
+            background: rgba(0, 255, 0, 0.2);
+            box-shadow: 0 0 8px #00ff00;
+        }
+
+        button:active {
+            background: #00ff00;
+            color: #000000;
+        }
+
+        .value-display {
+            font-size: 9px;
+            color: #ffff00;
+            text-align: right;
+            margin-top: 2px;
+            font-family: 'Courier New', monospace;
+            text-shadow: 2px 2px 0px rgba(0, 0, 0, 1);
+        }
+
+        .value-display::before {
+            content: "▶";
+            color: #ff00ff;
+            margin-right: 2px;
+        }
+
+        .value-display::after {
+            content: "◀";
+            color: #ff00ff;
+            margin-left: 2px;
+        }
+
+        .mobile-menu-toggle {
+            display: none;
+            position: fixed;
+            top: 15px;
+            right: 15px;
+            width: 50px;
+            height: 50px;
+            background: rgba(0, 0, 0, 0.85);
+            border: 2px solid #ff00ff;
+            border-radius: 50%;
+            color: #ff00ff;
+            font-size: 24px;
+            cursor: pointer;
+            z-index: 1001;
+            justify-content: center;
+            align-items: center;
+            box-shadow: 0 0 10px #ff00ff;
+            transition: all 0.3s ease;
+        }
+
+        .mobile-menu-toggle:hover {
+            background: rgba(255, 0, 255, 0.1);
+            box-shadow: 0 0 15px #ff00ff;
+        }
+
+        .mobile-menu-toggle span {
+            display: block;
+            width: 24px;
+            height: 2px;
+            background: #ff00ff;
+            position: relative;
+            transition: all 0.3s ease;
+        }
+
+        .mobile-menu-toggle span::before,
+        .mobile-menu-toggle span::after {
+            content: '';
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            background: #ff00ff;
+            transition: all 0.3s ease;
+        }
+
+        .mobile-menu-toggle span::before {
+            transform: translateY(-8px);
+        }
+
+        .mobile-menu-toggle span::after {
+            transform: translateY(8px);
+        }
+
+        .mobile-menu-toggle.active span {
+            background: transparent;
+        }
+
+        .mobile-menu-toggle.active span::before {
+            transform: rotate(45deg);
+        }
+
+        .mobile-menu-toggle.active span::after {
+            transform: rotate(-45deg);
+        }
+
+        @media (min-width: 769px) {
+            .control-panel {
+                display: block !important;
+                opacity: 1 !important;
+                visibility: visible !important;
+            }
+
+            .mobile-menu-toggle {
+                display: none !important;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .mobile-menu-toggle {
+                display: flex;
+            }
+
+            .control-panel {
+                top: 70px;
+                right: 10px;
+                left: 10px;
+                max-width: none;
+                padding: 15px;
+                font-size: 10px;
+                background: rgba(0, 0, 0, 0.95);
+                border: 2px solid #ff00ff;
+                border-radius: 12px;
+                opacity: 0;
+                visibility: hidden;
+                transform: translateY(-10px);
+                pointer-events: none;
+                transition: all 0.3s ease;
+            }
+
+            .control-panel.show {
+                opacity: 1;
+                visibility: visible;
+                transform: translateY(0);
+                pointer-events: all;
+            }
+
+            button {
+                font-size: 9px;
+                padding: 7px 8px;
+            }
+
+            .control-group {
+                margin-bottom: 12px;
+            }
+
+            input[type="range"] {
+                height: 10px;
+            }
+
+            input[type="range"]::-webkit-slider-thumb {
+                width: 20px;
+                height: 20px;
+            }
+
+            input[type="range"]::-moz-range-thumb {
+                width: 20px;
+                height: 20px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .mobile-menu-toggle {
+                top: 10px;
+                right: 10px;
+                width: 45px;
+                height: 45px;
+            }
+
+            .control-panel {
+                top: 65px;
+                padding: 12px;
+            }
+
+            button {
+                font-size: 8px;
+                padding: 6px 6px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <canvas id="canvas"></canvas>
+
+    <div class="mobile-menu-toggle" id="mobileMenuToggle">
+        <span></span>
+    </div>
+
+    <div class="control-panel" id="controlPanel">
+        <div class="control-group">
+            <label>Rotation Speed</label>
+            <input type="range" id="rotationSpeed" min="0.1" max="3" value="1" step="0.1">
+            <div class="value-display" id="rotationValue">1.0</div>
+        </div>
+
+        <div class="control-group">
+            <label>Sphere Detail</label>
+            <input type="range" id="sphereDetail" min="4" max="12" value="6" step="1">
+            <div class="value-display" id="sphereValue">6</div>
+        </div>
+
+        <div class="control-group">
+            <label>Trail Length</label>
+            <input type="range" id="trailLength" min="0.5" max="0.9" value="0.7" step="0.05">
+            <div class="value-display" id="trailValue">0.70</div>
+        </div>
+
+        <div class="control-group">
+            <div class="button-group">
+                <button onclick="resetRotation()">Reset</button>
+                <button onclick="toggleGrid()">Grid</button>
+                <button onclick="togglePause()">Pause</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+        const controlPanel = document.getElementById('controlPanel');
+        const mobileMenuToggle = document.getElementById('mobileMenuToggle');
+
+        let isDragging = false;
+        let lastTouchX = 0;
+        let lastTouchY = 0;
+
+        let animationId;
+        let isPaused = false;
+        let time = 0;
+
+        let rotationSpeed = 1;
+        let sphereDetail = 6;
+        let trailLength = 0.7;
+        let showGrid = true;
+        let gridDensity = 80;
+
+        let gridBursts = new Map();
+        const burstDuration = 40;
+
+        let rotXY = 0, rotXZ = 0, rotXW = 0, rotYZ = 0, rotYW = 0, rotZW = 0;
+
+        let colorOffset = 0;
+        const pixelColors = [
+            '#ff0080', '#ff8000', '#ffff00', '#80ff00', '#00ff80',
+            '#00ffff', '#0080ff', '#8000ff', '#ff00ff', '#ff4040',
+            '#40ff40', '#4040ff'
+        ];
+
+        let isMenuOpen = false;
+
+        function resizeCanvas() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+
+            ctx.imageSmoothingEnabled = false;
+            ctx.webkitImageSmoothingEnabled = false;
+            ctx.mozImageSmoothingEnabled = false;
+            ctx.msImageSmoothingEnabled = false;
+        }
+
+        function initializeControlPanel() {
+            const isMobile = window.innerWidth <= 768;
+
+            if (isMobile) {
+                controlPanel.classList.remove('show');
+                mobileMenuToggle.style.display = 'flex';
+                isMenuOpen = false;
+                mobileMenuToggle.classList.remove('active');
+            } else {
+                controlPanel.classList.add('show');
+                mobileMenuToggle.style.display = 'none';
+                isMenuOpen = false;
+                mobileMenuToggle.classList.remove('active');
+            }
+        }
+
+        function toggleMenu() {
+            const isMobile = window.innerWidth <= 768;
+
+            if (!isMobile) return;
+
+            isMenuOpen = !isMenuOpen;
+
+            if (isMenuOpen) {
+                controlPanel.classList.add('show');
+                mobileMenuToggle.classList.add('active');
+            } else {
+                controlPanel.classList.remove('show');
+                mobileMenuToggle.classList.remove('active');
+            }
+        }
+
+        function hideMenu() {
+            const isMobile = window.innerWidth <= 768;
+
+            if (!isMobile) return;
+
+            isMenuOpen = false;
+            controlPanel.classList.remove('show');
+            mobileMenuToggle.classList.remove('active');
+        }
+
+        function handleResize() {
+            resizeCanvas();
+            initializeControlPanel();
+        }
+
+        function point4D(x, y, z, w) {
+            return { x, y, z, w };
+        }
+
+        function rotateXY(p, angle) {
+            const cos = Math.cos(angle);
+            const sin = Math.sin(angle);
+            return point4D(
+                cos * p.x - sin * p.y,
+                sin * p.x + cos * p.y,
+                p.z, p.w
+            );
+        }
+
+        function rotateXZ(p, angle) {
+            const cos = Math.cos(angle);
+            const sin = Math.sin(angle);
+            return point4D(
+                cos * p.x - sin * p.z,
+                p.y,
+                sin * p.x + cos * p.z,
+                p.w
+            );
+        }
+
+        function rotateXW(p, angle) {
+            const cos = Math.cos(angle);
+            const sin = Math.sin(angle);
+            return point4D(
+                cos * p.x - sin * p.w,
+                p.y, p.z,
+                sin * p.x + cos * p.w
+            );
+        }
+
+        function project4Dto3D(p) {
+            const distance = 4;
+            const w = 1 / (distance - p.w);
+            return {
+                x: p.x * w,
+                y: p.y * w,
+                z: p.z * w
+            };
+        }
+
+        function project3Dto2D(p) {
+            const distance = 0.5;
+            const scale = Math.min(canvas.width, canvas.height) * 1.8;
+            const z = 1 / (distance - p.z);
+            return {
+                x: canvas.width / 2 + p.x * scale * z,
+                y: canvas.height / 2 + p.y * scale * z,
+                depth: p.z
+            };
+        }
+
+        function drawNonagon(x, y, size) {
+            ctx.beginPath();
+            for (let i = 0; i < 9; i++) {
+                const angle = (i * 2 * Math.PI) / 9;
+                const px = x + Math.cos(angle) * size;
+                const py = y + Math.sin(angle) * size;
+                if (i === 0) {
+                    ctx.moveTo(px, py);
+                } else {
+                    ctx.lineTo(px, py);
+                }
+            }
+            ctx.closePath();
+        }
+
+        function getNonagonGridPosition(row, col) {
+            const nonWidth = gridDensity;
+            const nonHeight = gridDensity * 0.866;
+            const x = col * nonWidth * 0.8;
+            const y = row * nonHeight + (col % 2) * nonHeight / 2;
+            return { x, y };
+        }
+
+        function getNearestNonagonNode(x, y) {
+            const nonWidth = gridDensity;
+            const nonHeight = gridDensity * 0.866;
+
+            const col = Math.round(x / (nonWidth * 0.8));
+            const row = Math.round((y - (col % 2) * nonHeight / 2) / nonHeight);
+
+            const nonPos = getNonagonGridPosition(row, col);
+
+            let closestDist = Infinity;
+            let closestPos = nonPos;
+
+            for (let dr = -1; dr <= 1; dr++) {
+                for (let dc = -1; dc <= 1; dc++) {
+                    const testPos = getNonagonGridPosition(row + dr, col + dc);
+                    const dist = Math.sqrt((x - testPos.x) ** 2 + (y - testPos.y) ** 2);
+                    if (dist < closestDist) {
+                        closestDist = dist;
+                        closestPos = testPos;
+                    }
+                }
+            }
+
+            return { pos: closestPos, distance: closestDist };
+        }
+
+        function checkNodeCollision(x, y) {
+            const nonResult = getNearestNonagonNode(x, y);
+            const distance = nonResult.distance;
+
+            if (distance < gridDensity * 0.5) {
+                const nodeKey = `${nonResult.pos.x.toFixed(0)},${nonResult.pos.y.toFixed(0)}`;
+                if (!gridBursts.has(nodeKey)) {
+                    gridBursts.set(nodeKey, {
+                        x: nonResult.pos.x,
+                        y: nonResult.pos.y,
+                        frame: 0,
+                        intensity: 1,
+                        color: getPixelColor(Math.random() * pixelColors.length)
+                    });
+                }
+            }
+        }
+
+        function updateBursts() {
+            for (let [key, burst] of gridBursts) {
+                burst.frame++;
+                burst.intensity = Math.max(0, 1 - (burst.frame / burstDuration));
+
+                if (burst.frame >= burstDuration) {
+                    gridBursts.delete(key);
+                }
+            }
+        }
+
+        function drawBursts() {
+            for (let [key, burst] of gridBursts) {
+                const size = 10 + (1 - burst.intensity) * 20;
+                const alpha = burst.intensity;
+
+                ctx.strokeStyle = `${burst.color}${Math.floor(alpha * 255).toString(16).padStart(2, '0')}`;
+                ctx.lineWidth = 3;
+                drawNonagon(burst.x, burst.y, size);
+                ctx.stroke();
+
+                ctx.fillStyle = `#ffffff${Math.floor(alpha * 255).toString(16).padStart(2, '0')}`;
+                ctx.fillRect(burst.x - 2, burst.y - 2, 4, 4);
+            }
+        }
+
+        function getPixelColor(index) {
+            const colorIndex = Math.floor((index + colorOffset) % pixelColors.length);
+            return pixelColors[colorIndex];
+        }
+
+        function createGlomePoints() {
+            const points = [];
+            const radius = 1;
+
+            for (let i = 0; i < sphereDetail; i++) {
+                for (let j = 0; j < sphereDetail; j++) {
+                    const phi1 = (i / sphereDetail) * Math.PI * 2;
+                    const phi2 = (j / sphereDetail) * Math.PI;
+
+                    const x = radius * Math.cos(phi1) * Math.sin(phi2);
+                    const y = radius * Math.sin(phi1) * Math.sin(phi2);
+                    const z = radius * Math.cos(phi2);
+                    const w = radius * Math.sin(phi1 + phi2) * 0.3;
+
+                    points.push(point4D(x, y, z, w));
+                }
+            }
+
+            return points;
+        }
+
+        function drawGrid() {
+            if (!showGrid) return;
+
+            const nonSize = gridDensity * 0.2;
+            const nonWidth = gridDensity;
+            const nonHeight = gridDensity * 0.866;
+
+            ctx.strokeStyle = '#330066';
+            ctx.lineWidth = 1;
+
+            const cols = Math.ceil(canvas.width / (nonWidth * 0.8)) + 2;
+            const rows = Math.ceil(canvas.height / nonHeight) + 2;
+
+            for (let row = -1; row < rows; row++) {
+                for (let col = -1; col < cols; col++) {
+                    const pos = getNonagonGridPosition(row, col);
+                    if (pos.x > -nonWidth && pos.x < canvas.width + nonWidth &&
+                        pos.y > -nonHeight && pos.y < canvas.height + nonHeight) {
+
+                        drawNonagon(pos.x, pos.y, nonSize);
+                        ctx.stroke();
+                    }
+                }
+            }
+
+            const nodeSize = 3;
+            let nodeIndex = 0;
+
+            for (let row = -1; row < rows; row++) {
+                for (let col = -1; col < cols; col++) {
+                    const pos = getNonagonGridPosition(row, col);
+                    if (pos.x > -nonWidth && pos.x < canvas.width + nonWidth &&
+                        pos.y > -nonHeight && pos.y < canvas.height + nonHeight) {
+
+                        const color = getPixelColor(nodeIndex + time);
+                        ctx.fillStyle = color;
+                        ctx.fillRect(pos.x - nodeSize / 2, pos.y - nodeSize / 2, nodeSize, nodeSize);
+
+                        nodeIndex++;
+                    }
+                }
+            }
+        }
+
+        function animate() {
+            if (isPaused) {
+                animationId = requestAnimationFrame(animate);
+                return;
+            }
+
+            time += 0.02 * rotationSpeed;
+            colorOffset += 0.1 * rotationSpeed;
+
+            rotXY += 0.006 * rotationSpeed;
+            rotXZ += 0.008 * rotationSpeed;
+            rotXW += 0.004 * rotationSpeed;
+            rotYZ += 0.007 * rotationSpeed;
+            rotYW += 0.005 * rotationSpeed;
+            rotZW += 0.009 * rotationSpeed;
+
+            ctx.fillStyle = `rgba(26, 0, 51, ${1 - trailLength})`;
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            updateBursts();
+            drawGrid();
+            drawBursts();
+
+            const glomePoints = createGlomePoints();
+            const transformedPoints = glomePoints.map((p, index) => {
+                let point = p;
+
+                point = rotateXY(point, rotXY);
+                point = rotateXZ(point, rotXZ);
+                point = rotateXW(point, rotXW);
+
+                const p3d = project4Dto3D(point);
+                const p2d = project3Dto2D(p3d);
+
+                return { ...p2d, originalIndex: index };
+            });
+
+            transformedPoints.sort((a, b) => a.depth - b.depth);
+
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.3)';
+            ctx.lineWidth = 1;
+
+            for (let i = 0; i < transformedPoints.length; i++) {
+                for (let j = i + 1; j < transformedPoints.length; j++) {
+                    const p1 = transformedPoints[i];
+                    const p2 = transformedPoints[j];
+
+                    const distance = Math.sqrt((p1.x - p2.x) ** 2 + (p1.y - p2.y) ** 2);
+                    if (distance < 200) {
+                        const alpha = Math.max(0, 1 - distance / 200) * 0.2;
+                        const color = getPixelColor((i + j) * 0.5);
+                        ctx.strokeStyle = `${color}${Math.floor(alpha * 255).toString(16).padStart(2, '0')}`;
+
+                        ctx.beginPath();
+                        ctx.moveTo(p1.x, p1.y);
+                        ctx.lineTo(p2.x, p2.y);
+                        ctx.stroke();
+                    }
+                }
+            }
+
+            transformedPoints.forEach(point => {
+                checkNodeCollision(point.x, point.y);
+
+                const size = 4 + (1 - point.depth) * 2;
+                const color = getPixelColor(point.originalIndex + time * 2);
+
+                ctx.fillStyle = color;
+                ctx.fillRect(point.x - size / 2, point.y - size / 2, size, size);
+
+                ctx.fillStyle = '#ffffff';
+                ctx.fillRect(point.x - size / 2, point.y - size / 2, 1, 1);
+            });
+
+            animationId = requestAnimationFrame(animate);
+        }
+
+        document.getElementById('rotationSpeed').addEventListener('input', (e) => {
+            rotationSpeed = parseFloat(e.target.value);
+            document.getElementById('rotationValue').textContent = rotationSpeed.toFixed(1);
+        });
+
+        document.getElementById('sphereDetail').addEventListener('input', (e) => {
+            sphereDetail = parseInt(e.target.value);
+            document.getElementById('sphereValue').textContent = sphereDetail;
+        });
+
+        document.getElementById('trailLength').addEventListener('input', (e) => {
+            trailLength = parseFloat(e.target.value);
+            document.getElementById('trailValue').textContent = trailLength.toFixed(2);
+        });
+
+        function resetRotation() {
+            rotXY = rotXZ = rotXW = rotYZ = rotYW = rotZW = 0;
+            time = 0;
+        }
+
+        function toggleGrid() {
+            showGrid = !showGrid;
+            document.querySelector('button[onclick="toggleGrid()"]').textContent = showGrid ? 'Grid' : 'No Grid';
+        }
+
+        function togglePause() {
+            isPaused = !isPaused;
+            const pauseButton = document.querySelector('button[onclick="togglePause()"]');
+            pauseButton.textContent = isPaused ? 'Play' : 'Pause';
+        }
+
+        mobileMenuToggle.addEventListener('click', toggleMenu);
+
+        document.addEventListener('click', (e) => {
+            const isMobile = window.innerWidth <= 768;
+
+            if (isMobile && isMenuOpen) {
+                if (!controlPanel.contains(e.target) && !mobileMenuToggle.contains(e.target)) {
+                    hideMenu();
+                }
+            }
+        });
+
+        canvas.addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            isDragging = true;
+            const touch = e.touches[0];
+            lastTouchX = touch.clientX;
+            lastTouchY = touch.clientY;
+
+            if (isMenuOpen && window.innerWidth <= 768) {
+                hideMenu();
+            }
+        });
+
+        canvas.addEventListener('touchmove', (e) => {
+            e.preventDefault();
+            if (!isDragging) return;
+
+            const touch = e.touches[0];
+            const deltaX = (touch.clientX - lastTouchX) * 0.01;
+            const deltaY = (touch.clientY - lastTouchY) * 0.01;
+
+            rotXY += deltaX;
+            rotXZ += deltaY;
+
+            lastTouchX = touch.clientX;
+            lastTouchY = touch.clientY;
+        });
+
+        canvas.addEventListener('touchend', (e) => {
+            e.preventDefault();
+            isDragging = false;
+        });
+
+        canvas.addEventListener('mousedown', (e) => {
+            isDragging = true;
+            lastTouchX = e.clientX;
+            lastTouchY = e.clientY;
+        });
+
+        canvas.addEventListener('mousemove', (e) => {
+            if (!isDragging) return;
+
+            const deltaX = (e.clientX - lastTouchX) * 0.01;
+            const deltaY = (e.clientY - lastTouchY) * 0.01;
+
+            rotXY += deltaX;
+            rotXZ += deltaY;
+
+            lastTouchX = e.clientX;
+            lastTouchY = e.clientY;
+        });
+
+        canvas.addEventListener('mouseup', () => {
+            isDragging = false;
+        });
+
+        window.addEventListener('resize', handleResize);
+
+        resizeCanvas();
+        initializeControlPanel();
+        animate();
+    </script>
+</body>
+
+</html>
