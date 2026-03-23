@@ -1,0 +1,903 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Polytope</title>
+    <style>
+        :root {
+            --bg: #0b0f14;
+            --panel: rgba(17, 24, 39, 0.6);
+            --text: #e5e7eb;
+            --muted: #94a3b8;
+            --accent: #60a5fa;
+            --ring: rgba(96, 165, 250, .35);
+            --ok: #34d399;
+            --warn: #f59e0b;
+            --err: #f87171;
+            --topbar-h: 56px;
+            --side-w: clamp(280px, 28vw, 380px);
+            --radius: 16px;
+        }
+
+        html,
+        body {
+            height: 100%;
+        }
+
+        body {
+            margin: 0;
+            height: 100vh;
+            overflow: hidden;
+            background: radial-gradient(1200px 800px at 15% 10%, #0f172a 0%, #0b0f14 45%, #05070a 100%);
+            color: var(--text);
+            font: 14px/1.4 system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji";
+        }
+
+        .topbar {
+            height: var(--topbar-h);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            padding: 0 16px;
+            backdrop-filter: blur(10px);
+            background: linear-gradient(180deg, rgba(10, 15, 25, .65), rgba(10, 15, 25, .35));
+            border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+        }
+
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-weight: 600;
+            letter-spacing: .2px;
+        }
+
+        .dot {
+            width: 9px;
+            height: 9px;
+            border-radius: 50%;
+            background: var(--accent);
+            box-shadow: 0 0 18px var(--accent);
+            display: inline-block;
+        }
+
+        .btn {
+            -webkit-appearance: none;
+            appearance: none;
+            cursor: pointer;
+            padding: 8px 12px;
+            border-radius: 12px;
+            color: var(--text);
+            border: 1px solid rgba(255, 255, 255, .1);
+            background: linear-gradient(180deg, rgba(255, 255, 255, .06), rgba(255, 255, 255, .02));
+            box-shadow: inset 0 1px 0 rgba(255, 255, 255, .06);
+        }
+
+        .layout {
+            display: grid;
+            grid-template-columns: var(--side-w) 1fr;
+            grid-template-rows: 1fr;
+            height: calc(100vh - var(--topbar-h));
+        }
+
+        .sidebar {
+            position: relative;
+            height: 100%;
+            z-index: 10;
+            overflow: hidden;
+            border-right: 1px solid rgba(255, 255, 255, 0.08);
+            background: linear-gradient(180deg, rgba(10, 15, 25, .55), rgba(10, 15, 25, .35));
+            backdrop-filter: blur(10px);
+        }
+
+        .panel-body {
+            height: 100%;
+            overflow: auto;
+            padding: 14px 16px;
+        }
+
+        .stage {
+            position: relative;
+            height: 100%;
+        }
+
+        canvas {
+            position: absolute;
+            inset: 0;
+            display: block;
+        }
+
+        .row {
+            display: grid;
+            grid-template-columns: 110px 1fr auto;
+            align-items: center;
+            gap: 10px;
+            margin: 8px 0;
+        }
+
+        .row:first-child {
+            margin-top: 0;
+        }
+
+        label {
+            color: var(--muted);
+        }
+
+        select,
+        input[type="range"],
+        input[type="checkbox"] {
+            width: 100%;
+        }
+
+        select,
+        input[type="range"] {
+            -webkit-appearance: none;
+            appearance: none;
+            background: linear-gradient(180deg, rgba(255, 255, 255, .06), rgba(255, 255, 255, .02));
+            border: 1px solid rgba(255, 255, 255, .1);
+            color: var(--text);
+            padding: 8px 10px;
+            border-radius: 10px;
+            outline: none;
+            box-shadow: inset 0 1px 0 rgba(255, 255, 255, .06);
+        }
+
+        input[type="range"] {
+            padding: 0;
+            height: 36px;
+        }
+
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            background: var(--accent);
+            box-shadow: 0 0 0 4px var(--ring);
+            border: none;
+            transition: all 0.1s ease;
+        }
+
+        input[type="range"]::-moz-range-thumb {
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            background: var(--accent);
+            box-shadow: 0 0 0 4px var(--ring);
+            border: none;
+            transition: all 0.1s ease;
+        }
+
+        input[type="range"]:active::-webkit-slider-thumb {
+            box-shadow: 0 0 0 8px var(--ring);
+        }
+
+        .value {
+            color: var(--muted);
+            font-variant-numeric: tabular-nums;
+            min-width: 44px;
+            text-align: right;
+        }
+
+        .title {
+            font-weight: 600;
+            letter-spacing: .2px;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .hint {
+            color: var(--muted);
+            margin-top: 8px;
+            font-size: 12px;
+        }
+
+        .badge {
+            font-size: 11px;
+            padding: 2px 8px;
+            border-radius: 999px;
+            background: rgba(96, 165, 250, .12);
+            color: #bfdbfe;
+            border: 1px solid rgba(96, 165, 250, .3);
+        }
+
+        .sep {
+            height: 1px;
+            background: rgba(255, 255, 255, .08);
+            margin: 10px 0;
+        }
+
+        .footer {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 8px;
+            margin-top: 6px;
+        }
+
+        .small {
+            font-size: 12px;
+            color: var(--muted);
+        }
+
+        .kbd {
+            font-size: 11px;
+            padding: 2px 6px;
+            border-radius: 6px;
+            border: 1px solid rgba(255, 255, 255, .12);
+            background: rgba(255, 255, 255, .05);
+        }
+
+        .toggle-row {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .toggle-row input {
+            width: auto;
+        }
+
+        .diag {
+            margin-top: 8px;
+            font-size: 12px;
+            color: var(--muted);
+        }
+
+        .pill {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 999px;
+            border: 1px solid rgba(255, 255, 255, .12);
+        }
+
+        .ok {
+            color: #10b981;
+            border-color: rgba(16, 185, 129, .35);
+            background: rgba(16, 185, 129, .08);
+        }
+
+        .warn {
+            color: #f59e0b;
+            border-color: rgba(245, 158, 11, .35);
+            background: rgba(245, 158, 11, .08);
+        }
+
+        .err {
+            color: #ef4444;
+            border-color: rgba(239, 68, 68, .35);
+            background: rgba(239, 68, 68, .08);
+        }
+
+        details summary {
+            cursor: pointer;
+            user-select: none;
+        }
+
+        details pre {
+            max-height: 160px;
+            overflow: auto;
+            background: rgba(255, 255, 255, .04);
+            border: 1px solid rgba(255, 255, 255, .08);
+            padding: 8px;
+            border-radius: 8px;
+        }
+
+        .overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(2, 6, 23, .45);
+            backdrop-filter: blur(2px);
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity .2s ease;
+        }
+
+        .overlay.show {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        @media (max-width: 900px) {
+            .layout {
+                grid-template-columns: 1fr;
+            }
+
+            .sidebar {
+                position: fixed;
+                inset: auto 0 0 0;
+                height: auto;
+                max-height: min(76vh, 560px);
+                border-right: 0;
+                border-top: 1px solid rgba(255, 255, 255, .08);
+                border-top-left-radius: var(--radius);
+                border-top-right-radius: var(--radius);
+                box-shadow: 0 -20px 60px rgba(0, 0, 0, .45);
+                transform: translateY(100%);
+                transition: transform .25s ease;
+            }
+
+            .sidebar[data-open="true"] {
+                transform: translateY(0%);
+            }
+
+            .panel-body {
+                padding: 14px 16px 18px;
+            }
+
+            .row {
+                grid-template-columns: 1fr 1fr auto;
+            }
+
+            .btn {
+                padding: 8px 12px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <header class="topbar">
+        <div class="brand"><span class="dot"></span> Polytope Animator <span class="badge">Canvas</span></div>
+        <button id="toggleMenu" class="btn" aria-expanded="false" aria-controls="sidebar">Controls</button>
+    </header>
+
+    <div class="layout">
+        <aside class="sidebar" id="sidebar" role="region" aria-label="Controls" aria-hidden="false">
+            <div class="panel-body">
+                <div class="title">Render Settings</div>
+
+                <div class="row">
+                    <label for="shape">Shape</label>
+                    <select id="shape">
+                        <option value="hypercube" selected>Hypercube (n-cube)</option>
+                        <option value="simplex">Simplex (n-simplex)</option>
+                        <option value="cross">Cross polytope (n-orthoplex)</option>
+                    </select>
+                    <span class="value" id="shapeInfo">n=4</span>
+                </div>
+
+                <div class="row">
+                    <label for="dim">Dimension</label>
+                    <input id="dim" type="range" min="3" max="6" step="1" value="4" />
+                    <span class="value" id="dimVal">4D</span>
+                </div>
+
+                <div class="row">
+                    <label for="speed">Spin speed</label>
+                    <!-- Increased max speed to 0.8 with adjusted default -->
+                    <input id="speed" type="range" min="0" max="0.8" step="0.001" value="0.15" />
+                    <span class="value" id="speedVal">0.15</span>
+                </div>
+
+                <div class="row">
+                    <label for="size">Size</label>
+                    <input id="size" type="range" min="0.5" max="1.6" step="0.01" value="0.95" />
+                    <span class="value" id="sizeVal">0.95</span>
+                </div>
+
+                <div class="row">
+                    <label for="persp">Perspective</label>
+                    <input id="persp" type="range" min="2" max="8" step="0.1" value="3.5" />
+                    <span class="value" id="perspVal">3.5</span>
+                </div>
+
+                <div class="toggle-row">
+                    <label for="showVerts">Show vertices</label>
+                    <input id="showVerts" type="checkbox" checked />
+                    <label for="autoSpin" style="margin-left:auto;">Auto-spin</label>
+                    <input id="autoSpin" type="checkbox" checked />
+                </div>
+
+                <div class="sep"></div>
+
+                <details>
+                    <summary class="small">Diagnostics & self‑tests</summary>
+                    <div class="diag" id="diagStatus">Running…</div>
+                    <pre id="diagLog" aria-live="polite"></pre>
+                </details>
+
+                <div class="footer small">
+                    <div>Drag to rotate • Scroll/Pinch to zoom</div>
+                    <div class="kbd">R</div> reset
+                </div>
+            </div>
+        </aside>
+
+        <section class="stage" id="stage">
+            <canvas id="polyCanvas" aria-label="Polytope animation"></canvas>
+        </section>
+    </div>
+
+    <div id="overlay" class="overlay" hidden></div>
+
+    <script>
+        (function () {
+            'use strict';
+
+            const canvas = document.getElementById('polyCanvas');
+            const stage = document.getElementById('stage');
+            const ctx = canvas.getContext('2d', {
+                alpha: true,
+                desynchronized: false,
+                powerPreference: 'high-performance'
+            });
+            const dpr = Math.max(1, Math.min(2, window.devicePixelRatio || 1));
+
+            function resize() {
+                const rect = stage.getBoundingClientRect();
+                const w = Math.max(1, Math.floor(rect.width));
+                const h = Math.max(1, Math.floor(rect.height));
+                canvas.width = Math.floor(w * dpr);
+                canvas.height = Math.floor(h * dpr);
+                canvas.style.width = w + 'px';
+                canvas.style.height = h + 'px';
+                ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+                ctx.globalCompositeOperation = 'lighter';
+            }
+            window.addEventListener('resize', resize, { passive: true });
+            const ro = new ResizeObserver(resize); ro.observe(stage);
+            resize();
+
+            const sidebar = document.getElementById('sidebar');
+            const overlay = document.getElementById('overlay');
+            const btn = document.getElementById('toggleMenu');
+
+            function closeMenu() {
+                sidebar.removeAttribute('data-open');
+                overlay.classList.remove('show');
+                overlay.setAttribute('hidden', '');
+                btn.setAttribute('aria-expanded', 'false');
+            }
+            function openMenu() {
+                sidebar.setAttribute('data-open', 'true');
+                overlay.classList.add('show');
+                overlay.removeAttribute('hidden');
+                btn.setAttribute('aria-expanded', 'true');
+            }
+            btn.addEventListener('click', () => {
+                if (sidebar.hasAttribute('data-open')) closeMenu(); else openMenu();
+            });
+            overlay.addEventListener('click', closeMenu);
+            window.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeMenu(); });
+
+            const elShape = document.getElementById('shape');
+            const elDim = document.getElementById('dim');
+            const elSpeed = document.getElementById('speed');
+            const elSize = document.getElementById('size');
+            const elPersp = document.getElementById('persp');
+            const elShowVerts = document.getElementById('showVerts');
+            const elAutoSpin = document.getElementById('autoSpin');
+            const shapeInfo = document.getElementById('shapeInfo');
+            const dimVal = document.getElementById('dimVal');
+            const speedVal = document.getElementById('speedVal');
+            const sizeVal = document.getElementById('sizeVal');
+            const perspVal = document.getElementById('perspVal');
+            const settings = {
+                shape: elShape.value,
+                n: parseInt(elDim.value, 10),
+                speed: parseFloat(elSpeed.value),
+                size: parseFloat(elSize.value),
+                perspective: parseFloat(elPersp.value),
+                showVerts: elShowVerts.checked,
+                autoSpin: elAutoSpin.checked
+            };
+
+            let lastTime = 0;
+            let accumulatedTime = 0;
+            const fixedTimeStep = 1 / 60;
+
+            elShape.addEventListener('change', () => {
+                settings.shape = elShape.value;
+                regenerate();
+            });
+            elDim.addEventListener('input', () => {
+                settings.n = parseInt(elDim.value, 10);
+                dimVal.textContent = settings.n + 'D';
+                regenerate();
+            });
+            elSpeed.addEventListener('input', () => {
+                settings.speed = parseFloat(elSpeed.value);
+                speedVal.textContent = settings.speed.toFixed(2);
+            });
+            elSize.addEventListener('input', () => {
+                settings.size = parseFloat(elSize.value);
+                sizeVal.textContent = settings.size.toFixed(2);
+            });
+            elPersp.addEventListener('input', () => {
+                settings.perspective = parseFloat(elPersp.value);
+                perspVal.textContent = settings.perspective.toFixed(1);
+            });
+            elShowVerts.addEventListener('change', () => {
+                settings.showVerts = elShowVerts.checked;
+            });
+            elAutoSpin.addEventListener('change', () => {
+                settings.autoSpin = elAutoSpin.checked;
+            });
+
+            window.addEventListener('keydown', (e) => {
+                if (e.key === 'r' || e.key === 'R') resetOrientation();
+            });
+
+            const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
+
+            function normalizeVertices(verts) {
+                let maxR = 0;
+                for (const v of verts) {
+                    let r2 = 0; for (let i = 0; i < v.length; i++) r2 += v[i] * v[i];
+                    const r = Math.sqrt(r2); if (r > maxR) maxR = r;
+                }
+                if (maxR === 0) return;
+                const s = 1 / maxR;
+                for (const v of verts) for (let i = 0; i < v.length; i++) v[i] *= s;
+            }
+
+            function hypercube(n) {
+                const V = 1 << n; const verts = new Array(V);
+                for (let i = 0; i < V; i++) {
+                    const v = new Array(n);
+                    for (let b = 0; b < n; b++) v[b] = ((i >> b) & 1) ? 1 : -1;
+                    verts[i] = v;
+                }
+                normalizeVertices(verts);
+                const edges = [];
+                for (let i = 0; i < V; i++) {
+                    for (let j = i + 1; j < V; j++) {
+                        let hd = 0;
+                        for (let k = 0; k < n; k++) if (verts[i][k] !== verts[j][k]) { hd++; if (hd > 1) break; }
+                        if (hd === 1) edges.push([i, j]);
+                    }
+                }
+                return { verts, edges };
+            }
+
+            function simplex(n) {
+                const N = n + 1;
+                const temp = [];
+                for (let i = 0; i < N; i++) {
+                    const v = new Array(N).fill(-1 / N);
+                    v[i] = 1 - 1 / N;
+                    temp.push(v);
+                }
+                const verts = temp.map(v => v.slice(0, n));
+                normalizeVertices(verts);
+                const edges = [];
+                for (let i = 0; i < N; i++) for (let j = i + 1; j < N; j++) edges.push([i, j]);
+                return { verts, edges };
+            }
+
+            function crossPolytope(n) {
+                const verts = [];
+                for (let i = 0; i < n; i++) {
+                    const v1 = new Array(n).fill(0); v1[i] = 1; verts.push(v1);
+                    const v2 = new Array(n).fill(0); v2[i] = -1; verts.push(v2);
+                }
+                normalizeVertices(verts);
+                const axisOf = (v) => { for (let i = 0; i < n; i++) if (v[i] !== 0) return i; return -1; };
+                const edges = [];
+                for (let i = 0; i < verts.length; i++) {
+                    const ai = axisOf(verts[i]);
+                    for (let j = i + 1; j < verts.length; j++) {
+                        const aj = axisOf(verts[j]);
+                        if (ai === aj) continue;
+                        edges.push([i, j]);
+                    }
+                }
+                return { verts, edges };
+            }
+
+            let geom = { verts: [], edges: [] };
+            let pairs = [];
+            let angles = [];
+            let velocities = [];
+            let pairIndex = new Map();
+            let targetAngles = [];
+            let currentAngles = [];
+
+            function buildPairs(n) {
+                pairs = []; pairIndex.clear();
+                for (let i = 0; i < n; i++) for (let j = i + 1; j < n; j++) {
+                    pairIndex.set(`${i}-${j}`, pairs.length);
+                    pairs.push([i, j]);
+                }
+                angles = new Array(pairs.length).fill(0);
+                velocities = new Array(pairs.length).fill(0).map(() =>
+                    ((Math.random() * 0.3 + 0.05) * (Math.random() < 0.5 ? -1 : 1)) * 0.25
+                );
+                targetAngles = angles.slice();
+                currentAngles = angles.slice();
+            }
+
+            function resetOrientation() {
+                angles.fill(0);
+                targetAngles = angles.slice();
+                currentAngles = angles.slice();
+            }
+
+            function smoothStep(current, target, deltaTime, smoothing = 4) {
+                const t = 1 - Math.exp(-smoothing * deltaTime);
+                return current + (target - current) * t;
+            }
+
+            function rotatePoint(vec, deltaTime) {
+                if (settings.autoSpin) {
+                    const s = settings.speed * 0.7;
+                    for (let p = 0; p < angles.length; p++) {
+                        targetAngles[p] += velocities[p] * s * deltaTime;
+                    }
+                }
+
+                for (let p = 0; p < currentAngles.length; p++) {
+                    currentAngles[p] = smoothStep(currentAngles[p], targetAngles[p], deltaTime);
+                }
+
+                const r = vec.slice();
+                for (let p = 0; p < pairs.length; p++) {
+                    const [i, j] = pairs[p];
+                    const a = currentAngles[p];
+                    const si = Math.sin(a), co = Math.cos(a);
+                    const xi = r[i], xj = r[j];
+                    r[i] = xi * co - xj * si;
+                    r[j] = xi * si + xj * co;
+                }
+                return r;
+            }
+
+            function projectNDTo2D(v) {
+                const f = settings.perspective;
+                let p = v.slice();
+                for (let k = p.length - 1; k > 2; k--) {
+                    const w = p[k];
+                    const denom = (f - w);
+                    const s = f / (denom === 0 ? 1e-6 : denom);
+                    for (let i = 0; i < k; i++) p[i] *= s;
+                    p.length = k;
+                }
+                let z = 0;
+                if (p.length === 3) {
+                    const w = p[2];
+                    const denom = (f - w);
+                    const s = f / (denom === 0 ? 1e-6 : denom);
+                    p[0] *= s; p[1] *= s; z = w;
+                    p.length = 2;
+                }
+                return { x: p[0], y: p[1], zDepth: z };
+            }
+
+            function regenerate() {
+                const n = clamp(settings.n, 2, 8);
+                let g;
+                if (settings.shape === 'hypercube') g = hypercube(n);
+                else if (settings.shape === 'simplex') g = simplex(n);
+                else g = crossPolytope(n);
+                geom = g;
+                buildPairs(n);
+                resetOrientation();
+                shapeInfo.textContent = `${geom.verts.length}v / ${geom.edges.length}e`;
+            }
+            regenerate();
+
+            let dragging = false;
+            let lastX = 0, lastY = 0;
+            let dragVelX = 0, dragVelY = 0;
+            let lastDragTime = 0;
+
+            canvas.addEventListener('pointerdown', (e) => {
+                dragging = true;
+                lastX = e.clientX;
+                lastY = e.clientY;
+                lastDragTime = performance.now();
+                dragVelX = dragVelY = 0;
+                canvas.setPointerCapture(e.pointerId);
+            });
+
+            canvas.addEventListener('pointerup', (e) => {
+                dragging = false;
+                canvas.releasePointerCapture(e.pointerId);
+            });
+
+            canvas.addEventListener('pointerleave', () => dragging = false);
+
+            canvas.addEventListener('pointermove', (e) => {
+                if (!dragging) return;
+                const now = performance.now();
+                const dt = Math.min(0.1, (now - lastDragTime) / 1000);
+                lastDragTime = now;
+
+                const dx = (e.clientX - lastX);
+                const dy = (e.clientY - lastY);
+                lastX = e.clientX;
+                lastY = e.clientY;
+
+                const smoothFactor = 0.2;
+                dragVelX = dragVelX * (1 - smoothFactor) + dx * smoothFactor;
+                dragVelY = dragVelY * (1 - smoothFactor) + dy * smoothFactor;
+
+                const key01 = '0-1';
+                const key02 = '0-2';
+                const key23 = '2-3';
+
+                if (pairIndex.has(key01)) targetAngles[pairIndex.get(key01)] += dragVelX * 0.004;
+                if (pairIndex.has(key02)) targetAngles[pairIndex.get(key02)] += dragVelY * 0.004;
+                if (pairIndex.has(key23)) targetAngles[pairIndex.get(key23)] += (dragVelX - dragVelY) * 0.002;
+            });
+
+            canvas.addEventListener('wheel', (e) => {
+                e.preventDefault();
+                const delta = Math.sign(e.deltaY) * 0.03;
+                const newSize = clamp(settings.size - delta, 0.3, 2.5);
+                const animateZoom = (current, target, steps = 10) => {
+                    const step = (target - current) / steps;
+                    let stepCount = 0;
+                    const animateStep = () => {
+                        settings.size += step;
+                        if (++stepCount >= steps) {
+                            settings.size = target;
+                        } else {
+                            requestAnimationFrame(animateStep);
+                        }
+                        elSize.value = settings.size.toString();
+                        sizeVal.textContent = settings.size.toFixed(2);
+                    };
+                    animateStep();
+                };
+
+                animateZoom(settings.size, newSize, 5);
+            }, { passive: false });
+
+            function drawFrame(now) {
+                const dt = Math.min(0.05, (now - lastTime) / 1000);
+                lastTime = now;
+
+                accumulatedTime += dt;
+
+                while (accumulatedTime >= fixedTimeStep) {
+                    accumulatedTime -= fixedTimeStep;
+                }
+
+                const w = canvas.clientWidth, h = canvas.clientHeight;
+
+                ctx.fillStyle = 'rgba(11, 15, 20, 0.08)';
+                ctx.fillRect(0, 0, w, h);
+
+                ctx.strokeStyle = 'rgba(96, 165, 250, 0.03)';
+                ctx.lineWidth = 0.5;
+                const gridSize = 40;
+                const cx = w / 2, cy = h / 2;
+
+                ctx.beginPath();
+                ctx.moveTo(cx, 0);
+                ctx.lineTo(cx, h);
+                ctx.moveTo(0, cy);
+                ctx.lineTo(w, cy);
+                ctx.stroke();
+
+                const screen = new Array(geom.verts.length);
+                let minZ = Infinity, maxZ = -Infinity;
+
+                for (let i = 0; i < geom.verts.length; i++) {
+                    const r = rotatePoint(geom.verts[i], dt);
+                    const p = projectNDTo2D(r);
+                    screen[i] = p;
+                    if (p.zDepth < minZ) minZ = p.zDepth;
+                    if (p.zDepth > maxZ) maxZ = p.zDepth;
+                }
+
+                const zSpan = Math.max(1e-6, maxZ - minZ);
+                const scale = Math.min(w, h) * 0.28 * settings.size;
+
+                const edges = geom.edges.slice().sort((a, b) => {
+                    const za = (screen[a[0]].zDepth + screen[a[1]].zDepth) * 0.5;
+                    const zb = (screen[b[0]].zDepth + screen[b[1]].zDepth) * 0.5;
+                    return za - zb;
+                });
+
+                ctx.lineCap = 'round';
+                ctx.lineJoin = 'round';
+
+                for (const [i, j] of edges) {
+                    const a = screen[i], b = screen[j];
+                    const ax = cx + a.x * scale, ay = cy + a.y * scale;
+                    const bx = cx + b.x * scale, by = cy + b.y * scale;
+                    const zAvg = (a.zDepth + b.zDepth) * 0.5;
+                    const t = (zAvg - minZ) / zSpan;
+
+                    ctx.globalAlpha = 0.2 + 0.4 * (1 - t);
+                    const hue = 200 + 60 * (1 - t);
+
+                    ctx.strokeStyle = `hsl(${hue}deg 50% 75% / 0.9)`;
+                    ctx.lineWidth = 0.8 + (1 - t) * 0.4;
+                    ctx.beginPath();
+                    ctx.moveTo(ax, ay);
+                    ctx.lineTo(bx, by);
+                    ctx.stroke();
+                }
+
+                if (settings.showVerts) {
+                    ctx.globalCompositeOperation = 'lighter';
+                    for (let i = 0; i < screen.length; i++) {
+                        const p = screen[i];
+                        const x = cx + p.x * scale, y = cy + p.y * scale;
+                        const t = (p.zDepth - minZ) / zSpan;
+
+                        ctx.globalAlpha = 0.3 + 0.4 * (1 - t);
+
+                        const gradient = ctx.createRadialGradient(x, y, 0, x, y, 8);
+                        gradient.addColorStop(0, `hsl(${220 + 40 * (1 - t)}deg 60% 85% / 0.8)`);
+                        gradient.addColorStop(1, `hsl(${220 + 40 * (1 - t)}deg 30% 70% / 0)`);
+
+                        ctx.fillStyle = gradient;
+                        const r = 1.2 + (1 - t) * 1.2;
+
+                        ctx.beginPath();
+                        ctx.arc(x, y, r, 0, Math.PI * 2);
+                        ctx.fill();
+
+                        ctx.globalAlpha = 0.6 + 0.4 * (1 - t);
+                        ctx.fillStyle = `hsl(${220 + 40 * (1 - t)}deg 70% 90%)`;
+                        ctx.beginPath();
+                        ctx.arc(x, y, r * 0.4, 0, Math.PI * 2);
+                        ctx.fill();
+                    }
+                    ctx.globalCompositeOperation = 'source-over';
+                }
+
+                const vignette = ctx.createRadialGradient(cx, cy, 0, cx, cy, Math.max(w, h) * 0.7);
+                vignette.addColorStop(0, 'rgba(11, 15, 20, 0)');
+                vignette.addColorStop(1, 'rgba(11, 15, 20, 0.3)');
+                ctx.fillStyle = vignette;
+                ctx.fillRect(0, 0, w, h);
+
+                requestAnimationFrame(drawFrame);
+            }
+
+            requestAnimationFrame((now) => {
+                lastTime = now;
+                drawFrame(now);
+            });
+
+            const diagStatus = document.getElementById('diagStatus');
+            const diagLog = document.getElementById('diagLog');
+            function expect(label, cond) { return { label, pass: !!cond }; }
+            function runSelfTests() {
+                const results = [];
+                for (let n = 3; n <= 6; n++) {
+                    const g = hypercube(n);
+                    const vExp = 2 ** n; const eExp = n * (2 ** (n - 1));
+                    results.push(expect(`Hypercube ${n}D vertices == ${vExp}`, g.verts.length === vExp));
+                    results.push(expect(`Hypercube ${n}D edges == ${eExp}`, g.edges.length === eExp));
+                }
+                for (let n = 3; n <= 6; n++) {
+                    const g = simplex(n);
+                    const vExp = n + 1; const eExp = (n * (n + 1)) / 2;
+                    results.push(expect(`Simplex ${n}D vertices == ${vExp}`, g.verts.length === vExp));
+                    results.push(expect(`Simplex ${n}D edges == ${eExp}`, g.edges.length === eExp));
+                }
+                for (let n = 3; n <= 6; n++) {
+                    const g = crossPolytope(n);
+                    const vExp = 2 * n; const eExp = 2 * n * (n - 1);
+                    results.push(expect(`Cross ${n}D vertices == ${vExp}`, g.verts.length === vExp));
+                    results.push(expect(`Cross ${n}D edges == ${eExp}`, g.edges.length === eExp));
+                }
+                return results;
+            }
+            (function reportTests() {
+                const results = runSelfTests();
+                const passes = results.filter(r => r.pass).length; const total = results.length;
+                const cls = passes === total ? 'ok' : (passes > 0 ? 'warn' : 'err');
+                diagStatus.innerHTML = `<span class="pill ${cls}">${passes}/${total} tests passed</span>`;
+                const lines = results.map(r => `${r.pass ? '✔' : '✖'} ${r.label}`);
+                diagLog.textContent = lines.join('\n');
+                console.log('[polytope] Self-tests:', { passes, total, details: results });
+            })();
+
+        })();
+    </script>
+</body>
+
+</html>

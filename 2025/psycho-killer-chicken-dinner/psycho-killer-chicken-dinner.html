@@ -1,0 +1,690 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Psycho Killer, Chicken Dinner</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: linear-gradient(135deg, #0a0a0a, #1a0a1a, #0a0a2a);
+            font-family: 'Courier New', 'Monaco', monospace;
+            overflow: hidden;
+            display: flex;
+            height: 100vh;
+            color: #ff00ff;
+        }
+
+        canvas {
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(circle at center, rgba(40, 0, 40, 0.8), rgba(0, 0, 0, 0.95));
+            cursor: crosshair;
+        }
+    </style>
+</head>
+
+<body>
+    <canvas id="canvas"></canvas>
+
+    <script>
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+
+        let width, height;
+        let particles = [];
+        let vectors = [];
+        let time = 0;
+        let animationId;
+        let currentText = 'PSYCHO KILLER CHICKEN DINNER';
+        let speed = 2;
+        let phase = 0;
+        let phaseTime = 0;
+        let phaseDuration = 4000;
+
+        function resizeCanvas() {
+            width = canvas.width = window.innerWidth;
+            height = canvas.height = window.innerHeight;
+        }
+
+        class Particle {
+            constructor(x, y, color = '#00ffff') {
+                this.x = x;
+                this.y = y;
+                this.vx = (Math.random() - 0.5) * 4;
+                this.vy = (Math.random() - 0.5) * 4;
+                this.color = color;
+                this.size = Math.random() * 3 + 1;
+                this.life = 1;
+                this.decay = Math.random() * 0.02 + 0.005;
+                this.trail = [];
+            }
+
+            update() {
+                this.x += this.vx;
+                this.y += this.vy;
+                this.life -= this.decay;
+
+                this.trail.push({ x: this.x, y: this.y, life: this.life });
+                if (this.trail.length > 10) this.trail.shift();
+
+                if (phase === 1 || phase === 2) {
+                    const centerX = width / 2;
+                    const centerY = height / 2;
+                    const dx = centerX - this.x;
+                    const dy = centerY - this.y;
+                    const distance = Math.sqrt(dx * dx + dy * dy);
+
+                    if (distance > 50) {
+                        this.vx += dx * 0.0001;
+                        this.vy += dy * 0.0001;
+                    }
+                }
+
+                if (this.x < 0 || this.x > width) this.vx *= -0.8;
+                if (this.y < 0 || this.y > height) this.vy *= -0.8;
+
+                this.vx *= 0.995;
+                this.vy *= 0.995;
+            }
+
+            draw() {
+                for (let i = 0; i < this.trail.length; i++) {
+                    const point = this.trail[i];
+                    const alpha = (point.life * (i / this.trail.length)) * 0.5;
+
+                    ctx.save();
+                    ctx.globalAlpha = alpha;
+                    ctx.fillStyle = this.color;
+                    ctx.beginPath();
+                    ctx.arc(point.x, point.y, this.size * (i / this.trail.length), 0, Math.PI * 2);
+                    ctx.fill();
+                    ctx.restore();
+                }
+
+                ctx.save();
+                ctx.globalAlpha = this.life;
+                ctx.fillStyle = this.color;
+                ctx.shadowBlur = 10;
+                ctx.shadowColor = this.color;
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.restore();
+            }
+        }
+
+        class Vector {
+            constructor(values, x, y, word = '') {
+                this.values = values;
+                this.originalValues = [...values];
+                this.x = x;
+                this.y = y;
+                this.targetX = x;
+                this.targetY = y;
+                this.rotation = 0;
+                this.scale = 1;
+                this.word = word;
+                this.dimensions = values.length;
+                this.magnitude = Math.sqrt(values.reduce((sum, val) => sum + val * val, 0));
+                this.vectorNodes = [];
+                this.transformationMatrix = [];
+                this.clusterGroup = 0;
+
+                for (let i = 0; i < this.dimensions; i++) {
+                    this.transformationMatrix.push(Math.random() * 0.5 + 0.5);
+                }
+
+                if (word.includes('PSYCHO') || word.includes('KILLER')) this.clusterGroup = 0;
+                else if (word.includes('CHICKEN') || word.includes('DINNER')) this.clusterGroup = 1;
+                else this.clusterGroup = 2;
+
+                for (let i = 0; i < this.dimensions; i++) {
+                    this.vectorNodes.push({
+                        angle: (i / this.dimensions) * Math.PI * 2,
+                        distance: Math.abs(this.values[i]) * 50,
+                        value: this.values[i],
+                        pulsing: Math.random() * Math.PI * 2
+                    });
+                }
+            }
+
+            update() {
+                this.x += (this.targetX - this.x) * 0.08;
+                this.y += (this.targetY - this.y) * 0.08;
+                this.rotation += 0.008;
+
+                for (let i = 0; i < this.values.length; i++) {
+                    let drift = Math.sin(time * 0.003 + i) * 0.02;
+
+                    if (phase === 3) {
+                        drift *= this.transformationMatrix[i];
+                        this.values[i] = this.originalValues[i] * this.transformationMatrix[i] + drift;
+                    } else {
+                        this.values[i] = this.originalValues[i] + drift;
+                    }
+                }
+
+                this.vectorNodes.forEach((node, i) => {
+                    node.distance = Math.abs(this.values[i]) * 70 + 15;
+                    node.pulsing += 0.04;
+                    node.currentDistance = node.distance + Math.sin(node.pulsing) * 8;
+                });
+
+                const phasePulse = Math.sin(time * 0.005 + this.clusterGroup) * 0.1;
+                this.scale = 1 + Math.sin(time * 0.01 + this.magnitude) * 0.12 + phasePulse;
+            }
+
+            draw() {
+                ctx.save();
+                ctx.translate(this.x, this.y);
+                ctx.scale(this.scale, this.scale);
+                ctx.strokeStyle = `rgba(255,0,255,${0.05 + Math.sin(time * 0.002) * 0.03})`;
+                ctx.lineWidth = 1;
+                for (let i = 0; i < this.dimensions; i++) {
+                    const angle = (i / this.dimensions) * Math.PI * 2;
+                    ctx.beginPath();
+                    ctx.moveTo(0, 0);
+                    ctx.lineTo(Math.cos(angle) * 100, Math.sin(angle) * 100);
+                    ctx.stroke();
+                }
+
+                const clusterColors = ['#ff0080', '#80ff00', '#0080ff'];
+                const clusterColor = clusterColors[this.clusterGroup];
+
+                ctx.beginPath();
+                ctx.arc(0, 0, this.magnitude * 40, 0, Math.PI * 2);
+                ctx.strokeStyle = `${clusterColor}88`;
+                ctx.lineWidth = 3;
+                ctx.stroke();
+
+                this.vectorNodes.forEach((node, i) => {
+                    const x = Math.cos(node.angle + this.rotation) * node.currentDistance;
+                    const y = Math.sin(node.angle + this.rotation) * node.currentDistance;
+
+                    ctx.beginPath();
+                    ctx.moveTo(0, 0);
+                    ctx.lineTo(x, y);
+                    ctx.strokeStyle = node.value > 0 ? '#ff00ff' : '#00ffff';
+                    ctx.lineWidth = Math.abs(node.value) * 4 + 1;
+                    ctx.shadowBlur = 12;
+                    ctx.shadowColor = ctx.strokeStyle;
+                    ctx.stroke();
+                    ctx.save();
+                    ctx.translate(x, y);
+                    ctx.fillStyle = node.value > 0 ? '#ff00ff' : '#00ffff';
+                    ctx.shadowBlur = 18;
+                    ctx.shadowColor = ctx.fillStyle;
+                    ctx.beginPath();
+                    ctx.arc(0, 0, Math.abs(node.value) * 10 + 4, 0, Math.PI * 2);
+                    ctx.fill();
+
+                    if (Math.abs(node.value) > 0.3) {
+                        ctx.fillStyle = 'white';
+                        ctx.font = '6px Courier New';
+                        ctx.textAlign = 'center';
+                        ctx.fillText(node.value.toFixed(1), 0, 2);
+                    }
+                    ctx.restore();
+                });
+
+                if (this.word) {
+                    ctx.fillStyle = clusterColor;
+                    ctx.font = 'bold 14px Courier New';
+                    ctx.textAlign = 'center';
+                    ctx.shadowBlur = 15;
+                    ctx.shadowColor = clusterColor;
+                    ctx.fillText(this.word, 0, -120);
+                }
+
+                const avgX = this.vectorNodes.reduce((sum, node) =>
+                    sum + Math.cos(node.angle + this.rotation) * node.value * 25, 0) / this.dimensions;
+                const avgY = this.vectorNodes.reduce((sum, node) =>
+                    sum + Math.sin(node.angle + this.rotation) * node.value * 25, 0) / this.dimensions;
+
+                if (Math.abs(avgX) > 5 || Math.abs(avgY) > 5) {
+                    ctx.beginPath();
+                    ctx.moveTo(0, 0);
+                    ctx.lineTo(avgX, avgY);
+                    ctx.strokeStyle = '#ffff00';
+                    ctx.lineWidth = 5;
+                    ctx.shadowBlur = 25;
+                    ctx.shadowColor = '#ffff00';
+                    ctx.stroke();
+
+                    const arrowAngle = Math.atan2(avgY, avgX);
+                    ctx.save();
+                    ctx.translate(avgX, avgY);
+                    ctx.rotate(arrowAngle);
+                    ctx.beginPath();
+                    ctx.moveTo(0, 0);
+                    ctx.lineTo(-12, -6);
+                    ctx.lineTo(-12, 6);
+                    ctx.closePath();
+                    ctx.fillStyle = '#ffff00';
+                    ctx.fill();
+                    ctx.restore();
+                }
+
+                ctx.restore();
+            }
+        }
+
+        function createVectors() {
+            vectors = [];
+            const words = currentText.split(/[, ]+/);
+
+            words.forEach((word, index) => {
+                if (word.trim()) {
+                    const dimensions = 16;
+                    const values = Array.from({ length: dimensions }, (_, i) => {
+                        const base = Math.sin(word.charCodeAt(0) + i) * 0.8;
+                        const semantic = Math.cos(word.length + i * 0.7) * 0.6;
+                        const random = (Math.random() - 0.5) * 0.4;
+                        return base + semantic + random;
+                    });
+
+                    const x = (width / (words.length + 1)) * (index + 1);
+                    const y = height / 2;
+
+                    vectors.push(new Vector(values, x, y, word));
+                }
+            });
+        }
+
+        function drawPhase() {
+            const phaseNames = ['◊ VECTORIZATION ◊', '◊ EMBEDDING SPACE ◊', '◊ SEMANTIC CLUSTERING ◊', '◊ VECTOR TRANSFORMATION ◊'];
+            ctx.save();
+            ctx.fillStyle = '#ff00ff';
+            ctx.strokeStyle = '#00ffff';
+            ctx.font = 'bold 20px Courier New';
+            ctx.textAlign = 'center';
+            ctx.lineWidth = 1;
+            ctx.shadowBlur = 25;
+            ctx.shadowColor = '#ff00ff';
+            ctx.strokeText(phaseNames[phase], width / 2, 60);
+            ctx.fillText(phaseNames[phase], width / 2, 60);
+            ctx.restore();
+
+            switch (phase) {
+                case 0:
+                    drawVectorization();
+                    break;
+                case 1:
+                    drawEmbeddingSpace();
+                    break;
+                case 2:
+                    drawClustering();
+                    break;
+                case 3:
+                    drawTransformation();
+                    break;
+            }
+        }
+
+        function drawVectorization() {
+            for (let i = 0; i < vectors.length - 1; i++) {
+                const v1 = vectors[i];
+                const v2 = vectors[i + 1];
+
+                let dotProduct = 0;
+                let mag1 = 0;
+                let mag2 = 0;
+
+                for (let j = 0; j < v1.values.length; j++) {
+                    dotProduct += v1.values[j] * v2.values[j];
+                    mag1 += v1.values[j] * v1.values[j];
+                    mag2 += v2.values[j] * v2.values[j];
+                }
+
+                const similarity = dotProduct / (Math.sqrt(mag1) * Math.sqrt(mag2));
+                const alpha = Math.abs(similarity) * 0.6 + 0.2;
+
+                ctx.save();
+                ctx.strokeStyle = `rgba(255,255,0,${alpha})`;
+                ctx.lineWidth = Math.abs(similarity) * 8 + 2;
+                ctx.shadowBlur = 15;
+                ctx.shadowColor = ctx.strokeStyle;
+                ctx.setLineDash([8, 8]);
+                ctx.beginPath();
+                ctx.moveTo(v1.x, v1.y);
+                ctx.lineTo(v2.x, v2.y);
+                ctx.stroke();
+
+                const midX = (v1.x + v2.x) / 2;
+                const midY = (v1.y + v2.y) / 2;
+                ctx.fillStyle = '#ffff00';
+                ctx.font = '12px Courier New';
+                ctx.textAlign = 'center';
+                ctx.shadowBlur = 10;
+                ctx.shadowColor = '#ffff00';
+                ctx.fillText(similarity.toFixed(2), midX, midY - 15);
+                ctx.restore();
+            }
+
+            vectors.forEach(vector => {
+                vector.update();
+                vector.draw();
+            });
+
+            for (let x = 0; x < width; x += 80) {
+                for (let y = 0; y < height; y += 80) {
+                    let fieldX = 0;
+                    let fieldY = 0;
+
+                    vectors.forEach(vector => {
+                        const dx = x - vector.x;
+                        const dy = y - vector.y;
+                        const distance = Math.sqrt(dx * dx + dy * dy) + 1;
+                        const influence = vector.magnitude / (distance * 0.01);
+
+                        fieldX += (dx / distance) * influence * 0.0008;
+                        fieldY += (dy / distance) * influence * 0.0008;
+                    });
+
+                    if (Math.abs(fieldX) > 0.1 || Math.abs(fieldY) > 0.1) {
+                        ctx.save();
+                        ctx.strokeStyle = 'rgba(255,0,255,0.4)';
+                        ctx.lineWidth = 2;
+                        ctx.beginPath();
+                        ctx.moveTo(x, y);
+                        ctx.lineTo(x + fieldX * 30, y + fieldY * 30);
+                        ctx.stroke();
+                        ctx.restore();
+                    }
+                }
+            }
+        }
+
+        function drawEmbeddingSpace() {
+            ctx.save();
+            ctx.strokeStyle = 'rgba(0,255,255,0.2)';
+            ctx.lineWidth = 1;
+
+            for (let i = 0; i < width; i += 50) {
+                const waveOffset = Math.sin(time * 0.002 + i * 0.01) * 40;
+                ctx.beginPath();
+                ctx.moveTo(i, 0);
+                ctx.quadraticCurveTo(i + waveOffset, height / 2, i + waveOffset * 1.5, height);
+                ctx.stroke();
+            }
+
+            for (let i = 0; i < height; i += 50) {
+                const waveOffset = Math.cos(time * 0.002 + i * 0.01) * 40;
+                ctx.beginPath();
+                ctx.moveTo(0, i);
+                ctx.quadraticCurveTo(width / 2 + waveOffset, i, width, i + waveOffset * 0.8);
+                ctx.stroke();
+            }
+
+            const centerX = width / 2;
+            const centerY = height / 2;
+
+            for (let dim = 0; dim < 12; dim++) {
+                const angle = (dim / 12) * Math.PI * 2;
+                const length = 200;
+                const endX = centerX + Math.cos(angle + time * 0.002) * length;
+                const endY = centerY + Math.sin(angle + time * 0.002) * length;
+
+                ctx.save();
+                ctx.strokeStyle = `hsl(${dim * 30}, 80%, 60%)`;
+                ctx.lineWidth = 3;
+                ctx.shadowBlur = 15;
+                ctx.shadowColor = ctx.strokeStyle;
+                ctx.beginPath();
+                ctx.moveTo(centerX, centerY);
+                ctx.lineTo(endX, endY);
+                ctx.stroke();
+                ctx.fillStyle = ctx.strokeStyle;
+                ctx.font = '14px Courier New';
+                ctx.textAlign = 'center';
+                ctx.fillText(`D${dim + 1}`, endX, endY);
+                ctx.restore();
+            }
+            ctx.restore();
+
+            vectors.forEach((vector, i) => {
+                const centerX = width / 2;
+                const centerY = height / 2;
+
+                vector.targetX = centerX + Math.sin(time * 0.003 + i * 0.5) * 150;
+                vector.targetY = centerY + Math.cos(time * 0.003 + i * 0.7) * 150;
+                vector.update();
+                vector.draw();
+                vectors.forEach((otherVector, j) => {
+                    if (i < j) {
+                        let similarity = 0;
+                        for (let k = 0; k < vector.values.length; k++) {
+                            similarity += vector.values[k] * otherVector.values[k];
+                        }
+                        similarity = similarity / (vector.magnitude * otherVector.magnitude);
+
+                        if (Math.abs(similarity) > 0.4) {
+                            ctx.save();
+                            ctx.strokeStyle = `rgba(255,255,255,${Math.abs(similarity) * 0.5})`;
+                            ctx.lineWidth = Math.abs(similarity) * 6;
+                            ctx.shadowBlur = 20;
+                            ctx.shadowColor = ctx.strokeStyle;
+                            ctx.beginPath();
+                            ctx.moveTo(vector.x, vector.y);
+                            ctx.lineTo(otherVector.x, otherVector.y);
+                            ctx.stroke();
+                            ctx.restore();
+                        }
+                    }
+                });
+            });
+
+            if (Math.random() < 0.2) {
+                const angle = Math.random() * Math.PI * 2;
+                const distance = Math.random() * 300 + 100;
+                particles.push(new Particle(
+                    centerX + Math.cos(angle) * distance,
+                    centerY + Math.sin(angle) * distance,
+                    `hsl(${Math.random() * 360}, 80%, 70%)`
+                ));
+            }
+        }
+
+        function drawClustering() {
+            const clusterCenters = [
+                { x: width * 0.25, y: height * 0.4, color: '#ff0080', label: 'PSYCHO KILLER CLUSTER' },
+                { x: width * 0.75, y: height * 0.6, color: '#80ff00', label: 'CHICKEN DINNER CLUSTER' },
+                { x: width * 0.5, y: height * 0.3, color: '#0080ff', label: 'OTHER CLUSTER' }
+            ];
+
+            clusterCenters.forEach((cluster, i) => {
+                ctx.save();
+                ctx.strokeStyle = cluster.color + '40';
+                ctx.fillStyle = cluster.color + '10';
+                ctx.lineWidth = 3;
+                ctx.shadowBlur = 20;
+                ctx.shadowColor = cluster.color;
+
+                const radius = 120 + Math.sin(time * 0.005 + i) * 20;
+                ctx.beginPath();
+                ctx.arc(cluster.x, cluster.y, radius, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.stroke();
+                ctx.fillStyle = cluster.color;
+                ctx.font = 'bold 16px Courier New';
+                ctx.textAlign = 'center';
+                ctx.fillText(cluster.label, cluster.x, cluster.y - radius - 20);
+                ctx.restore();
+            });
+
+            vectors.forEach((vector) => {
+                const targetCluster = clusterCenters[vector.clusterGroup];
+                const angle = Math.random() * Math.PI * 2;
+                const distance = Math.random() * 80 + 40;
+
+                vector.targetX = targetCluster.x + Math.cos(angle + time * 0.002) * distance;
+                vector.targetY = targetCluster.y + Math.sin(angle + time * 0.002) * distance;
+                vector.update();
+                vector.draw();
+
+                ctx.save();
+                ctx.strokeStyle = targetCluster.color + '60';
+                ctx.lineWidth = 2;
+                ctx.setLineDash([5, 10]);
+                ctx.beginPath();
+                ctx.moveTo(vector.x, vector.y);
+                ctx.lineTo(targetCluster.x, targetCluster.y);
+                ctx.stroke();
+                ctx.restore();
+            });
+
+            if (Math.random() < 0.15) {
+                const cluster = clusterCenters[Math.floor(Math.random() * clusterCenters.length)];
+                const angle = Math.random() * Math.PI * 2;
+                const distance = Math.random() * 100;
+                particles.push(new Particle(
+                    cluster.x + Math.cos(angle) * distance,
+                    cluster.y + Math.sin(angle) * distance,
+                    cluster.color
+                ));
+            }
+        }
+
+        function drawTransformation() {
+            ctx.save();
+            ctx.strokeStyle = 'rgba(255,255,0,0.3)';
+            ctx.lineWidth = 1;
+
+            for (let i = 0; i < width; i += 60) {
+                for (let j = 0; j < height; j += 60) {
+                    const waveX = Math.sin(time * 0.003 + i * 0.01 + j * 0.005) * 20;
+                    const waveY = Math.cos(time * 0.003 + j * 0.01 + i * 0.005) * 20;
+
+                    ctx.beginPath();
+                    ctx.moveTo(i, j);
+                    ctx.lineTo(i + waveX, j + waveY);
+                    ctx.stroke();
+                }
+            }
+            ctx.restore();
+
+            vectors.forEach((vector, i) => {
+                const spiralAngle = time * 0.004 + i * 0.3;
+                const spiralRadius = 200 + Math.sin(time * 0.002 + i) * 100;
+
+                vector.targetX = width / 2 + Math.cos(spiralAngle) * spiralRadius;
+                vector.targetY = height / 2 + Math.sin(spiralAngle) * spiralRadius;
+
+                for (let j = 0; j < vector.values.length; j++) {
+                    const morphFactor = Math.sin(time * 0.01 + i + j) * 0.5 + 1;
+                    vector.values[j] = vector.originalValues[j] * morphFactor;
+                }
+
+                vector.update();
+                vector.draw();
+
+                ctx.save();
+                const trailLength = 8;
+                for (let t = 0; t < trailLength; t++) {
+                    const trailTime = time - t * 100;
+                    const trailAngle = trailTime * 0.004 + i * 0.3;
+                    const trailRadius = 200 + Math.sin(trailTime * 0.002 + i) * 100;
+                    const trailX = width / 2 + Math.cos(trailAngle) * trailRadius;
+                    const trailY = height / 2 + Math.sin(trailAngle) * trailRadius;
+
+                    ctx.globalAlpha = (trailLength - t) / trailLength * 0.3;
+                    ctx.fillStyle = '#ffff00';
+                    ctx.beginPath();
+                    ctx.arc(trailX, trailY, 3, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+                ctx.restore();
+            });
+
+            if (Math.random() < 0.25) {
+                const angle = Math.random() * Math.PI * 2;
+                const radius = Math.random() * 300 + 100;
+                particles.push(new Particle(
+                    width / 2 + Math.cos(angle) * radius,
+                    height / 2 + Math.sin(angle) * radius,
+                    `hsl(${60 + Math.random() * 60}, 90%, 70%)`
+                ));
+            }
+        }
+
+        function explodeParticles(centerX, centerY) {
+            for (let i = 0; i < 75; i++) {
+                const angle = (Math.PI * 2 * i) / 75;
+                const velocity = Math.random() * 15 + 8;
+                const color = `hsl(${Math.random() * 360}, 80%, 70%)`;
+
+                const p = new Particle(centerX, centerY, color);
+                p.vx = Math.cos(angle) * velocity;
+                p.vy = Math.sin(angle) * velocity;
+                particles.push(p);
+            }
+        }
+
+        function update() {
+            time += speed;
+            phaseTime += 16.67 * speed;
+
+            if (phaseTime >= phaseDuration) {
+                phaseTime = 0;
+                phase = (phase + 1) % 4;
+
+                if (phase === 0) createVectors();
+            }
+
+            particles = particles.filter(particle => {
+                particle.update();
+                return particle.life > 0;
+            });
+
+            if (particles.length > 800) {
+                particles = particles.slice(-800);
+            }
+        }
+
+        function draw() {
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.08)';
+            ctx.fillRect(0, 0, width, height);
+
+            drawPhase();
+
+            particles.forEach(particle => particle.draw());
+        }
+
+        function animate() {
+            update();
+            draw();
+            animationId = requestAnimationFrame(animate);
+        }
+
+        canvas.addEventListener('click', (e) => {
+            const rect = canvas.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
+            explodeParticles(x, y);
+        });
+
+        canvas.addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            const rect = canvas.getBoundingClientRect();
+            const touch = e.touches[0];
+            const x = touch.clientX - rect.left;
+            const y = touch.clientY - rect.top;
+            explodeParticles(x, y);
+        });
+
+        window.addEventListener('resize', resizeCanvas);
+
+        resizeCanvas();
+        createVectors();
+        animate();
+    </script>
+</body>
+
+</html>

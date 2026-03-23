@@ -1,0 +1,453 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mosaic</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-primary: #000000;
+            --bg-secondary: #121212;
+            --text-primary: #ffffff;
+            --text-secondary: #cccccc;
+            --accent-primary: #4a90e2;
+            --accent-secondary: #e74c3c;
+            --border-color: #333333;
+            --shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.2);
+            --shadow-md: 0 4px 8px rgba(0, 0, 0, 0.3);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        html,
+        body {
+            height: 100%;
+            font-family: 'Inter', sans-serif;
+            overflow-x: hidden;
+        }
+
+        body {
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            display: flex;
+            flex-direction: column;
+        }
+
+        .main-container {
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+            width: 100vw;
+        }
+
+        .control-panel {
+            background: var(--bg-secondary);
+            border-bottom: 1px solid var(--border-color);
+            padding: 16px;
+            flex-shrink: 0;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+            gap: 12px;
+            box-shadow: var(--shadow-sm);
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+
+        .control-group {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .control-label {
+            font-size: 12px;
+            color: var(--text-secondary);
+            font-weight: 500;
+        }
+
+        select {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            color: var(--text-primary);
+            padding: 8px 12px;
+            border-radius: 4px;
+            font-size: 14px;
+            cursor: pointer;
+            transition: border-color 0.2s ease;
+        }
+
+        select:hover {
+            border-color: var(--accent-primary);
+        }
+
+        select:focus {
+            outline: none;
+            border-color: var(--accent-primary);
+            box-shadow: 0 0 0 2px rgba(74, 144, 226, 0.3);
+        }
+
+        .range-container {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        input[type="range"] {
+            flex: 1;
+            height: 4px;
+            background: var(--border-color);
+            border-radius: 2px;
+            outline: none;
+            cursor: pointer;
+        }
+
+        input[type="range"]::-webkit-slider-thumb {
+            appearance: none;
+            width: 16px;
+            height: 16px;
+            background: var(--accent-primary);
+            border-radius: 50%;
+            cursor: pointer;
+        }
+
+        .range-value {
+            min-width: 30px;
+            text-align: center;
+            background: var(--accent-primary);
+            color: white;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: 500;
+        }
+
+        button {
+            background: var(--accent-primary);
+            color: white;
+            border: none;
+            padding: 10px 16px;
+            border-radius: 4px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: background 0.2s ease;
+        }
+
+        button:hover {
+            background: #357abd;
+        }
+
+        button:active {
+            background: #2e6da4;
+        }
+
+        button.animate-btn.active {
+            background: var(--accent-secondary);
+        }
+
+        button.animate-btn.active:hover {
+            background: #c0392b;
+        }
+
+        .canvas-container {
+            flex: 1;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: var(--bg-primary);
+            padding: 16px;
+            overflow-y: auto;
+            min-height: calc(100vh - 120px);
+        }
+
+        #mosaicCanvas {
+            border: 1px solid var(--border-color);
+            background: var(--bg-primary);
+            width: 100%;
+            height: 100%;
+            max-width: 100%;
+            max-height: 100%;
+            box-shadow: var(--shadow-md);
+        }
+
+        .status {
+            position: fixed;
+            top: 16px;
+            right: 16px;
+            background: var(--accent-primary);
+            color: white;
+            padding: 6px 12px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: 500;
+            z-index: 20;
+        }
+
+        @media (min-width: 1024px) {
+            .main-container {
+                flex-direction: row;
+            }
+
+            .control-panel {
+                width: 280px;
+                border-right: 1px solid var(--border-color);
+                border-bottom: none;
+                position: static;
+            }
+
+            .canvas-container {
+                min-height: 100vh;
+                overflow-y: hidden;
+            }
+        }
+
+        @media (max-width: 767px) {
+            .control-panel {
+                grid-template-columns: repeat(2, 1fr);
+                padding: 12px;
+            }
+
+            .canvas-container {
+                min-height: calc(100vh - 100px);
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="main-container">
+        <div class="control-panel">
+            <div class="control-group">
+                <div class="control-label">Pattern Type</div>
+                <select id="patternType">
+                    <option value="spiral">Logarithmic Spiral</option>
+                    <option value="mandala">Radial Symmetry</option>
+                    <option value="fibonacci">Fibonacci Sequence</option>
+                    <option value="geometric">Trigonometric Grid</option>
+                    <option value="wave">Sine Wave</option>
+                    <option value="celtic">Parametric Curves</option>
+                </select>
+            </div>
+
+            <div class="control-group">
+                <div class="control-label">Color Palette</div>
+                <select id="colorPalette">
+                    <option value="modern">Modern Blues</option>
+                    <option value="neutral">Neutral Grays</option>
+                    <option value="soft">Soft Pastels</option>
+                    <option value="warm">Warm Tones</option>
+                </select>
+            </div>
+
+            <div class="control-group">
+                <div class="control-label">Grid Size</div>
+                <div class="range-container">
+                    <input type="range" id="gridSize" min="15" max="40" value="25">
+                    <span class="range-value" id="gridSizeValue">25</span>
+                </div>
+            </div>
+
+            <div class="control-group">
+                <div class="control-label">Complexity</div>
+                <div class="range-container">
+                    <input type="range" id="complexity" min="1" max="8" value="4">
+                    <span class="range-value" id="complexityValue">4</span>
+                </div>
+            </div>
+
+            <div class="control-group">
+                <div class="control-label">Scale</div>
+                <div class="range-container">
+                    <input type="range" id="scale" min="0.5" max="2.5" step="0.1" value="1">
+                    <span class="range-value" id="scaleValue">1.0</span>
+                </div>
+            </div>
+
+            <div class="control-group">
+                <button class="animate-btn" onclick="toggleAnimation()">Animate</button>
+            </div>
+        </div>
+
+        <div class="canvas-container">
+            <canvas id="mosaicCanvas"></canvas>
+            <div class="status" id="status">Ready</div>
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('mosaicCanvas');
+        const ctx = canvas.getContext('2d');
+        let animationId = null;
+        let isAnimating = false;
+        let animationFrame = 0;
+
+        const colorPalettes = {
+            modern: ['#4a90e2', '#7b68ee', '#50c878', '#ff6b6b'],
+            neutral: ['#6c757d', '#495057', '#343a40', '#adb5bd'],
+            soft: ['#ffd1dc', '#b19cd9', '#c4d79b', '#98d8c8'],
+            warm: ['#ff9f43', '#ffcc5c', '#ff6b6b', '#ffa07a']
+        };
+
+        function updateCanvasSize() {
+            const container = document.querySelector('.canvas-container');
+            const containerRect = container.getBoundingClientRect();
+
+            canvas.width = containerRect.width - 32;
+            canvas.height = containerRect.height - 32;
+            canvas.style.width = (containerRect.width - 32) + 'px';
+            canvas.style.height = (containerRect.height - 32) + 'px';
+        }
+
+        function updateRangeValues() {
+            document.getElementById('gridSizeValue').textContent = document.getElementById('gridSize').value;
+            document.getElementById('complexityValue').textContent = document.getElementById('complexity').value;
+            document.getElementById('scaleValue').textContent = parseFloat(document.getElementById('scale').value).toFixed(1);
+        }
+
+        document.getElementById('gridSize').addEventListener('input', updateRangeValues);
+        document.getElementById('complexity').addEventListener('input', updateRangeValues);
+        document.getElementById('scale').addEventListener('input', updateRangeValues);
+
+        function getPatternValue(x, y, time = 0) {
+            const pattern = document.getElementById('patternType').value;
+            const complexity = parseInt(document.getElementById('complexity').value);
+            const scale = parseFloat(document.getElementById('scale').value);
+
+            const centerX = canvas.width / 2;
+            const centerY = canvas.height / 2;
+            const dx = (x - centerX) * scale;
+            const dy = (y - centerY) * scale;
+            const distance = Math.sqrt(dx * dx + dy * dy);
+            const angle = Math.atan2(dy, dx);
+
+            switch (pattern) {
+                case 'spiral':
+                    return Math.sin(distance * 0.02 * complexity + angle * 3 + time * 0.05);
+                case 'mandala':
+                    return Math.sin(distance * 0.01 * complexity + time * 0.02) *
+                        Math.sin(angle * 8 + time * 0.04);
+                case 'fibonacci':
+                    return Math.sin(distance * 0.01 * complexity + time * 0.03) *
+                        Math.sin(angle * 1.618 + time * 0.02);
+                case 'geometric':
+                    return Math.sin(dx * 0.01 * complexity + time * 0.03) *
+                        Math.cos(dy * 0.01 * complexity + time * 0.04);
+                case 'wave':
+                    return Math.sin(dx * 0.008 * complexity + time * 0.1) *
+                        Math.cos(dy * 0.008 * complexity + time * 0.07);
+                case 'celtic':
+                    return Math.sin(distance * 0.015 * complexity + angle * 4 + time * 0.03) *
+                        Math.cos(distance * 0.01 * complexity + angle * 6 + time * 0.05);
+                default:
+                    return Math.sin(distance * 0.01 * complexity + angle + time * 0.05);
+            }
+        }
+
+        function generateMosaic() {
+            const gridSize = parseInt(document.getElementById('gridSize').value);
+            const paletteKey = document.getElementById('colorPalette').value;
+            const colors = colorPalettes[paletteKey];
+
+            ctx.fillStyle = '#000000';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            const tileWidth = canvas.width / gridSize;
+            const tileHeight = canvas.height / gridSize;
+
+            for (let i = 0; i < gridSize; i++) {
+                for (let j = 0; j < gridSize; j++) {
+                    const x = i * tileWidth + tileWidth / 2;
+                    const y = j * tileHeight + tileHeight / 2;
+
+                    const value = getPatternValue(x, y, animationFrame);
+                    const normalizedValue = (value + 1) / 2;
+                    const colorIndex = Math.floor(normalizedValue * colors.length);
+                    const color = colors[Math.min(colorIndex, colors.length - 1)];
+
+                    ctx.fillStyle = color;
+
+                    const marginX = tileWidth * 0.1;
+                    const marginY = tileHeight * 0.1;
+                    const width = tileWidth - marginX * 2;
+                    const height = tileHeight - marginY * 2;
+
+                    ctx.fillRect(
+                        i * tileWidth + marginX,
+                        j * tileHeight + marginY,
+                        width,
+                        height
+                    );
+                }
+            }
+        }
+
+        function animate() {
+            if (!isAnimating) return;
+
+            animationFrame += 0.5;
+            generateMosaic();
+            animationId = requestAnimationFrame(animate);
+        }
+
+        function toggleAnimation() {
+            const button = document.querySelector('.animate-btn');
+
+            if (isAnimating) {
+                isAnimating = false;
+                cancelAnimationFrame(animationId);
+                button.textContent = 'Animate';
+                button.classList.remove('active');
+                document.getElementById('status').textContent = 'Stopped';
+            } else {
+                isAnimating = true;
+                button.textContent = 'Stop';
+                button.classList.add('active');
+                document.getElementById('status').textContent = 'Running';
+                animate();
+            }
+        }
+
+        updateRangeValues();
+        updateCanvasSize();
+
+        let resizeTimeout;
+        window.addEventListener('resize', () => {
+            clearTimeout(resizeTimeout);
+            resizeTimeout = setTimeout(() => {
+                updateCanvasSize();
+                generateMosaic();
+            }, 100);
+        });
+
+        let updateTimeout;
+        function throttledUpdate() {
+            clearTimeout(updateTimeout);
+            updateTimeout = setTimeout(generateMosaic, 50);
+        }
+
+        document.getElementById('patternType').addEventListener('change', throttledUpdate);
+        document.getElementById('colorPalette').addEventListener('change', throttledUpdate);
+        document.getElementById('gridSize').addEventListener('input', () => {
+            updateRangeValues();
+            throttledUpdate();
+        });
+        document.getElementById('complexity').addEventListener('input', () => {
+            updateRangeValues();
+            throttledUpdate();
+        });
+        document.getElementById('scale').addEventListener('input', () => {
+            updateRangeValues();
+            throttledUpdate();
+        });
+
+        generateMosaic();
+    </script>
+</body>
+
+</html>
