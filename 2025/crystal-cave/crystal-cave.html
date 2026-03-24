@@ -1,0 +1,477 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Crystal Cave</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    <script crossorigin src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://unpkg.com/three@0.151.3/build/three.min.js"></script>
+    <style>
+        body,
+        html {
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+            background: #0a0015;
+        }
+
+        canvas {
+            display: block;
+        }
+
+        .loading {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: #00ffff;
+            font-size: 1.5rem;
+            text-shadow: 0 0 10px #00ffff;
+        }
+    </style>
+</head>
+
+<body class="bg-gray-900">
+    <div id="root" class="w-screen h-screen"></div>
+
+    <script type="text/babel">
+        const { useRef, useEffect, useState } = React;
+
+        const CrystalCave = () => {
+            const mountRef = useRef(null);
+            const rendererRef = useRef(null);
+            const sceneRef = useRef(null);
+            const cameraRef = useRef(null);
+            const animationRef = useRef(null);
+            const [isLoaded, setIsLoaded] = useState(false);
+
+            useEffect(() => {
+                const scene = new THREE.Scene();
+                sceneRef.current = scene;
+
+                scene.fog = new THREE.FogExp2(0x1a0033, 0.008);
+
+                const camera = new THREE.PerspectiveCamera(
+                    75,
+                    window.innerWidth / window.innerHeight,
+                    0.1,
+                    1000
+                );
+                camera.position.set(0, 5, 10);
+                cameraRef.current = camera;
+
+                const renderer = new THREE.WebGLRenderer({
+                    antialias: true,
+                    alpha: true
+                });
+                renderer.setSize(window.innerWidth, window.innerHeight);
+                renderer.setClearColor(0x0a0015, 1);
+                renderer.shadowMap.enabled = true;
+                renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+                rendererRef.current = renderer;
+
+                if (mountRef.current) {
+                    mountRef.current.appendChild(renderer.domElement);
+                }
+
+                const ambientLight = new THREE.AmbientLight(0x4a0080, 0.3);
+                scene.add(ambientLight);
+
+                const lights = [
+                    { color: 0x00ffff, pos: [50, 10, -50] },
+                    { color: 0xff00ff, pos: [-50, 8, -50] },
+                    { color: 0x00ff88, pos: [0, 15, -80] },
+                    { color: 0xff0088, pos: [70, 5, 30] },
+                    { color: 0x8800ff, pos: [-70, 12, 0] },
+                    { color: 0x00ccff, pos: [30, 8, 60] },
+                    { color: 0xff6600, pos: [-40, 10, 40] }
+                ];
+
+                lights.forEach(l => {
+                    const light = new THREE.PointLight(l.color, 1.2, 80);
+                    light.position.set(l.pos[0], l.pos[1], l.pos[2]);
+                    scene.add(light);
+                });
+
+                const floorGeometry = new THREE.PlaneGeometry(400, 400, 80, 80);
+                const vertices = floorGeometry.attributes.position.array;
+                for (let i = 0; i < vertices.length; i += 3) {
+                    vertices[i + 2] = Math.random() * 3 - 1.5;
+                }
+                floorGeometry.attributes.position.needsUpdate = true;
+                floorGeometry.computeVertexNormals();
+
+                const floorMaterial = new THREE.MeshStandardMaterial({
+                    color: 0x2a1a3a,
+                    roughness: 0.9,
+                    metalness: 0.1
+                });
+                const floor = new THREE.Mesh(floorGeometry, floorMaterial);
+                floor.rotation.x = -Math.PI / 2;
+                floor.receiveShadow = true;
+                scene.add(floor);
+
+                const ceilingGeometry = new THREE.PlaneGeometry(400, 400, 80, 80);
+                const ceilingVertices = ceilingGeometry.attributes.position.array;
+                for (let i = 0; i < ceilingVertices.length; i += 3) {
+                    ceilingVertices[i + 2] = Math.random() * 5 - 2.5;
+                }
+                ceilingGeometry.attributes.position.needsUpdate = true;
+                ceilingGeometry.computeVertexNormals();
+
+                const ceilingMaterial = new THREE.MeshStandardMaterial({
+                    color: 0x1a0a2a,
+                    roughness: 0.9
+                });
+                const ceiling = new THREE.Mesh(ceilingGeometry, ceilingMaterial);
+                ceiling.position.y = 30;
+                ceiling.rotation.x = Math.PI / 2;
+                scene.add(ceiling);
+
+                const createRock = (x, y, z, scale) => {
+                    const rockGeometry = new THREE.SphereGeometry(scale, 8, 6);
+                    const rockVertices = rockGeometry.attributes.position.array;
+                    for (let i = 0; i < rockVertices.length; i += 3) {
+                        const noise = (Math.random() - 0.5) * 0.4;
+                        rockVertices[i] *= (1 + noise);
+                        rockVertices[i + 1] *= (1 + noise);
+                        rockVertices[i + 2] *= (1 + noise);
+                    }
+                    rockGeometry.attributes.position.needsUpdate = true;
+                    rockGeometry.computeVertexNormals();
+
+                    const rockMaterial = new THREE.MeshStandardMaterial({
+                        color: 0x3a2a4a,
+                        roughness: 0.95,
+                        metalness: 0.05
+                    });
+
+                    const rock = new THREE.Mesh(rockGeometry, rockMaterial);
+                    rock.position.set(x, y, z);
+                    rock.rotation.set(
+                        Math.random() * Math.PI,
+                        Math.random() * Math.PI,
+                        Math.random() * Math.PI
+                    );
+                    rock.castShadow = true;
+                    rock.receiveShadow = true;
+                    return rock;
+                };
+
+                for (let i = 0; i < 40; i++) {
+                    const x = (Math.random() - 0.5) * 350;
+                    const z = (Math.random() - 0.5) * 350;
+                    const scale = 2 + Math.random() * 4;
+
+                    if (Math.abs(x) > 10 || Math.abs(z) > 10) {
+                        const rock = createRock(x, scale * 0.5, z, scale);
+                        scene.add(rock);
+                    }
+                }
+
+                const createPool = (x, z, size) => {
+                    const poolGeometry = new THREE.CircleGeometry(size, 32);
+                    const poolMaterial = new THREE.MeshStandardMaterial({
+                        color: 0x001a33,
+                        roughness: 0.1,
+                        metalness: 0.8,
+                        emissive: 0x003366,
+                        emissiveIntensity: 0.3
+                    });
+
+                    const pool = new THREE.Mesh(poolGeometry, poolMaterial);
+                    pool.rotation.x = -Math.PI / 2;
+                    pool.position.set(x, 0.1, z);
+                    pool.receiveShadow = true;
+
+                    const poolLight = new THREE.PointLight(0x0066ff, 0.8, 30);
+                    poolLight.position.set(x, 2, z);
+                    scene.add(poolLight);
+
+                    return pool;
+                };
+
+                const poolPositions = [
+                    [40, -30, 15],
+                    [-50, 40, 12],
+                    [60, 60, 18],
+                    [-60, -40, 14],
+                    [20, 70, 10]
+                ];
+
+                poolPositions.forEach(pos => {
+                    const pool = createPool(pos[0], pos[1], pos[2]);
+                    scene.add(pool);
+                });
+
+                const createCrystal = (x, y, z, scale, color) => {
+                    const group = new THREE.Group();
+
+                    const crystalGeometry = new THREE.ConeGeometry(0.5 * scale, 3 * scale, 6);
+                    const crystalMaterial = new THREE.MeshPhysicalMaterial({
+                        color: color,
+                        transparent: true,
+                        opacity: 0.7,
+                        metalness: 0.1,
+                        roughness: 0.1,
+                        clearcoat: 1,
+                        clearcoatRoughness: 0.1,
+                        emissive: color,
+                        emissiveIntensity: 0.3
+                    });
+
+                    const crystal = new THREE.Mesh(crystalGeometry, crystalMaterial);
+                    crystal.castShadow = true;
+                    group.add(crystal);
+
+                    const baseCrystal = new THREE.Mesh(crystalGeometry, crystalMaterial);
+                    baseCrystal.rotation.x = Math.PI;
+                    baseCrystal.scale.set(0.7, 0.7, 0.7);
+                    baseCrystal.position.y = -1.5 * scale;
+                    group.add(baseCrystal);
+
+                    for (let i = 0; i < 3; i++) {
+                        const sideCrystal = new THREE.Mesh(crystalGeometry, crystalMaterial);
+                        const angle = (i * Math.PI * 2) / 3;
+                        sideCrystal.position.x = Math.cos(angle) * 0.8 * scale;
+                        sideCrystal.position.z = Math.sin(angle) * 0.8 * scale;
+                        sideCrystal.position.y = -0.5 * scale;
+                        sideCrystal.rotation.z = Math.PI / 6;
+                        sideCrystal.rotation.y = angle;
+                        sideCrystal.scale.set(0.5, 0.5, 0.5);
+                        group.add(sideCrystal);
+                    }
+
+                    group.position.set(x, y, z);
+                    group.rotation.y = Math.random() * Math.PI * 2;
+                    return group;
+                };
+
+                const crystalColors = [0x00ffff, 0xff00ff, 0x00ff88, 0xff0088, 0x8800ff, 0x00ccff];
+
+                const crystals = [];
+                for (let i = 0; i < 80; i++) {
+                    const x = (Math.random() - 0.5) * 360;
+                    const z = (Math.random() - 0.5) * 360;
+                    const scale = 0.5 + Math.random() * 2;
+                    const color = crystalColors[Math.floor(Math.random() * crystalColors.length)];
+
+                    if (Math.abs(x) > 8 || Math.abs(z) > 8) {
+                        const crystal = createCrystal(x, scale * 1.5, z, scale, color);
+                        scene.add(crystal);
+                        crystals.push(crystal);
+                    }
+                }
+
+                for (let i = 0; i < 50; i++) {
+                    const x = (Math.random() - 0.5) * 360;
+                    const z = (Math.random() - 0.5) * 360;
+                    const scale = 0.5 + Math.random() * 1.5;
+                    const color = crystalColors[Math.floor(Math.random() * crystalColors.length)];
+
+                    const crystal = createCrystal(x, 30 - scale * 2, z, scale, color);
+                    crystal.rotation.z = Math.PI;
+                    scene.add(crystal);
+                    crystals.push(crystal);
+                }
+
+                const particleGeometry = new THREE.BufferGeometry();
+                const particleCount = 1000;
+                const positions = new Float32Array(particleCount * 3);
+                const colors = new Float32Array(particleCount * 3);
+
+                for (let i = 0; i < particleCount * 3; i += 3) {
+                    positions[i] = (Math.random() - 0.5) * 300;
+                    positions[i + 1] = Math.random() * 25;
+                    positions[i + 2] = (Math.random() - 0.5) * 300;
+
+                    const color = new THREE.Color(crystalColors[Math.floor(Math.random() * crystalColors.length)]);
+                    colors[i] = color.r;
+                    colors[i + 1] = color.g;
+                    colors[i + 2] = color.b;
+                }
+
+                particleGeometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+                particleGeometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+
+                const particleMaterial = new THREE.PointsMaterial({
+                    size: 0.3,
+                    vertexColors: true,
+                    transparent: true,
+                    opacity: 0.8,
+                    blending: THREE.AdditiveBlending
+                });
+
+                const particles = new THREE.Points(particleGeometry, particleMaterial);
+                scene.add(particles);
+
+                const keys = {};
+                const moveSpeed = 0.5;
+
+                const handleKeyDown = (e) => {
+                    keys[e.code] = true;
+                };
+
+                const handleKeyUp = (e) => {
+                    keys[e.code] = false;
+                };
+
+                document.addEventListener('keydown', handleKeyDown);
+                document.addEventListener('keyup', handleKeyUp);
+
+                const updateMovement = () => {
+                    if (keys['KeyW'] || keys['ArrowUp']) {
+                        camera.translateZ(-moveSpeed);
+                    }
+                    if (keys['KeyS'] || keys['ArrowDown']) {
+                        camera.translateZ(moveSpeed);
+                    }
+                    if (keys['KeyA'] || keys['ArrowLeft']) {
+                        camera.translateX(-moveSpeed);
+                    }
+                    if (keys['KeyD'] || keys['ArrowRight']) {
+                        camera.translateX(moveSpeed);
+                    }
+
+                    camera.position.y = 5;
+                };
+
+                let mouseX = 0;
+                let onMouseDown = false;
+
+                const handleMouseDown = () => {
+                    onMouseDown = true;
+                };
+
+                const handleMouseUp = () => {
+                    onMouseDown = false;
+                };
+
+                const handleMouseMove = (e) => {
+                    if (onMouseDown) {
+                        mouseX += e.movementX * 0.002;
+                        camera.rotation.y = -mouseX;
+                    }
+                };
+
+                document.addEventListener('mousedown', handleMouseDown);
+                document.addEventListener('mouseup', handleMouseUp);
+                document.addEventListener('mousemove', handleMouseMove);
+
+                let time = 0;
+                const animate = () => {
+                    animationRef.current = requestAnimationFrame(animate);
+                    time += 0.01;
+
+                    crystals.forEach((crystal, i) => {
+                        crystal.rotation.y += 0.002 + (i % 3) * 0.001;
+                    });
+
+                    const positions = particles.geometry.attributes.position.array;
+                    for (let i = 1; i < positions.length; i += 3) {
+                        positions[i] += Math.sin(time + i) * 0.01;
+                    }
+                    particles.geometry.attributes.position.needsUpdate = true;
+                    particles.rotation.y += 0.0005;
+
+                    updateMovement();
+                    renderer.render(scene, camera);
+
+                    if (!isLoaded) {
+                        setIsLoaded(true);
+                    }
+                };
+                animate();
+
+                const handleResize = () => {
+                    const width = window.innerWidth;
+                    const height = window.innerHeight;
+
+                    camera.aspect = width / height;
+                    camera.updateProjectionMatrix();
+                    renderer.setSize(width, height);
+                };
+
+                window.addEventListener('resize', handleResize);
+
+                return () => {
+                    window.removeEventListener('resize', handleResize);
+                    document.removeEventListener('keydown', handleKeyDown);
+                    document.removeEventListener('keyup', handleKeyUp);
+                    document.removeEventListener('mousedown', handleMouseDown);
+                    document.removeEventListener('mouseup', handleMouseUp);
+                    document.removeEventListener('mousemove', handleMouseMove);
+
+                    if (animationRef.current) {
+                        cancelAnimationFrame(animationRef.current);
+                    }
+
+                    if (mountRef.current && renderer.domElement) {
+                        mountRef.current.removeChild(renderer.domElement);
+                    }
+
+                    if (rendererRef.current) {
+                        rendererRef.current.dispose();
+                    }
+                };
+            }, []);
+
+            return (
+                <div className="relative w-full h-screen overflow-hidden">
+                    {!isLoaded && (
+                        <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-80 z-10">
+                            <div className="text-center">
+                                <div className="inline-block animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-cyan-400 mb-4"></div>
+                                <p className="text-cyan-300 text-xl">Loading Crystal Cave...</p>
+                            </div>
+                        </div>
+                    )}
+
+                    <div ref={mountRef} className="w-full h-full" />
+
+                    <div className="absolute top-4 left-4 bg-black bg-opacity-70 text-white p-4 rounded-xl max-w-sm border border-purple-500 shadow-2xl backdrop-blur-sm">
+                        <ul className="text-sm space-y-2">
+                            <li className="flex items-center">
+                                <span className="bg-blue-500 text-white px-2 py-1 rounded mr-2 text-xs">W / ↑</span>
+                                <span className="text-gray-300">Move Forward</span>
+                            </li>
+                            <li className="flex items-center">
+                                <span className="bg-blue-500 text-white px-2 py-1 rounded mr-2 text-xs">S / ↓</span>
+                                <span className="text-gray-300">Move Backward</span>
+                            </li>
+                            <li className="flex items-center">
+                                <span className="bg-blue-500 text-white px-2 py-1 rounded mr-2 text-xs">A / ←</span>
+                                <span className="text-gray-300">Move Left</span>
+                            </li>
+                            <li className="flex items-center">
+                                <span className="bg-blue-500 text-white px-2 py-1 rounded mr-2 text-xs">D / →</span>
+                                <span className="text-gray-300">Move Right</span>
+                            </li>
+                            <li className="flex items-center mt-2">
+                                <span className="bg-purple-500 text-white px-2 py-1 rounded mr-2 text-xs">Click + Drag</span>
+                                <span className="text-gray-300">Look Around</span>
+                            </li>
+                        </ul>
+                    </div>
+
+                    <div className="absolute bottom-4 right-4 bg-black bg-opacity-50 text-white p-3 rounded-lg text-sm">
+                        <div className="flex items-center">
+                            <div className="w-3 h-3 rounded-full bg-green-500 mr-2 animate-pulse"></div>
+                            <span>Interactive 3D</span>
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<CrystalCave />);
+    </script>
+</body>
+
+</html>
