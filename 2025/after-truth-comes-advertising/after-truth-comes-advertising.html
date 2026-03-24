@@ -1,0 +1,438 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>After Truth, Comes Advertising</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: #000;
+            overflow: hidden;
+            font-family: ui-monospace, "Cascadia Code", "Roboto Mono", "Courier New", monospace;
+            touch-action: none;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        canvas {
+            display: block;
+            background: #000;
+            cursor: pointer;
+        }
+    </style>
+</head>
+
+<body>
+    <canvas id="glitchCanvas"></canvas>
+
+    <script>
+        class GlitchArt {
+            constructor(canvasId) {
+                this.canvas = document.getElementById(canvasId);
+                this.ctx = this.canvas.getContext('2d', { alpha: false });
+                this.dpr = Math.min(window.devicePixelRatio || 1, 2);
+
+                this.config = {
+                    text: "AFTER TRUTH COMES ADVERTISING",
+                    mobileBreakpoint: 768,
+                    maxParticles: 100,
+                    maxScanlines: 15,
+                    maxNoise: 800,
+                    phaseDuration: 300,
+                };
+
+                this.state = {
+                    time: 0,
+                    lastTime: performance.now(),
+                    glitchIntensity: 0,
+                    clickBoost: 0,
+                    phase: 'calm',
+                    cssWidth: 0,
+                    cssHeight: 0,
+                    particles: [],
+                    scanlines: [],
+                    noise: [],
+                    isRunning: true,
+                };
+
+                this.init();
+                this.bindEvents();
+                this.animate();
+            }
+
+            get isMobile() {
+                return window.matchMedia(`(max-width: ${this.config.mobileBreakpoint}px) and (hover: none)`).matches;
+            }
+
+            get performanceMultiplier() {
+                return this.isMobile ? 0.6 : 1;
+            }
+
+            init() {
+                this.resize();
+                this.initElements();
+            }
+
+            resize() {
+                this.state.cssWidth = window.innerWidth;
+                this.state.cssHeight = window.innerHeight;
+
+                this.canvas.width = this.state.cssWidth * this.dpr;
+                this.canvas.height = this.state.cssHeight * this.dpr;
+                this.canvas.style.width = `${this.state.cssWidth}px`;
+                this.canvas.style.height = `${this.state.cssHeight}px`;
+
+                this.ctx.setTransform(this.dpr, 0, 0, this.dpr, 0, 0);
+
+                this.config.maxParticles = this.isMobile ? 60 : 120;
+                this.config.maxScanlines = this.isMobile ? 8 : 15;
+                this.config.maxNoise = this.isMobile ? 300 : 600;
+
+                this.initElements();
+            }
+
+            initElements() {
+                const { cssWidth, cssHeight } = this.state;
+
+                this.state.particles = Array.from({ length: this.config.maxParticles }, () => ({
+                    x: Math.random() * cssWidth,
+                    y: Math.random() * cssHeight,
+                    vx: (Math.random() - 0.5) * 2,
+                    vy: (Math.random() - 0.5) * 2,
+                    life: Math.random() * 100 + 50,
+                    maxLife: Math.random() * 100 + 50,
+                    size: Math.random() * 2 + 0.5,
+                }));
+
+                this.state.scanlines = Array.from({ length: this.config.maxScanlines }, () => ({
+                    y: Math.random() * cssHeight,
+                    speed: Math.random() * 2 + 0.5,
+                    intensity: Math.random() * 0.5,
+                    width: Math.random() * 3 + 1,
+                }));
+
+                this.state.noise = Array.from({ length: this.config.maxNoise }, () => ({
+                    x: Math.random() * cssWidth,
+                    y: Math.random() * cssHeight,
+                    size: Math.random() * 3 + 0.5,
+                    life: Math.random() * 60,
+                    maxLife: Math.random() * 60,
+                }));
+            }
+
+            getGlitchPhase() {
+                const cycle = this.state.time / this.config.phaseDuration;
+                const phaseIndex = Math.floor(cycle) % 4;
+
+                const phases = ['calm', 'building', 'peak', 'decay'];
+                const intensityMap = {
+                    calm: 0.1 + Math.sin(this.state.time * 0.02) * 0.1,
+                    building: 0.3 + (this.state.time % this.config.phaseDuration) / this.config.phaseDuration * 0.4,
+                    peak: 0.8 + Math.random() * 0.4,
+                    decay: 0.7 - (this.state.time % this.config.phaseDuration) / this.config.phaseDuration * 0.5,
+                };
+
+                return { phase: phases[phaseIndex], intensity: intensityMap[phases[phaseIndex]] };
+            }
+
+            drawVignette() {
+                const { cssWidth, cssHeight } = this.state;
+                const gradient = this.ctx.createRadialGradient(
+                    cssWidth / 2, cssHeight / 2, 0,
+                    cssWidth / 2, cssHeight / 2, Math.max(cssWidth, cssHeight) * 0.6
+                );
+                gradient.addColorStop(0, 'rgba(10, 10, 10, 0)');
+                gradient.addColorStop(0.7, 'rgba(0, 0, 0, 0.5)');
+                gradient.addColorStop(1, 'rgba(0, 0, 0, 0.9)');
+
+                this.ctx.fillStyle = gradient;
+                this.ctx.fillRect(0, 0, cssWidth, cssHeight);
+            }
+
+            drawChromaticAberration(str, x, y, fontSize) {
+                const offset = this.state.glitchIntensity * 4;
+                const distance = Math.hypot(x - this.state.cssWidth / 2, y - this.state.cssHeight / 2);
+                const distortion = offset * (1 + distance * 0.0005);
+
+                this.ctx.font = `${fontSize}px ui-monospace, "Cascadia Code", "Roboto Mono", monospace`;
+                this.ctx.textAlign = 'center';
+                this.ctx.textBaseline = 'middle';
+
+                this.ctx.fillStyle = `rgba(255, 0, 0, ${0.6 * this.state.glitchIntensity})`;
+                this.ctx.fillText(str, x - distortion, y);
+
+                this.ctx.fillStyle = `rgba(0, 255, 0, ${0.8 * this.state.glitchIntensity})`;
+                this.ctx.fillText(str, x, y);
+
+                this.ctx.fillStyle = `rgba(0, 100, 255, ${0.7 * this.state.glitchIntensity})`;
+                this.ctx.fillText(str, x + distortion, y);
+
+                this.ctx.fillStyle = `rgba(255, 255, 255, ${0.9 - this.state.glitchIntensity * 0.3})`;
+                this.ctx.fillText(str, x, y);
+            }
+
+            drawText() {
+                this.ctx.save();
+
+                const { cssWidth, cssHeight } = this.state;
+                const centerX = cssWidth / 2;
+                const centerY = cssHeight / 2;
+                const words = this.config.text.split(' ');
+
+                const baseFontSize = this.isMobile ? 20 : 36;
+                const lineSpacing = this.isMobile ? 32 : 56;
+
+                words.forEach((word, idx) => {
+                    const wordY = centerY + (idx - (words.length - 1) / 2) * lineSpacing;
+                    const wave = Math.sin(this.state.time * 0.03 + idx) * baseFontSize * 0.1;
+                    const fontSize = baseFontSize + wave;
+
+                    const xOffset = Math.sin(this.state.time * 0.08 + idx * 2) * this.state.glitchIntensity * 15;
+                    const yOffset = Math.cos(this.state.time * 0.12 + idx * 2) * this.state.glitchIntensity * 8;
+
+                    const randX = this.state.glitchIntensity > 0.7 ? (Math.random() - 0.5) * this.state.glitchIntensity * 20 : 0;
+                    const randY = this.state.glitchIntensity > 0.7 ? (Math.random() - 0.5) * this.state.glitchIntensity * 10 : 0;
+
+                    const finalX = centerX + xOffset + randX;
+                    const finalY = wordY + yOffset + randY;
+
+                    if (this.state.glitchIntensity > 0.3) {
+                        this.drawChromaticAberration(word.toUpperCase(), finalX, finalY, fontSize);
+                    } else {
+                        this.ctx.font = `${fontSize}px ui-monospace, "Cascadia Code", "Roboto Mono", monospace`;
+                        this.ctx.textAlign = 'center';
+                        this.ctx.textBaseline = 'middle';
+                        this.ctx.fillStyle = '#e0e0e0';
+                        this.ctx.fillText(word.toUpperCase(), finalX, finalY);
+                    }
+
+                    if (this.state.glitchIntensity > 0.6 && Math.random() < 0.3) {
+                        this.ctx.strokeStyle = `rgba(255, 0, 255, ${this.state.glitchIntensity * 0.4})`;
+                        this.ctx.lineWidth = 1;
+                        this.ctx.strokeText(word.toUpperCase(), finalX + 1, finalY + 1);
+                    }
+                });
+
+                this.ctx.restore();
+            }
+
+            drawParticles() {
+                const { cssWidth, cssHeight } = this.state;
+
+                this.state.particles.forEach(p => {
+                    if (p.life > 0) {
+                        p.x += p.vx * this.performanceMultiplier;
+                        p.y += p.vy * this.performanceMultiplier;
+                        p.x = ((p.x % cssWidth) + cssWidth) % cssWidth;
+                        p.y = ((p.y % cssHeight) + cssHeight) % cssHeight;
+
+                        const alpha = (p.life / p.maxLife) * 0.8;
+                        this.ctx.fillStyle = `rgba(0, 255, 200, ${alpha})`;
+                        this.ctx.fillRect(p.x, p.y, p.size, p.size);
+
+                        p.life--;
+                    } else {
+                        p.x = Math.random() * cssWidth;
+                        p.y = Math.random() * cssHeight;
+                        p.life = p.maxLife;
+                    }
+                });
+            }
+
+            drawScanlines() {
+                this.state.scanlines.forEach(line => {
+                    const alpha = line.intensity * this.state.glitchIntensity * 0.3;
+                    this.ctx.fillStyle = `rgba(0, 255, 100, ${alpha})`;
+                    this.ctx.fillRect(0, line.y, this.state.cssWidth, line.width);
+
+                    line.y += line.speed * this.performanceMultiplier;
+                    if (line.y > this.state.cssHeight) {
+                        line.y = -line.width;
+                        line.intensity = Math.random() * 0.5;
+                    }
+                });
+            }
+
+            drawNoise() {
+                const { cssWidth, cssHeight } = this.state;
+
+                this.state.noise.forEach(n => {
+                    if (n.life > 0) {
+                        this.ctx.fillStyle = `rgba(${Math.random() * 255}, ${Math.random() * 255}, ${Math.random() * 255}, 0.6)`;
+                        this.ctx.fillRect(n.x, n.y, n.size, n.size);
+                        n.life--;
+                    } else {
+                        n.x = Math.random() * cssWidth;
+                        n.y = Math.random() * cssHeight;
+                        n.life = n.maxLife;
+                    }
+                });
+            }
+
+            drawFrameBuffer() {
+                if (this.state.glitchIntensity < 0.7 || Math.random() > 0.1) return;
+
+                const { cssWidth, cssHeight } = this.state;
+                const corruptionHeight = Math.random() * 30 + 10;
+                const startY = Math.random() * (cssHeight - corruptionHeight);
+                const hue = Math.floor(Math.random() * 360);
+
+                this.ctx.fillStyle = `hsla(${hue}, 100%, 50%, ${this.state.glitchIntensity * 0.2})`;
+                this.ctx.fillRect(0, startY, cssWidth, corruptionHeight);
+            }
+
+            applyDataMoshing(imageData) {
+                if (this.state.glitchIntensity < 0.4) return;
+
+                const { data, width, height } = imageData;
+                const glitchRows = Math.floor(height * this.state.glitchIntensity * 0.01);
+
+                for (let i = 0; i < glitchRows; i++) {
+                    const sourceRow = Math.floor(Math.random() * height) * width * 4;
+                    const targetRow = Math.floor(Math.random() * height) * width * 4;
+
+                    for (let x = 0; x < width * 4; x += 4) {
+                        const sourceIdx = sourceRow + x;
+                        const targetIdx = targetRow + x;
+
+                        if (sourceIdx < data.length && targetIdx < data.length) {
+                            data[targetIdx] = data[sourceIdx];
+                            data[targetIdx + 1] = data[sourceIdx + 1];
+                            data[targetIdx + 2] = data[sourceIdx + 2];
+                        }
+                    }
+                }
+            }
+
+            applyPixelSort(imageData) {
+                if (this.state.glitchIntensity < 0.5) return;
+
+                const { data, width, height } = imageData;
+                const bandHeight = Math.floor(Math.random() * 80 + 20);
+                const startY = Math.floor(Math.random() * (height - bandHeight));
+
+                for (let y = 0; y < bandHeight; y++) {
+                    const rowStart = ((y + startY) * width + Math.floor(Math.random() * width * 0.3)) * 4;
+                    const rowEnd = rowStart + Math.floor(width * 0.4) * 4;
+
+                    const pixels = [];
+                    for (let i = rowStart; i < rowEnd && i < data.length; i += 4) {
+                        const brightness = (data[i] + data[i + 1] + data[i + 2]) / 3;
+                        pixels.push({ index: i, brightness });
+                    }
+
+                    pixels.sort((a, b) => a.brightness - b.brightness);
+
+                    pixels.forEach((pixel, idx) => {
+                        const targetIdx = rowStart + idx * 4;
+                        if (targetIdx < data.length) {
+                            data[targetIdx] = data[pixel.index];
+                            data[targetIdx + 1] = data[pixel.index + 1];
+                            data[targetIdx + 2] = data[pixel.index + 2];
+                            data[targetIdx + 3] = data[pixel.index + 3];
+                        }
+                    });
+                }
+            }
+
+            applyBitCrush(imageData) {
+                if (this.state.glitchIntensity < 0.6) return;
+
+                const { data } = imageData;
+                const reduction = Math.min(Math.floor(this.state.glitchIntensity * 4), 7);
+                const mask = 0xff << reduction;
+
+                for (let i = 0; i < data.length; i += 4) {
+                    data[i] &= mask;
+                    data[i + 1] &= mask;
+                    data[i + 2] &= mask;
+                }
+            }
+
+            bindEvents() {
+                window.addEventListener('resize', () => this.resize());
+
+                document.addEventListener('visibilitychange', () => {
+                    this.state.isRunning = !document.hidden;
+                    if (this.state.isRunning) {
+                        this.state.lastTime = performance.now();
+                        this.animate();
+                    }
+                });
+
+                this.canvas.addEventListener('click', () => {
+                    // NEW: Add to click boost instead of directly to intensity
+                    this.state.clickBoost = Math.min(this.state.clickBoost + 0.5, 0.6);
+                });
+
+                window.addEventListener('orientationchange', () => {
+                    setTimeout(() => this.resize(), 100);
+                });
+            }
+
+            animate() {
+                if (!this.state.isRunning) return;
+
+                const now = performance.now();
+                const deltaTime = (now - this.state.lastTime) / 16.67;
+                this.state.lastTime = now;
+
+                // 1. Clear canvas
+                this.ctx.fillStyle = 'rgba(0, 0, 0, 0.12)';
+                this.ctx.fillRect(0, 0, this.state.cssWidth, this.state.cssHeight);
+
+                // 2. Calculate glitch phase (target intensity)
+                const phaseInfo = this.getGlitchPhase();
+
+                // NEW: Decay click boost over time
+                this.state.clickBoost *= 0.95;
+                this.state.clickBoost = Math.max(0, this.state.clickBoost - 0.01); // Also linear decay
+
+                // NEW: Combine phase intensity with click boost
+                this.state.glitchIntensity = Math.min(phaseInfo.intensity + this.state.clickBoost, 1.2);
+
+                // 3. Draw base layers
+                this.drawVignette();
+                this.drawParticles();
+                this.drawText();
+                this.drawScanlines();
+                this.drawNoise();
+                this.drawFrameBuffer();
+
+                // 4. Capture canvas for pixel manipulation
+                let imageData = null;
+                const needsImageData = this.state.glitchIntensity > 0.4;
+                if (needsImageData) {
+                    imageData = this.ctx.getImageData(0, 0, this.canvas.width, this.canvas.height);
+                }
+
+                // 5. Apply pixel-manipulation effects
+                if (imageData) {
+                    this.applyDataMoshing(imageData);
+                    this.applyPixelSort(imageData);
+                    this.applyBitCrush(imageData);
+                    this.ctx.putImageData(imageData, 0, 0);
+                }
+
+                this.state.time += deltaTime;
+                requestAnimationFrame(() => this.animate());
+            }
+        }
+
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', () => {
+                const art = new GlitchArt('glitchCanvas');
+            });
+        } else {
+            const art = new GlitchArt('glitchCanvas');
+        }
+    </script>
+</body>
+
+</html>

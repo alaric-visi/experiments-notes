@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dodecahedron</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            width: 100vw;
+            background: black;
+            font-family: Arial, sans-serif;
+            overflow: hidden;
+        }
+
+        canvas {
+            display: block;
+            max-width: 100vw;
+            max-height: 100vh;
+            width: 100%;
+            height: 100%;
+            touch-action: none;
+        }
+
+        @media (max-width: 768px) {
+            canvas {
+                width: 100vw;
+                height: 100vh;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <canvas id="canvas"></canvas>
+
+    <script>
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+
+        function resizeCanvas() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        }
+
+        resizeCanvas();
+        window.addEventListener('resize', resizeCanvas);
+
+        function getCenter() {
+            return {
+                x: canvas.width / 2,
+                y: canvas.height * 0.45
+            };
+        }
+
+        function getSize() {
+            return Math.min(canvas.width, canvas.height) * 0.1875;
+        }
+
+        let angleX = 0;
+        let angleY = 0;
+        let angleZ = 0;
+        let time = 0;
+
+        const phi = (1 + Math.sqrt(5)) / 2;
+
+        const vertices = [
+            [1, 1, 1],
+            [1, 1, -1],
+            [1, -1, 1],
+            [1, -1, -1],
+            [-1, 1, 1],
+            [-1, 1, -1],
+            [-1, -1, 1],
+            [-1, -1, -1],
+
+            [0, 1 / phi, phi],
+            [0, 1 / phi, -phi],
+            [0, -1 / phi, phi],
+            [0, -1 / phi, -phi],
+
+            [1 / phi, phi, 0],
+            [1 / phi, -phi, 0],
+            [-1 / phi, phi, 0],
+            [-1 / phi, -phi, 0],
+
+            [phi, 0, 1 / phi],
+            [phi, 0, -1 / phi],
+            [-phi, 0, 1 / phi],
+            [-phi, 0, -1 / phi]
+        ];
+
+        const faces = [
+            [0, 16, 2, 10, 8],
+            [0, 8, 4, 14, 12],
+            [16, 17, 1, 12, 0],
+            [1, 9, 11, 3, 17],
+            [1, 12, 14, 5, 9],
+            [2, 13, 15, 6, 10],
+            [13, 3, 17, 16, 2],
+            [3, 11, 7, 15, 13],
+            [4, 8, 10, 6, 18],
+            [14, 5, 19, 18, 4],
+            [5, 14, 4, 18, 19],
+            [6, 15, 7, 19, 18]
+        ];
+
+        const correctFaces = [
+            [0, 16, 2, 10, 8],
+            [0, 8, 4, 14, 12],
+            [0, 12, 1, 17, 16],
+            [1, 9, 11, 3, 17],
+            [1, 12, 14, 5, 9],
+            [2, 13, 15, 6, 10],
+            [2, 16, 17, 3, 13],
+            [3, 11, 7, 15, 13],
+            [4, 8, 10, 6, 18],
+            [4, 18, 19, 5, 14],
+            [6, 15, 7, 19, 18],
+            [7, 11, 9, 5, 19]
+        ];
+
+        function hslToRgb(h, s, l) {
+            const c = (1 - Math.abs(2 * l - 1)) * s;
+            const x = c * (1 - Math.abs((h / 60) % 2 - 1));
+            const m = l - c / 2;
+            let r, g, b;
+
+            if (h < 60) { r = c; g = x; b = 0; }
+            else if (h < 120) { r = x; g = c; b = 0; }
+            else if (h < 180) { r = 0; g = c; b = x; }
+            else if (h < 240) { r = 0; g = x; b = c; }
+            else if (h < 300) { r = x; g = 0; b = c; }
+            else { r = c; g = 0; b = x; }
+
+            return [
+                Math.round((r + m) * 255),
+                Math.round((g + m) * 255),
+                Math.round((b + m) * 255)
+            ];
+        }
+
+        function getColorForFace(faceIndex, brightness) {
+            const hue = (time * 50 + faceIndex * 30) % 360;
+            const [r, g, b] = hslToRgb(hue, 0.8, 0.6);
+            return `rgb(${Math.floor(r * brightness)}, ${Math.floor(g * brightness)}, ${Math.floor(b * brightness)})`;
+        }
+
+        function rotateX(point, angle) {
+            const cos = Math.cos(angle);
+            const sin = Math.sin(angle);
+            return [
+                point[0],
+                point[1] * cos - point[2] * sin,
+                point[1] * sin + point[2] * cos
+            ];
+        }
+
+        function rotateY(point, angle) {
+            const cos = Math.cos(angle);
+            const sin = Math.sin(angle);
+            return [
+                point[0] * cos + point[2] * sin,
+                point[1],
+                -point[0] * sin + point[2] * cos
+            ];
+        }
+
+        function rotateZ(point, angle) {
+            const cos = Math.cos(angle);
+            const sin = Math.sin(angle);
+            return [
+                point[0] * cos - point[1] * sin,
+                point[0] * sin + point[1] * cos,
+                point[2]
+            ];
+        }
+
+        function project(point) {
+            const center = getCenter();
+            const size = getSize();
+            const perspective = 600;
+            const scale = perspective / (perspective + point[2] * size);
+            return [
+                center.x + point[0] * size * scale,
+                center.y + point[1] * size * scale,
+                point[2]
+            ];
+        }
+
+        function drawFace(projectedVertices, faceIndices, faceIndex) {
+            const points = faceIndices.map(i => projectedVertices[i]);
+
+            const avgZ = points.reduce((sum, p) => sum + p[2], 0) / points.length;
+
+            ctx.beginPath();
+            ctx.moveTo(points[0][0], points[0][1]);
+            for (let i = 1; i < points.length; i++) {
+                ctx.lineTo(points[i][0], points[i][1]);
+            }
+            ctx.closePath();
+
+            const brightness = 0.6 + (avgZ + 2) / 7;
+            ctx.fillStyle = getColorForFace(faceIndex, brightness);
+            ctx.fill();
+
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.7)';
+            ctx.lineWidth = 2;
+            ctx.stroke();
+
+            return avgZ;
+        }
+
+        function animate() {
+            ctx.fillStyle = 'black';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            angleX += 0.007;
+            angleY += 0.011;
+            angleZ += 0.005;
+            time += 0.02;
+
+            const rotatedVertices = vertices.map(v => {
+                let point = rotateX(v, angleX);
+                point = rotateY(point, angleY);
+                point = rotateZ(point, angleZ);
+                return point;
+            });
+
+            const projectedVertices = rotatedVertices.map(project);
+
+            const facesWithDepth = correctFaces.map((face, idx) => {
+                const avgZ = face.reduce((sum, i) => sum + rotatedVertices[i][2], 0) / face.length;
+                return { face, avgZ, idx };
+            });
+
+            facesWithDepth.sort((a, b) => a.avgZ - b.avgZ);
+
+            facesWithDepth.forEach(({ face, idx }) => {
+                drawFace(projectedVertices, face, idx);
+            });
+
+            requestAnimationFrame(animate);
+        }
+
+        animate();
+    </script>
+</body>
+
+</html>

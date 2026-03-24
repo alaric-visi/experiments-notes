@@ -39,10 +39,13 @@ A variation of the hypersphere visualisation that places the object on top of a 
 ### 5. Klein Bottle (`klein-bottle.html`)
 Generates a 3-dimensional non-orientable surface (the mathematical Klein Bottle) and runs it through the same 4D rotation pipelines as the other experiments. The rendering logic maps parametric `u` and `v` coordinates to a continuous self-intersecting shape, drawing connection intervals between adjacent vertices in the point cloud.
 
-### 6. Quartic Plane Curve (`quartic-plane-curve.html`)
+### 6. Quartic Plane Curve 1 (`quartic-plane-curve-1.html`)
 A 2D mathematical curve generator that can transition between five distinct curve architectures, including bounding spirals, butterfly equations, and clover curves. It employs an interactive control panel permitting the user to switch the active equation dynamically on the underlying canvas API.
 
-### 7. Lemniscate of Bernoulli (`lemniscate-of-bernoulli.html`)
+### 7. Quartic Plane Curve 2 (`quartic-plane-curve-2.html`)
+An iteration on the curve generator that incorporates an interactive background grid of nonagons. The paths of the mathematical curves dynamically trigger expanding "burst" animations on the grid nodes as they intersect them, tracked via a collision detection algorithm.
+
+### 8. Lemniscate of Bernoulli (`lemniscate-of-bernoulli.html`)
 Specifically visualises the lemniscate curve (resembling the infinity symbol). The code generates three independent layers of the mathematical curve, applying phase offsets to their individual geometric scale and matrix rotation to create a continuous, intertwined animation effect.
 
 ```javascript

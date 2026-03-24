@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sine Wave Button</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: black;
+            font-family: "Arial", sans-serif;
+        }
+
+        .button-container {
+            position: relative;
+            width: 600px;
+            height: 150px;
+        }
+
+        canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+        }
+
+        button {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            padding: 10px 24px;
+            font-size: 14px;
+            font-weight: 600;
+            color: #e9e9f0;
+            background: #3b1d22;
+            border: 2px solid #ff6936;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            z-index: 10;
+            letter-spacing: 0.5px;
+        }
+
+        button:hover {
+            background: #260e0e;
+            border-color: #ff6936;
+            transform: translate(-50%, -50%) scale(1.05);
+            box-shadow: 0 0 20px rgba(255, 105, 54, 0.4);
+        }
+
+        button:active {
+            transform: translate(-50%, -50%) scale(0.95);
+        }
+    </style>
+</head>
+
+<body>
+    <div class="button-container">
+        <canvas id="waveCanvas"></canvas>
+        <button id="waveButton">Execute</button>
+    </div>
+
+    <script>
+        const canvas = document.getElementById("waveCanvas");
+        const ctx = canvas.getContext("2d");
+        const button = document.getElementById("waveButton");
+
+        canvas.width = 600;
+        canvas.height = 150;
+
+        let time = 0;
+        let amplitude = 20;
+        let frequency = 0.02;
+        let speed = 0.05;
+        let waveCount = 3;
+        let isHovering = false;
+        let clickEffect = 0;
+
+        button.addEventListener("mouseenter", () => {
+            isHovering = true;
+        });
+
+        button.addEventListener("mouseleave", () => {
+            isHovering = false;
+        });
+
+        button.addEventListener("click", () => {
+            clickEffect = 1;
+        });
+
+        function drawWave() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            if (isHovering) {
+                amplitude += (40 - amplitude) * 0.1;
+                frequency += (0.03 - frequency) * 0.1;
+                speed += (0.1 - speed) * 0.1;
+            } else {
+                amplitude += (20 - amplitude) * 0.1;
+                frequency += (0.02 - frequency) * 0.1;
+                speed += (0.05 - speed) * 0.1;
+            }
+
+            if (clickEffect > 0) {
+                clickEffect -= 0.02;
+            }
+
+            for (let w = 0; w < waveCount; w++) {
+                ctx.beginPath();
+
+                const colors = ["#FF6936", "#E9E9F0", "#3B1D22"];
+                const color = colors[w % colors.length];
+                const alpha = 0.7 - w * 0.2;
+                ctx.strokeStyle =
+                    color === "#3B1D22"
+                        ? `rgba(59, 29, 34, ${alpha})`
+                        : color === "#E9E9F0"
+                            ? `rgba(233, 233, 240, ${alpha})`
+                            : `rgba(255, 105, 54, ${alpha})`;
+                ctx.lineWidth = 2 + clickEffect * 4;
+
+                for (let x = 0; x < canvas.width; x++) {
+                    const baseY = canvas.height / 2;
+                    const wave1 = Math.sin(x * frequency + time + w * 1) * amplitude;
+                    const wave2 =
+                        Math.sin(x * frequency * 2 + time * 1.5 + w * 0.5) * (amplitude * 0.5);
+                    const clickWave = Math.sin(x * 0.05 + time * 3) * (clickEffect * 30);
+
+                    const y = baseY + wave1 + wave2 + clickWave;
+
+                    if (x === 0) {
+                        ctx.moveTo(x, y);
+                    } else {
+                        ctx.lineTo(x, y);
+                    }
+                }
+
+                ctx.stroke();
+            }
+
+            time += speed;
+            requestAnimationFrame(drawWave);
+        }
+
+        drawWave();
+    </script>
+</body>
+
+</html>
