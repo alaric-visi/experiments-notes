@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Constants</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: #05050f;
+            overflow: hidden;
+            height: 100vh;
+            width: 100vw;
+        }
+
+        canvas {
+            display: block;
+            width: 100%;
+            height: 100%;
+        }
+    </style>
+</head>
+
+<body>
+    <canvas id="phiCanvas"></canvas>
+
+    <script>
+        const PHI = (1 + Math.sqrt(5)) / 2;
+        let animationId = null;
+        let time = 0;
+
+        const animationSpeed = 1;
+        const maxDepth = 1;
+        const glowIntensity = 100;
+
+        const canvas = document.getElementById('phiCanvas');
+        const ctx = canvas.getContext('2d');
+
+        function resizeCanvas() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        }
+
+        resizeCanvas();
+        window.addEventListener('resize', resizeCanvas);
+
+        function drawVortex(x, y, radius, rotation, color, isInward, depth = 0) {
+            if (depth > maxDepth) return;
+
+            ctx.save();
+            ctx.translate(x, y);
+            ctx.rotate(rotation);
+
+            const gradient = ctx.createRadialGradient(0, 0, 0, 0, 0, radius);
+            if (isInward) {
+                gradient.addColorStop(0, `rgba(100, 150, 255, ${0.9 - depth * 0.15})`);
+                gradient.addColorStop(0.5, `rgba(50, 100, 200, ${0.6 - depth * 0.1})`);
+                gradient.addColorStop(1, `rgba(20, 50, 150, ${0.2 - depth * 0.05})`);
+            } else {
+                gradient.addColorStop(0, `rgba(255, 150, 50, ${0.9 - depth * 0.15})`);
+                gradient.addColorStop(0.5, `rgba(255, 100, 30, ${0.6 - depth * 0.1})`);
+                gradient.addColorStop(1, `rgba(200, 50, 10, ${0.2 - depth * 0.05})`);
+            }
+
+            const numArms = 8;
+            for (let i = 0; i < numArms; i++) {
+                const angle = (i * Math.PI * 2) / numArms;
+                ctx.beginPath();
+
+                for (let r = 0; r < radius; r += 2) {
+                    const spiralAngle = angle + (isInward ? -r : r) / (radius / (PHI * 3));
+                    const dist = r * (isInward ? (1 - r / radius * 0.3) : 1);
+                    const xPos = Math.cos(spiralAngle) * dist;
+                    const yPos = Math.sin(spiralAngle) * dist;
+
+                    if (r === 0) {
+                        ctx.moveTo(xPos, yPos);
+                    } else {
+                        ctx.lineTo(xPos, yPos);
+                    }
+                }
+
+                ctx.strokeStyle = gradient;
+                ctx.lineWidth = 3 - depth * 0.5;
+                ctx.stroke();
+            }
+
+            if (depth < maxDepth) {
+                const nestedRadius = radius / PHI;
+                const nestedDistance = radius / (PHI * 1.5);
+
+                for (let i = 0; i < 5; i++) {
+                    const nestedAngle = (i * Math.PI * 2) / 5;
+                    const nx = Math.cos(nestedAngle) * nestedDistance;
+                    const ny = Math.sin(nestedAngle) * nestedDistance;
+
+                    drawVortex(nx, ny, nestedRadius, rotation + nestedAngle, color, !isInward, depth + 1);
+                }
+            }
+
+            ctx.restore();
+        }
+
+        function drawPhiSpiral(centerX, centerY, maxRadius, color, clockwise = true) {
+            ctx.beginPath();
+            ctx.strokeStyle = color;
+            ctx.lineWidth = 2;
+
+            let angle = 0;
+            const angleStep = 0.1;
+            const maxAngle = Math.PI * 6;
+
+            while (angle < maxAngle) {
+                const radius = maxRadius * Math.pow(PHI, angle / (Math.PI * 2) - 3);
+                const x = centerX + Math.cos(angle * (clockwise ? 1 : -1)) * radius;
+                const y = centerY + Math.sin(angle * (clockwise ? 1 : -1)) * radius;
+
+                if (angle === 0) {
+                    ctx.moveTo(x, y);
+                } else {
+                    ctx.lineTo(x, y);
+                }
+                angle += angleStep;
+            }
+
+            ctx.stroke();
+        }
+
+        function animate() {
+            const centerX = canvas.width / 2;
+            const centerY = canvas.height / 2;
+
+            ctx.fillStyle = 'rgba(5, 5, 15, 0.15)';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            const spiralRadius = Math.min(canvas.width, canvas.height) * 0.35;
+            drawPhiSpiral(centerX, centerY, spiralRadius, 'rgba(100, 150, 255, 0.2)', true);
+            drawPhiSpiral(centerX, centerY, spiralRadius, 'rgba(255, 150, 50, 0.2)', false);
+
+            const glowSize = 50 * (glowIntensity / 100);
+            const glowGradient = ctx.createRadialGradient(centerX, centerY, 0, centerX, centerY, glowSize);
+            glowGradient.addColorStop(0, 'rgba(255, 255, 255, 0.9)');
+            glowGradient.addColorStop(0.5, 'rgba(200, 200, 255, 0.3)');
+            glowGradient.addColorStop(1, 'rgba(100, 100, 200, 0)');
+            ctx.fillStyle = glowGradient;
+            ctx.beginPath();
+            ctx.arc(centerX, centerY, glowSize, 0, Math.PI * 2);
+            ctx.fill();
+
+            const numPairs = 6;
+            const distance = Math.min(canvas.width, canvas.height) * 0.25;
+
+            for (let i = 0; i < numPairs; i++) {
+                const pairAngle = (i * Math.PI * 2) / numPairs + time * 0.2;
+
+                const blueX = centerX + Math.cos(pairAngle) * distance;
+                const blueY = centerY + Math.sin(pairAngle) * distance;
+                const blueRotation = time * (1 / PHI) - pairAngle;
+                drawVortex(blueX, blueY, 80, blueRotation, 'blue', true, 0);
+
+                const orangeAngle = pairAngle + Math.PI;
+                const orangeX = centerX + Math.cos(orangeAngle) * distance;
+                const orangeY = centerY + Math.sin(orangeAngle) * distance;
+                const orangeRotation = time * PHI + orangeAngle;
+                drawVortex(orangeX, orangeY, 80, orangeRotation, 'orange', false, 0);
+            }
+
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.1)';
+            ctx.lineWidth = 1;
+            for (let i = 0; i < 12; i++) {
+                const angle = (i * Math.PI * 2) / 12;
+                const radius = 150 + Math.sin(time + i) * 30;
+                ctx.beginPath();
+                ctx.arc(centerX, centerY, radius * Math.pow(PHI, i % 3 - 1), 0, Math.PI * 2);
+                ctx.stroke();
+            }
+
+            time += 0.02 * animationSpeed;
+
+            animationId = requestAnimationFrame(animate);
+        }
+
+        function startAnimation() {
+            if (animationId) {
+                cancelAnimationFrame(animationId);
+            }
+
+            ctx.fillStyle = 'rgb(5, 5, 15)';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            animate();
+        }
+
+        startAnimation();
+
+        document.addEventListener('visibilitychange', function () {
+            if (document.hidden) {
+                if (animationId) {
+                    cancelAnimationFrame(animationId);
+                    animationId = null;
+                }
+            } else {
+                startAnimation();
+            }
+        });
+    </script>
+</body>
+
+</html>

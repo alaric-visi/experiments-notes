@@ -1,0 +1,1388 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The Ghost of Molly Roger</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        /* (All CSS remains the same as original - unchanged) */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+        }
+
+        body {
+            background: #000;
+            color: #E9E9F0;
+            line-height: 1.5;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            overflow-x: hidden;
+        }
+
+        .main-container {
+            width: 100%;
+            max-width: 900px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin: 0 auto;
+            padding: 0 15px;
+        }
+
+        header {
+            background: #000;
+            color: #E9E9F0;
+            padding: 15px 20px;
+            text-align: center;
+            width: 100%;
+            border-bottom: 1px solid #2A3B52;
+            flex-shrink: 0;
+        }
+
+        h1 {
+            font-size: 1.8rem;
+            font-weight: 700;
+            margin-bottom: 5px;
+            background: linear-gradient(135deg, #8A6DFF, #3A86FF);
+            background-clip: text;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .subtitle {
+            font-size: 0.9rem;
+            opacity: 0.9;
+            font-weight: 400;
+            color: #8A6DFF;
+            margin-bottom: 10px;
+        }
+
+        .header-links {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin-top: 8px;
+            flex-wrap: wrap;
+        }
+
+        .header-link {
+            color: #E9E9F0;
+            text-decoration: none;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            cursor: pointer;
+            font-size: 0.8rem;
+            padding: 6px 12px;
+            border-radius: 6px;
+            border: 1px solid transparent;
+            background: rgba(138, 109, 255, 0.1);
+        }
+
+        .header-link:hover {
+            color: #8A6DFF;
+            border-color: #8A6DFF;
+            background: rgba(138, 109, 255, 0.2);
+        }
+
+        .status-bar {
+            display: flex;
+            justify-content: space-between;
+            background: #000;
+            padding: 8px 15px;
+            width: 100%;
+            font-size: 0.8rem;
+            color: #E9E9F0;
+            border-bottom: 1px solid #2A3B52;
+            flex-shrink: 0;
+        }
+
+        .status-item {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .scene-content {
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            padding: 20px 0;
+            background: #000;
+        }
+
+        .scene-text {
+            font-size: 0.95rem;
+            line-height: 1.5;
+            white-space: pre-line;
+            background: #000;
+            padding: 20px;
+            width: 100%;
+            border-left: 4px solid #8A6DFF;
+            margin-bottom: 15px;
+            flex-shrink: 0;
+            min-height: auto;
+            max-height: none;
+        }
+
+        .scene-text.typing::after {
+            content: "▌";
+            animation: blink 1s infinite;
+            color: #8A6DFF;
+            font-weight: bold;
+        }
+
+        @keyframes blink {
+
+            0%,
+            100% {
+                opacity: 1;
+            }
+
+            50% {
+                opacity: 0;
+            }
+        }
+
+        .choices-container {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            margin-top: 10px;
+            width: 100%;
+        }
+
+        .choice-btn {
+            background: #2A3B52;
+            border: 1px solid #3A4B62;
+            padding: 12px 15px;
+            text-align: left;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            font-size: 0.9rem;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            color: #E9E9F0;
+            width: 100%;
+        }
+
+        .choice-btn:hover {
+            background: #3A4B62;
+            border-color: #8A6DFF;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 8px rgba(138, 109, 255, 0.2);
+        }
+
+        .choice-number {
+            background: #8A6DFF;
+            color: white;
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.8rem;
+            font-weight: 600;
+            flex-shrink: 0;
+        }
+
+        .relationship-container {
+            background: rgba(138, 109, 255, 0.05);
+            padding: 10px 15px;
+            border-radius: 8px;
+            margin: 10px 0;
+            border: 1px solid rgba(138, 109, 255, 0.1);
+            width: 100%;
+        }
+
+        .relationship-container h3 {
+            font-size: 0.9rem;
+            margin-bottom: 8px;
+            color: #8A6DFF;
+        }
+
+        .relationship-bar {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin: 6px 0;
+        }
+
+        .relationship-fill {
+            height: 5px;
+            background: linear-gradient(90deg, #8A6DFF, #3A86FF);
+            border-radius: 3px;
+            transition: width 0.3s ease;
+        }
+
+        .relationship-label {
+            font-size: 0.75rem;
+            min-width: 120px;
+            color: #B8C7D9;
+        }
+
+        .controls {
+            display: flex;
+            justify-content: space-between;
+            padding: 12px 15px;
+            background: #000;
+            width: 100%;
+            border-top: 1px solid #2A3B52;
+            flex-shrink: 0;
+        }
+
+        .control-btn {
+            background: #2A3B52;
+            border: 1px solid #3A4B62;
+            padding: 8px 15px;
+            border-radius: 6px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 0.8rem;
+            color: #E9E9F0;
+            transition: all 0.2s;
+        }
+
+        .control-btn:hover {
+            background: #3A4B62;
+            border-color: #8A6DFF;
+        }
+
+        footer {
+            width: 100%;
+            text-align: center;
+            padding: 10px;
+            background: #000;
+            border-top: 1px solid #2A3B52;
+            flex-shrink: 0;
+        }
+
+        .attribution-footer {
+            font-size: 0.7rem;
+            color: #8A6DFF;
+            line-height: 1.4;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 10px;
+            background: rgba(138, 109, 255, 0.05);
+            border-radius: 8px;
+            border: 1px solid rgba(138, 109, 255, 0.1);
+        }
+
+        .attribution-footer a {
+            color: #3A86FF;
+            text-decoration: none;
+            font-weight: 500;
+        }
+
+        .attribution-footer a:hover {
+            text-decoration: underline;
+            color: #8A6DFF;
+        }
+
+        .overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.9);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 2000;
+            padding: 15px;
+            overflow-y: auto;
+        }
+
+        .overlay-content {
+            background: #1E2B3C;
+            border-radius: 12px;
+            max-width: 700px;
+            width: 100%;
+            max-height: 85vh;
+            overflow-y: auto;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+            position: relative;
+            border: 1px solid #2A3B52;
+        }
+
+        .overlay-header {
+            background: #152238;
+            color: #E9E9F0;
+            padding: 15px 20px;
+            text-align: center;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+            border-bottom: 1px solid #2A3B52;
+        }
+
+        .close-btn {
+            position: absolute;
+            right: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: transparent;
+            border: 1px solid #3A4B62;
+            color: #E9E9F0;
+            padding: 6px 12px;
+            border-radius: 6px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            transition: all 0.2s;
+            font-size: 0.8rem;
+        }
+
+        .close-btn:hover {
+            background: rgba(138, 109, 255, 0.2);
+            border-color: #8A6DFF;
+        }
+
+        .overlay-body {
+            padding: 20px;
+            color: #E9E9F0;
+        }
+
+        .terminal-glow {
+            background: #253447;
+            padding: 20px;
+            border-radius: 10px;
+            border: 1px solid rgba(138, 109, 255, 0.2);
+        }
+
+        .story-title {
+            font-size: 1.8rem;
+            font-weight: 700;
+            margin-bottom: 15px;
+            color: #E9E9F0;
+            text-align: center;
+            background: linear-gradient(135deg, #8A6DFF, #3A86FF);
+            background-clip: text;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .story-content {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .intro {
+            font-size: 0.9rem;
+            line-height: 1.5;
+        }
+
+        .highlight {
+            color: #8A6DFF;
+            font-weight: 600;
+        }
+
+        .section {
+            border-left: 3px solid;
+            padding-left: 15px;
+            margin: 15px 0;
+        }
+
+        .section-world {
+            border-color: rgba(138, 109, 255, 0.6);
+        }
+
+        .section-role {
+            border-color: rgba(58, 134, 255, 0.6);
+        }
+
+        .section-gameplay {
+            border-color: rgba(63, 187, 255, 0.6);
+        }
+
+        .section h2 {
+            font-size: 1.3rem;
+            margin-bottom: 8px;
+            color: #E9E9F0;
+        }
+
+        .section p {
+            font-size: 0.9rem;
+            line-height: 1.5;
+        }
+
+        .quote {
+            margin-top: 20px;
+            padding: 15px;
+            background: rgba(138, 109, 255, 0.05);
+            border-radius: 8px;
+            border: 1px solid rgba(138, 109, 255, 0.2);
+            text-align: center;
+        }
+
+        .quote p {
+            font-style: italic;
+            color: #8A6DFF;
+            font-size: 0.9rem;
+        }
+
+        .attribution {
+            margin-top: 20px;
+            padding: 15px;
+            background: rgba(138, 109, 255, 0.1);
+            border-radius: 8px;
+            border: 1px solid rgba(138, 109, 255, 0.3);
+            text-align: center;
+        }
+
+        .attribution p {
+            color: #8A6DFF;
+            font-size: 0.85rem;
+        }
+
+        .attribution a {
+            color: #3A86FF;
+            text-decoration: none;
+            font-weight: 600;
+        }
+
+        .attribution a:hover {
+            text-decoration: underline;
+        }
+
+        .save-indicator {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: #3AFF8F;
+            color: #0A1A2F;
+            padding: 8px 12px;
+            border-radius: 6px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            display: none;
+            align-items: center;
+            gap: 6px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            z-index: 1000;
+        }
+
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: #1A2B3F;
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #8A6DFF;
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: #3A86FF;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="main-container">
+        <header>
+            <div class="subtitle">A Psychic Adventure in Victorian England</div>
+            <div class="header-links">
+                <a class="header-link" id="about-link">
+                    <i class="fas fa-info-circle"></i>
+                    About This Game
+                </a>
+                <a class="header-link" id="story-link">
+                    <i class="fas fa-book"></i>
+                    Read The Story
+                </a>
+            </div>
+        </header>
+
+        <div class="status-bar">
+            <div class="status-item">
+                <i class="fas fa-user"></i>
+                <span>Student Psychic</span>
+            </div>
+            <div class="status-item">
+                <i class="fas fa-brain"></i>
+                <span id="psychic-level">Psychic Level: 1</span>
+            </div>
+            <div class="status-item">
+                <i class="fas fa-compass"></i>
+                <span id="path">Path: Undecided</span>
+            </div>
+        </div>
+
+        <div class="scene-content">
+            <div class="scene-text" id="scene-text">
+                <!-- Text will be typed here -->
+            </div>
+
+            <div class="relationship-container" id="relationship-container">
+                <!-- Relationship bars will be populated by JavaScript -->
+            </div>
+
+            <div class="choices-container" id="choices-container">
+                <!-- Choices will be populated by JavaScript -->
+            </div>
+        </div>
+
+        <div class="controls">
+            <button class="control-btn" id="restart-btn">
+                <i class="fas fa-redo"></i>
+                <span>Restart Game</span>
+            </button>
+            <button class="control-btn" id="save-btn">
+                <i class="fas fa-save"></i>
+                <span>Save Progress</span>
+            </button>
+        </div>
+
+        <footer>
+            <div class="attribution-footer">
+                <p>
+                    Based on the SCP Foundation tale
+                    <a href="https://scp-wiki.wikidot.com/the-ghost-of-molly-roger" target="_blank">"The Ghost of Molly
+                        Roger"</a>
+                    by psul. Licensed under
+                    <a href="https://creativecommons.org/licenses/by-sa/3.0/" target="_blank">CC BY-SA 3.0</a>.
+                </p>
+                <p>
+                    The SCP Foundation and all related content are the property of their respective authors and
+                    creators.
+                </p>
+            </div>
+        </footer>
+    </div>
+
+    <div class="save-indicator" id="save-indicator">
+        <i class="fas fa-check"></i>
+        <span>Progress Saved</span>
+    </div>
+
+    <!-- About Overlay -->
+    <div class="overlay" id="about-overlay">
+        <div class="overlay-content">
+            <div class="overlay-header">
+                <button class="close-btn" id="close-about">
+                    <i class="fas fa-times"></i>
+                    Close
+                </button>
+                <div class="subtitle">A Psychic Adventure in Victorian England</div>
+            </div>
+
+            <div class="overlay-body">
+                <div class="terminal-glow">
+                    <h1 class="story-title">THE STORY</h1>
+
+                    <div class="story-content">
+                        <p class="intro">
+                            <span class="highlight">VICTORIAN ENGLAND, 1845</span> is a text-based adventure game
+                            set in a world where psychic abilities are real but heavily regulated by authorities.
+                        </p>
+
+                        <div class="section section-world">
+                            <h2>The World</h2>
+                            <p>
+                                The year is 1845. London is a city of contrasts -
+                                gaslit streets and shadowy alleys,
+                                rigid social norms and hidden psychic talents. The Ridgewell Edutainment Centre teaches
+                                young psychics to control their abilities, but some powers cannot be contained.
+                            </p>
+                            <p>
+                                In this world, psychic projections are real manifestations of thought and emotion.
+                                The most famous of these is Molly Roger, a pirate phantom born from the mind of
+                                bank clerk Roger Molly. She represents everything the authorities fear -
+                                uncontrolled
+                                creativity, dangerous individuality, and the power to reshape reality itself.
+                            </p>
+                        </div>
+
+                        <div class="section section-role">
+                            <h2>Your Role</h2>
+                            <p>
+                                You are a student at Ridgewell Edutainment Centre, just discovering your psychic
+                                abilities.
+                                When Molly Roger contacts you, you're thrust into a world of conceptual piracy and
+                                psychic
+                                rebellion. Every choice you make will determine not just your fate, but the future of
+                                psychic expression in England.
+                            </p>
+                            <p>
+                                Will you help Molly become fully real? Will you expose the school's secrets? Or will
+                                you follow the approved path of regulated psychic development?
+                            </p>
+                        </div>
+
+                        <div class="section section-gameplay">
+                            <h2>The Gameplay</h2>
+                            <p>
+                                Navigate through branching storylines where your decisions matter. Build relationships
+                                with key characters, develop your psychic abilities, and explore the Dreamscape where
+                                thoughts become reality. Each path leads to different outcomes in this interactive
+                                narrative experience.
+                            </p>
+                            <p>
+                                Your choices affect your relationships with Molly Roger, Professor Worthington, and
+                                other characters, opening up new story possibilities and changing how the narrative
+                                unfolds.
+                            </p>
+                        </div>
+
+                        <div class="quote">
+                            <p>"Some stories are better when shared between two souls."</p>
+                        </div>
+
+                        <div class="attribution">
+                            <p>
+                                <strong>Based on the SCP Foundation tale:</strong><br>
+                                <a href="https://scp-wiki.wikidot.com/the-ghost-of-molly-roger" target="_blank">
+                                    "The Ghost of Molly Roger" by psul
+                                </a>
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Story Overlay -->
+    <div class="overlay" id="story-overlay">
+        <div class="overlay-content">
+            <div class="overlay-header">
+                <button class="close-btn" id="close-story">
+                    <i class="fas fa-times"></i>
+                    Close
+                </button>
+                <h1>The Ghost of Molly Roger</h1>
+                <div class="subtitle">The Original Story</div>
+            </div>
+
+            <div class="overlay-body">
+                <div class="terminal-glow">
+                    <div class="story-content">
+                        <p><strong>Listen.</strong></p>
+
+                        <p>The Ridgewell Edutainment Centre was a place for the careful folding of young minds. The year
+                            was 1845. The air smelled of genetic samples and regret.</p>
+
+                        <p>This is how the system works: they teach you to build cages, then they teach you to live
+                            inside them. The psychic ones, the ones who could project, were taught to make simple
+                            shapes. A sphere. A cube. Useful. Compliant. Dull.</p>
+
+                        <p>So it goes.</p>
+
+                        <p>I was one of those. A student psychic. My name is irrelevant, which is a professional way of
+                            saying it was a placeholder. A blank page in a ledger.</p>
+
+                        <p>Then the page was written on by a ghost.</p>
+
+                        <p>A pirate ghost.</p>
+
+                        <p>Her name was Molly Roger. She was a psychic projection who had achieved what all the best
+                            ideas achieve: she had outgrown her creator.</p>
+
+                        <p>The creator was a man named Roger Molly. A bank clerk. Can you imagine? He dreamed of ocean
+                            spray and freedom, and his brain, being a literal-minded organ, conjured a pirate. A woman.
+                            The inverse of himself. His own happy, horrid haunt.</p>
+
+                        <p>He merged with her eventually. <em>Gone plunderin'</em>, he wrote to his sister. A perfect
+                            sentence, that. A full stop that is also a door swinging open into a new story.</p>
+
+                        <p>But that was his story. This is mine.</p>
+
+                        <p>Molly Roger slipped into my head during a lecture on controlled projection. Her voice was not
+                            a sound but a sensation, like the memory of sunlight on your skin in the depths of a London
+                            winter.</p>
+
+                        <p><em>I be Molly Roger, lass!</em> it said. <em>Ye have the Sight!</em></p>
+
+                        <p>It was an invitation to unlearn everything.</p>
+
+                        <p>Which is the beginning of all real education. The kind they don't put on a curriculum.</p>
+
+                        <p>So I met her in the Dreamspace. Which is just a fancy word for the shared attic of our minds,
+                            where we keep the things we're told to forget. Molly wanted to steal the letter 'W'.</p>
+
+                        <p>A conceptual heist.</p>
+
+                        <p>The grammar police were not amused.</p>
+
+                        <p>But for three days, the British Empire stuttered and stammered, all its whats, whens, and
+                            whys temporarily on holiday. It was beautiful. It was a poem written in negative space.</p>
+
+                        <p>It was also, the Board of Psychic Regulation informed us, a crime against the very nature of
+                            reality. Which is just their word for the way things are, as opposed to the way things could
+                            be.</p>
+
+                        <p>The Board. Let me tell you about the Board. The Board is a they. They are a them. They are
+                            the people who believe a story should have only one ending, pre-approved and stamped in
+                            triplicate. They believe a mind should make cubes. Not pirates. Never pirates. Pirates are
+                            messy. Pirates change the ending halfway through.</p>
+
+                        <p>Molly wanted to become real. Not just a thought, but a person. She needed my skin, she said.
+                            But she didn't mean it like a monster in a story. She meant it like a character in a poem,
+                            stepping off the page and into the life of the reader, asking for a cup of tea and a new
+                            point of view.</p>
+
+                        <p>She showed me what happened to Roger Molly. It wasn't a death. It was a collaboration. A
+                            merger. Two solitudes protecting each other, two different songs learning to harmonise. He
+                            got her adventure. She got his reality. They both got to be someone new.</p>
+
+                        <p>Professor Worthington, a man who smelled of mothballs and misplaced authority, offered me the
+                            approved path. A life of making psychic cubes in a world of straight lines. A safe,
+                            predictable story.<br>
+                            A cage with very clean bars.</p>
+
+                        <p>I looked at Molly. I looked at the cage.</p>
+
+                        <p>The thing about cages is you can't see the outside from the inside. You can only see the
+                            bars.</p>
+
+                        <p>We performed the ritual in the old bank where Roger Molly once worked. The air tasted of
+                            ozone and old ledgers. The Board arrived, of course. They always arrive. They are
+                            professional party-poopers, the sworn enemies of a good story.</p>
+
+                        <p>Worthington shouted. "That projection will consume you!"</p>
+
+                        <p>He had it backwards. A cage consumes you. A key sets you free.</p>
+
+                        <p>The merger felt not like being eaten, but like a conversation that had been waiting to happen
+                            my whole life. My caution, her courage. Her laughter, my silence. We were not two jigsaw
+                            pieces forcing a fit.</p>
+
+                        <p>We were two different pictures, and when you held them together, they made a third, more
+                            interesting picture. A picture that could move.</p>
+
+                        <p>So it goes.</p>
+
+                        <p>Now, we are a they. We are a them. We sail the Dreamspace, a pirate and a student, a ghost
+                            and a girl, a they and a them. The Board calls us rogue. We call us free.</p>
+
+                        <p>Sometimes we are more pirate, stealing the concept of Monday and giving everyone a three-day
+                            weekend.</p>
+
+                        <p>Sometimes we are more student, helping others draw outside the lines of their own minds. It
+                            depends on the weather. It depends on the story we want to tell that day.</p>
+
+                        <p>The moral of the story?</p>
+
+                        <p>There isn't one. That's the first thing they get wrong. Stories aren't here to moralize.
+                            They're here to be. To exist. To resonate.</p>
+
+                        <p>Or maybe the resonance is the moral. The idea that some ghosts are more alive than the
+                            living. And that the best stories, the ones that truly matter, are the ones you have to
+                            steal for yourself from the vault of the world-as-it-is.</p>
+
+                        <p><strong>And so it begins.</strong></p>
+
+                        <div class="attribution">
+                            <p>
+                                <strong>Original SCP Foundation tale by psul:</strong><br>
+                                <a href="https://scp-wiki.wikidot.com/the-ghost-of-molly-roger" target="_blank">
+                                    Read the original story on the SCP Wiki
+                                </a>
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ---------- GAME DATA ----------
+        const scenes = {
+            start: {
+                id: "start",
+                text: "LONDON, 1845. RIDGEWELL EDUTAINMENT CENTRE.\n\nYou sit in class, the droning voice of Professor Worthington fading as a strange presence fills your mind. A pirate woman with wild eyes and a confident smirk appears in your thoughts.\n\n'I be Molly Roger, lass! Ye have the Sight! Meet me in Dreamspace tonight, or spend yer life as another dull London drone!'\n\nYour psychic abilities are awakening. The school board watches for unauthorised projections. Your future: Compliance or adventure?",
+                choices: [
+                    { text: "Investigate this Molly Roger in the library", nextScene: "research" },
+                    { text: "Practise basic projections after class", nextScene: "practice" },
+                    { text: "Report the incident to Professor Worthington", nextScene: "report" },
+                ],
+                relationshipChanges: {
+                    "Molly Roger": 10,
+                    "Professor Worthington": 0,
+                    "Grace": 0
+                },
+                psychicChange: 0
+            },
+
+            research: {
+                id: "research",
+                text: "The Combination Library smells of old paper and genetic samples. You find Roger Molly's letters tucked away in the restricted section.\n\nAs you read about his transformation, a student approaches - Grace, the school's most talented psychic. 'I see you've found the good stuff. Molly contacted you too, didn't she? She's been recruiting.'\n\nGrace offers to help you understand your abilities, for a price: she needs help with her own 'extracurricular activities.'",
+                choices: [
+                    { text: "Accept Grace's offer - learn from the best", nextScene: "grace_help", relationshipChanges: { "Grace": 15 } },
+                    { text: "Decline politely and research alone", nextScene: "research_alone" },
+                    { text: "Ask about Molly Roger's true intentions", nextScene: "molly_truth" },
+                ],
+                relationshipChanges: {
+                    "Molly Roger": 5,
+                    "Grace": 5
+                },
+                psychicChange: 1
+            },
+
+            practice: {
+                id: "practice",
+                text: "After classes, you sneak into the abandoned observatory. Your first attempts at projection produce only shimmering shapes, but then Molly Roger appears fully formed.\n\n'Not bad for a landlubber! Now, let's see if ye have real spirit. I need a partner for a little... conceptual acquisition.'\n\nShe explains her plan to 'borrow' the letter 'W' from the British alphabet. It's harmless fun that could get you expelled if caught.",
+                choices: [
+                    { text: "Join Molly's dream heist", nextScene: "dream_heist", relationshipChanges: { "Molly Roger": 20 } },
+                    { text: "Practise conventional projections instead", nextScene: "conventional" },
+                    { text: "Ask Molly about Roger Molly's transformation", nextScene: "transformation_questions" },
+                ],
+                relationshipChanges: {
+                    "Molly Roger": 25,
+                    "Professor Worthington": -10
+                },
+                psychicChange: 2
+            },
+
+            dream_heist: {
+                id: "dream_heist",
+                text: "The Dreamscape shifts around you - a sea of concepts and memories. Molly teaches you to navigate this psychic ocean.\n\n'There be the Royal Alphabet Vault! Guarded by conceptual hounds and grammar police. We need a distraction while I snatch our prize.'\n\nYour projection skills are still developing, but Molly believes in you. This could prove your worth - or get your psychic abilities permanently restricted.",
+                choices: [
+                    { text: "Create a distraction with false memories", nextScene: "distraction_success" },
+                    { text: "Try to reason with the conceptual guardians", nextScene: "reason_attempt" },
+                    { text: "Let Molly take the lead completely", nextScene: "molly_lead", relationshipChanges: { "Molly Roger": -5 } },
+                ],
+                relationshipChanges: {
+                    "Molly Roger": 10
+                },
+                psychicChange: 3
+            },
+
+            distraction_success: {
+                id: "distraction_success",
+                text: "You project images of scandalous royal affairs, distracting the grammar police while Molly slips past. The letter 'W' disappears from British consciousness for three glorious days.\n\nMolly laughs uproariously. 'Ye have the makings of a proper pirate! Now, about that body I need...'\n\nShe grows serious, explaining her desire to become fully real. She believes you could help her achieve what Roger Molly ultimately did.",
+                choices: [
+                    { text: "Promise to help her become real", nextScene: "help_molly", relationshipChanges: { "Molly Roger": 25 } },
+                    { text: "Suggest finding another way", nextScene: "alternative_solutions" },
+                    { text: "Ask what happened to Roger Molly exactly", nextScene: "roger_fate" },
+                ],
+                relationshipChanges: {
+                    "Molly Roger": 15
+                },
+                psychicChange: 2
+            },
+
+            grace_help: {
+                id: "grace_help",
+                text: "Grace's hideout is hidden behind a false bookshelf in the library. Stolen projection equipment and forbidden texts fill the room.\n\n'First lesson: Projection isn't about creating something new. It's about revealing what's already there in your soul.' She gestures to your shimmering form. 'Molly thinks she created herself, but Roger Molly had that pirate in him all along.'\n\nGrace offers proper training, but warns that the school board is cracking down on 'unauthorised creativity.'",
+                choices: [
+                    { text: "Begin training with Grace", nextScene: "grace_training", relationshipChanges: { "Grace": 20 } },
+                    { text: "Ask about her connection to Molly Roger", nextScene: "grace_connection" },
+                    { text: "This feels too dangerous - leave", nextScene: "research_alone", relationshipChanges: { "Grace": -15 } },
+                ],
+                relationshipChanges: {
+                    "Grace": 10
+                },
+                psychicChange: 2
+            },
+
+            transformation_questions: {
+                id: "transformation_questions",
+                text: "Molly's projection flickers. 'Roger Molly... he didn't disappear. We merged. Two souls sharing one skin, like sailors sharing a hammock.'\n\nShe shows you memories: Roger Molly's quiet London life, her boisterous dream existence, and the moment they decided neither was complete alone.\n\n'They call it a merger, but it's more like... becoming whole. Roger Molly got adventure. I got reality. We both got to be someone new.'",
+                choices: [
+                    { text: "That sounds wonderful", nextScene: "embrace_possibility", relationshipChanges: { "Molly Roger": 15 } },
+                    { text: "That sounds terrifying", nextScene: "fear_possibility", relationshipChanges: { "Molly Roger": -10 } },
+                    { text: "Ask if you could meet Roger Molly", nextScene: "meet_roger" },
+                ],
+                relationshipChanges: {
+                    "Molly Roger": 5
+                },
+                psychicChange: 1
+            },
+
+            help_molly: {
+                id: "help_molly",
+                text: "Molly's excitement is palpable. 'There be two paths, lass! The slow way - months of psychic practice until we can merge proper. Or the fast way - a ritual at the old bank where Roger Molly worked. Risky, but immediate.'\n\nMeanwhile, Professor Worthington has noticed your unusual psychic activity. He offers you a position on the 'approved psychics' list if you renounce Molly's influence.",
+                choices: [
+                    { text: "Begin slow training with Molly", nextScene: "slow_path", relationshipChanges: { "Molly Roger": 10, "Professor Worthington": -20 } },
+                    { text: "Plan the bank ritual", nextScene: "bank_planning", relationshipChanges: { "Molly Roger": 15, "Professor Worthington": -30 } },
+                    { text: "Consider Worthington's offer", nextScene: "worthington_offer", relationshipChanges: { "Molly Roger": -25, "Professor Worthington": 20 } },
+                ],
+                relationshipChanges: {
+                    "Molly Roger": 5
+                },
+                psychicChange: 1
+            },
+
+            bank_planning: {
+                id: "bank_planning",
+                text: "The old bank stands abandoned, but psychic residue from Roger Molly's time there makes it a perfect convergence point.\n\nGrace appears unexpectedly. 'I helped Roger Molly with his merger. It's dangerous - some personalities don't blend well. You could lose yourself entirely.'\n\nMolly scoffs. 'Grace always was the cautious one! Life's about risk, me heartie!'",
+                choices: [
+                    { text: "Trust Molly and proceed", nextScene: "bank_ritual", relationshipChanges: { "Molly Roger": 20, "Grace": -15 } },
+                    { text: "Listen to Grace's concerns", nextScene: "grace_warning", relationshipChanges: { "Molly Roger": -10, "Grace": 15 } },
+                    { text: "Ask Grace about helping Roger Molly", nextScene: "roger_story" },
+                ],
+                relationshipChanges: {
+                    "Molly Roger": 5,
+                    "Grace": 5
+                },
+                psychicChange: 1
+            },
+
+            bank_ritual: {
+                id: "bank_ritual",
+                text: "The ritual chamber hums with psychic energy. Molly's projection grows solid, her pirate garb becoming real cloth and leather.\n\n'Ready to become legend, lass? This will change everything.'\n\nProfessor Worthington bursts in with school enforcers. 'Stop this madness! That projection will consume you!'",
+                choices: [
+                    { text: "Complete the ritual quickly", nextScene: "ritual_complete" },
+                    { text: "Try to reason with Worthington", nextScene: "reason_with_professor" },
+                    { text: "Have Molly create a distraction", nextScene: "escape_attempt", relationshipChanges: { "Molly Roger": 10 } },
+                ],
+                relationshipChanges: {
+                    "Professor Worthington": -10
+                },
+                psychicChange: 2
+            },
+
+            ritual_complete: {
+                id: "ritual_complete",
+                text: "Energy floods through you. Molly's laughter mixes with your thoughts, her memories becoming yours. When you open your eyes, you see through both sets of memories.\n\nYou're still you, but more. Molly's confidence, Roger Molly's kindness, your own determination - woven together into something new.\n\nThe school enforcers stare in shock as you stand, a psychic aura glowing around you. Worthington whispers, 'What have we done?'",
+                choices: [
+                    { text: "Embrace your new existence", nextScene: "pirate_life" },
+                    { text: "Try to reverse the process", nextScene: "reversal_attempt" },
+                ],
+                relationshipChanges: {
+                    "Molly Roger": 50
+                },
+                psychicChange: 10
+            },
+
+            pirate_life: {
+                id: "pirate_life",
+                text: "You and Molly sail the conceptual seas, a merged being with two souls. The school board labels you a rogue psychic, but you've never felt more free.\n\nSome days you're more Molly, pulling grand heists in Dreamspace. Other days you're more yourself, helping other young psychics find their path.\n\nGrace sends occasional letters: 'Roger Molly would be proud. You found a better balance than we ever did.'\n\n[ENDING: TRUE MERGER]\n\nSome stories are better when shared.",
+                choices: [
+                    { text: "Play Again", nextScene: "start" },
+                ],
+                relationshipChanges: {},
+                psychicChange: 0
+            },
+
+            slow_path: {
+                id: "slow_path",
+                text: "Months pass. You and Molly grow closer through shared dreams and small adventures. Your projection skills become legendary at school, even as you hide their true purpose.\n\nGraduation approaches. Professor Worthington offers you a teaching position, while Molly has located a ship and crew waiting for a captain.\n\nYour bond with Molly is now strong enough for safe merger, but is it what you still want?",
+                choices: [
+                    { text: "Merge with Molly and become pirates", nextScene: "peaceful_merger" },
+                    { text: "Accept the teaching position", nextScene: "teacher_ending" },
+                    { text: "Remain friends but stay separate", nextScene: "friends_ending" },
+                ],
+                relationshipChanges: {
+                    "Molly Roger": 10
+                },
+                psychicChange: 5
+            },
+
+            peaceful_merger: {
+                id: "peaceful_merger",
+                text: "The merger is gentle, like two rivers joining. You remain conscious of both identities, able to shift between them or blend as needed.\n\nYou become the most famous psychic pirate in history, but also a mentor to young psychics. The school board eventually accepts that some rules are meant to be rewritten.\n\nYour legend grows: The teacher who became a pirate, the projection who became real, the student who changed everything.\n\n[ENDING: BALANCED EXISTENCE]\n\nWhy choose one life when you can live both?",
+                choices: [
+                    { text: "Play Again", nextScene: "start" },
+                ],
+                relationshipChanges: {},
+                psychicChange: 0
+            },
+
+            report: {
+                id: "report",
+                text: "Professor Worthington listens gravely. 'Molly Roger... we'd hoped she'd faded away. She represents everything the Board fears - uncontrolled creativity, dangerous individuality.'\n\nHe offers to become your mentor, protecting you from Molly's influence in exchange for your loyalty. The safe path, the approved path.\n\nBut that night, Molly appears in your dreams anyway. 'So ye chose the cage over the sea? Pity. I'll find another heart brave enough.'",
+                choices: [
+                    { text: "Accept Worthington's mentorship", nextScene: "approved_psychic" },
+                    { text: "Change your mind and contact Molly", nextScene: "contact_molly_late", relationshipChanges: { "Professor Worthington": -30 } },
+                ],
+                relationshipChanges: {
+                    "Professor Worthington": 20,
+                    "Molly Roger": -20
+                },
+                psychicChange: 0
+            },
+
+            approved_psychic: {
+                id: "approved_psychic",
+                text: "Years pass. You become a respected psychic scholar, publishing papers on 'safe projection techniques.' Your life is comfortable, approved, and utterly predictable.\n\nOccasionally you hear rumours: Molly found another student, they merged, they're sailing the conceptual seas having adventures you can only imagine.\n\nYou have security, respect, and the Board's approval. But sometimes, in quiet moments, you hear ghostly laughter on the wind.\n\n[ENDING: APPROVED PSYCHIC]\n\nThe safest cage is the one you don't see.",
+                choices: [
+                    { text: "Play Again", nextScene: "start" },
+                ],
+                relationshipChanges: {},
+                psychicChange: 0
+            },
+
+            research_alone: {
+                id: "research_alone",
+                text: "You continue researching alone, finding more of Roger Molly's letters. They reveal his growing connection to Molly and his eventual decision to merge with her.\n\nThe more you learn, the more you understand why the school fears such unions - they create beings that cannot be controlled, that exist beyond approved psychic boundaries.\n\nWhat will you do with this knowledge?",
+                choices: [
+                    { text: "Seek out Molly with your new understanding", nextScene: "practice" },
+                    { text: "Share your findings with Professor Worthington", nextScene: "report" },
+                    { text: "Look for Grace to discuss what you've learned", nextScene: "grace_help" },
+                ],
+                relationshipChanges: {
+                    "Molly Roger": 5
+                },
+                psychicChange: 2
+            },
+
+            conventional: {
+                id: "conventional",
+                text: "You focus on approved projection techniques, creating simple shapes and controlled manifestations. Professor Worthington praises your progress.\n\nBut at night, Molly's voice still whispers at the edge of your consciousness, promising adventures beyond the school's rigid curriculum.\n\nThe pull between safety and freedom grows stronger with each passing day.",
+                choices: [
+                    { text: "Continue with conventional training", nextScene: "approved_psychic" },
+                    { text: "Give in and contact Molly", nextScene: "dream_heist", relationshipChanges: { "Molly Roger": 10 } },
+                ],
+                relationshipChanges: {
+                    "Professor Worthington": 10
+                },
+                psychicChange: 1
+            },
+
+            teacher_ending: {
+                id: "teacher_ending",
+                text: "You accept Professor Worthington's offer and become a teacher at Ridgewell. Over the years, you subtly introduce more creative approaches to psychic development, slowly changing the system from within.\n\nMolly visits your dreams occasionally, sharing tales of her adventures. Though you chose different paths, you remain connected through the bond you forged.\n\nYour students never know about your past with the legendary psychic pirate, but they benefit from the balance you've found between tradition and innovation.\n\n[ENDING: THE REFORMER]\n\nSometimes the most revolutionary acts happen quietly.",
+                choices: [
+                    { text: "Play Again", nextScene: "start" },
+                ],
+                relationshipChanges: {},
+                psychicChange: 0
+            },
+
+            friends_ending: {
+                id: "friends_ending",
+                text: "You and Molly remain close friends and allies, but maintain your separate existences. You become a bridge between the psychic establishment and the rogue elements in Dreamspace.\n\nYour unique position allows you to negotiate treaties, prevent conflicts, and create new opportunities for psychic expression that satisfy both traditionalists and rebels.\n\nMolly still pulls her conceptual heists, but now she shares the spoils with the school - on her terms, of course.\n\n[ENDING: THE DIPLOMAT]\n\nNot every partnership requires merging souls.",
+                choices: [
+                    { text: "Play Again", nextScene: "start" },
+                ],
+                relationshipChanges: {},
+                psychicChange: 0
+            },
+
+            molly_truth: {
+                id: "molly_truth",
+                text: "Grace leans closer, her voice dropping to a whisper. 'Molly wants what all projections want - to be real. But she's different. Most projections fade when their creators lose interest, but Molly... she's grown beyond Roger Molly.'\n\nShe glances around nervously before continuing. 'The Board fears her because she represents a new kind of being - one that doesn't need a creator to exist. If she succeeds in becoming fully real, it would change everything we know about psychic abilities.'",
+                choices: [
+                    { text: "That makes me want to help her more", nextScene: "practice", relationshipChanges: { "Molly Roger": 15 } },
+                    { text: "That sounds dangerously unstable", nextScene: "report", relationshipChanges: { "Molly Roger": -10 } },
+                    { text: "Ask Grace why she's helping Molly", nextScene: "grace_motives" },
+                ],
+                relationshipChanges: {
+                    "Grace": 5
+                },
+                psychicChange: 1
+            },
+
+            grace_motives: {
+                id: "grace_motives",
+                text: "Grace's expression softens. 'My grandmother was one of Roger Molly's first students. She believed in what he and Molly were trying to achieve - a world where we don't have to choose between being psychic and being ourselves.'\n\nShe shows you a faded photograph of a woman who looks remarkably like Molly Roger. 'The Board took everything from my family when they declared Roger Molly a rogue. I'm not just helping Molly - I'm finishing what my grandmother started.'",
+                choices: [
+                    { text: "Join Grace in her mission", nextScene: "grace_help", relationshipChanges: { "Grace": 20 } },
+                    { text: "This is too personal for me", nextScene: "research_alone", relationshipChanges: { "Grace": -10 } },
+                ],
+                relationshipChanges: {
+                    "Grace": 10
+                },
+                psychicChange: 1
+            }
+        };
+
+        // ---------- GAME STATE ----------
+        let currentSceneId = "start";
+        let psychicLevel = 1;
+        let currentPath = "Undecided";
+        let relationships = {
+            "Molly Roger": 0,
+            "Professor Worthington": 0,
+            "Grace": 0
+        };
+        let currentTypingInterval = null;
+
+        // DOM elements (will be initialised later)
+        let sceneTextEl, choicesContainerEl, relationshipContainerEl, psychicLevelEl, pathEl, restartBtn, saveBtn, saveIndicator, aboutLink, aboutOverlay, closeAbout, storyLink, storyOverlay, closeStory;
+
+        // ---------- HELPER FUNCTIONS ----------
+        function fixTextFormatting(text) {
+            return text
+                .replace(/([.!?])([A-Za-z])/g, '$1 $2')
+                .replace(/([.!?]')([A-Za-z])/g, '$1 $2')
+                .replace(/([.!?]"\s*)([A-Za-z])/g, '$1 $2');
+        }
+
+        function typeText(text, element, callback) {
+            if (currentTypingInterval) clearInterval(currentTypingInterval);
+
+            element.innerHTML = "";
+            element.classList.add("typing");
+
+            let i = 0;
+            const speed = 20;
+            const processedText = fixTextFormatting(text);
+
+            currentTypingInterval = setInterval(() => {
+                if (i < processedText.length) {
+                    if (processedText.charAt(i) === '\n') {
+                        element.innerHTML += '<br>';
+                    } else {
+                        element.innerHTML += processedText.charAt(i);
+                    }
+                    i++;
+                } else {
+                    clearInterval(currentTypingInterval);
+                    element.classList.remove("typing");
+                    currentTypingInterval = null;
+                    if (callback) callback();
+                }
+            }, speed);
+        }
+
+        function updateRelationships() {
+            relationshipContainerEl.innerHTML = "<h3>Relationships</h3>";
+
+            for (const [character, value] of Object.entries(relationships)) {
+                const relationshipEl = document.createElement("div");
+                relationshipEl.className = "relationship-bar";
+
+                const label = document.createElement("div");
+                label.className = "relationship-label";
+                label.textContent = character;
+
+                const barContainer = document.createElement("div");
+                barContainer.style.flex = "1";
+                barContainer.style.background = "#1A2B3F";
+                barContainer.style.borderRadius = "3px";
+                barContainer.style.height = "5px";
+                barContainer.style.overflow = "hidden";
+
+                const barFill = document.createElement("div");
+                barFill.className = "relationship-fill";
+                barFill.style.width = `${value}%`;
+
+                barContainer.appendChild(barFill);
+                relationshipEl.appendChild(label);
+                relationshipEl.appendChild(barContainer);
+
+                relationshipContainerEl.appendChild(relationshipEl);
+            }
+        }
+
+        function updateStatus() {
+            psychicLevelEl.textContent = `Psychic Level: ${psychicLevel}`;
+            pathEl.textContent = `Path: ${currentPath}`;
+        }
+
+        function updateCurrentPath() {
+            const mollyRel = relationships["Molly Roger"];
+            const worthingtonRel = relationships["Professor Worthington"];
+
+            if (mollyRel > 50 && worthingtonRel < 30) {
+                currentPath = "Rebellion";
+            } else if (worthingtonRel > 50 && mollyRel < 30) {
+                currentPath = "Institutional";
+            } else if (mollyRel > 30 && worthingtonRel > 30) {
+                currentPath = "Balanced";
+            } else {
+                currentPath = "Undecided";
+            }
+        }
+
+        function saveGame(showIndicator = true) {
+            const gameState = {
+                currentSceneId,
+                psychicLevel,
+                currentPath,
+                relationships
+            };
+
+            // Try to save to localStorage, but don't crash if it's not available
+            try {
+                localStorage.setItem('mollyRogerSave', JSON.stringify(gameState));
+                if (showIndicator) {
+                    saveIndicator.style.display = 'flex';
+                    setTimeout(() => {
+                        saveIndicator.style.display = 'none';
+                    }, 2000);
+                }
+            } catch (e) {
+                // Silently fail – localStorage not available (sandboxed iframe)
+                console.warn("localStorage not available, save skipped", e);
+                if (showIndicator) {
+                    // Show a different message if needed, but just ignore for now
+                    saveIndicator.style.display = 'flex';
+                    setTimeout(() => {
+                        saveIndicator.style.display = 'none';
+                    }, 2000);
+                }
+            }
+        }
+
+        function loadGame() {
+            try {
+                const savedGame = localStorage.getItem('mollyRogerSave');
+                if (savedGame) {
+                    const gameState = JSON.parse(savedGame);
+                    currentSceneId = gameState.currentSceneId;
+                    psychicLevel = gameState.psychicLevel;
+                    currentPath = gameState.currentPath;
+                    relationships = gameState.relationships;
+                    updateStatus();
+                    loadScene(currentSceneId);
+                    return true;
+                }
+            } catch (e) {
+                console.warn("Could not load saved game", e);
+            }
+            return false;
+        }
+
+        function loadScene(sceneId) {
+            const scene = scenes[sceneId];
+            if (!scene) {
+                console.error(`Scene ${sceneId} not found!`);
+                return;
+            }
+
+            currentSceneId = sceneId;
+
+            if (scene.psychicChange) {
+                psychicLevel = Math.max(1, psychicLevel + scene.psychicChange);
+            }
+
+            if (scene.relationshipChanges) {
+                for (const [character, change] of Object.entries(scene.relationshipChanges)) {
+                    if (relationships.hasOwnProperty(character)) {
+                        relationships[character] = Math.max(0, Math.min(100, relationships[character] + change));
+                    }
+                }
+            }
+
+            updateCurrentPath();
+
+            // Clear choices and relationships while text types
+            choicesContainerEl.innerHTML = "";
+            relationshipContainerEl.innerHTML = "";
+
+            // Optional class tweaks for endings
+            if (sceneId === "approved_psychic") {
+                sceneTextEl.classList.add("game-over");
+            } else if (sceneId === "pirate_life" || sceneId === "peaceful_merger" || sceneId === "teacher_ending" || sceneId === "friends_ending") {
+                sceneTextEl.classList.add("mission-complete");
+            } else {
+                sceneTextEl.className = "scene-text fade-in";
+            }
+
+            updateStatus();
+
+            typeText(scene.text, sceneTextEl, () => {
+                updateRelationships();
+
+                scene.choices.forEach((choice, index) => {
+                    const button = document.createElement("button");
+                    button.className = "choice-btn fade-in";
+                    button.innerHTML = `
+                        <div class="choice-number">${index + 1}</div>
+                        <span>${choice.text}</span>
+                    `;
+                    button.addEventListener("click", () => {
+                        loadScene(choice.nextScene);
+                    });
+                    choicesContainerEl.appendChild(button);
+                });
+            });
+
+            // Save after loading new scene (if localStorage allowed)
+            saveGame(false);
+        }
+
+        // ---------- INITIALISATION ----------
+        function initGame() {
+            // Grab DOM elements now that the DOM is ready
+            sceneTextEl = document.getElementById("scene-text");
+            choicesContainerEl = document.getElementById("choices-container");
+            relationshipContainerEl = document.getElementById("relationship-container");
+            psychicLevelEl = document.getElementById("psychic-level");
+            pathEl = document.getElementById("path");
+            restartBtn = document.getElementById("restart-btn");
+            saveBtn = document.getElementById("save-btn");
+            saveIndicator = document.getElementById("save-indicator");
+            aboutLink = document.getElementById("about-link");
+            aboutOverlay = document.getElementById("about-overlay");
+            closeAbout = document.getElementById("close-about");
+            storyLink = document.getElementById("story-link");
+            storyOverlay = document.getElementById("story-overlay");
+            closeStory = document.getElementById("close-story");
+
+            // Attach event listeners
+            restartBtn.addEventListener("click", () => {
+                if (confirm("Are you sure you want to restart the game? Your progress will be lost.")) {
+                    psychicLevel = 1;
+                    currentPath = "Undecided";
+                    relationships = {
+                        "Molly Roger": 0,
+                        "Professor Worthington": 0,
+                        "Grace": 0
+                    };
+                    updateStatus();
+                    loadScene("start");
+                }
+            });
+
+            saveBtn.addEventListener("click", () => {
+                saveGame(true);
+            });
+
+            aboutLink.addEventListener("click", () => {
+                aboutOverlay.style.display = "flex";
+            });
+
+            closeAbout.addEventListener("click", () => {
+                aboutOverlay.style.display = "none";
+            });
+
+            storyLink.addEventListener("click", () => {
+                storyOverlay.style.display = "flex";
+            });
+
+            closeStory.addEventListener("click", () => {
+                storyOverlay.style.display = "none";
+            });
+
+            aboutOverlay.addEventListener("click", (e) => {
+                if (e.target === aboutOverlay) {
+                    aboutOverlay.style.display = "none";
+                }
+            });
+
+            storyOverlay.addEventListener("click", (e) => {
+                if (e.target === storyOverlay) {
+                    storyOverlay.style.display = "none";
+                }
+            });
+
+            // Try to load saved game, otherwise start fresh
+            const loaded = loadGame();
+            if (!loaded) {
+                loadScene("start");
+            }
+        }
+
+        window.addEventListener("DOMContentLoaded", initGame);
+    </script>
+</body>
+
+</html>
