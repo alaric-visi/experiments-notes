@@ -1,0 +1,1558 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Wayback Machine</title>
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/diff-match-patch/1.0.5/diff_match_patch.min.js"></script>
+    <style>
+        :root {
+            --bg-primary: #0a0a0a;
+            --bg-secondary: #1a1a1a;
+            --bg-surface: #121212;
+            --bg-card: #1e1e1e;
+            --text-primary: #ffffff;
+            --text-secondary: #b0b0b0;
+            --text-muted: #888888;
+            --accent-primary: #3a86ff;
+            --accent-secondary: #8338ec;
+            --accent-success: #06d6a0;
+            --accent-warning: #ffd166;
+            --accent-error: #ef476f;
+            --border-color: #333333;
+            --border-light: #444444;
+            --shadow-color: rgba(0, 0, 0, 0.5);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-primary);
+            color: var(--text-primary);
+            line-height: 1.6;
+            min-height: 100vh;
+            font-weight: 300;
+        }
+
+        .container {
+            display: flex;
+            min-height: 100vh;
+        }
+
+        .sidebar {
+            width: 280px;
+            background: var(--bg-surface);
+            padding: 30px 20px;
+            position: fixed;
+            height: 100vh;
+            overflow-y: auto;
+            z-index: 1000;
+            transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            border-right: 1px solid var(--border-color);
+        }
+
+        .logo-container {
+            text-align: center;
+            margin-bottom: 40px;
+            padding-bottom: 25px;
+            border-bottom: 1px solid var(--border-light);
+        }
+
+        .logo {
+            width: 160px;
+            height: auto;
+            filter: brightness(0) invert(1) saturate(0) brightness(2);
+            margin-bottom: 15px;
+            opacity: 0.9;
+        }
+
+        .app-title {
+            font-size: 1.2rem;
+            color: var(--text-primary);
+            font-weight: 400;
+            letter-spacing: 1px;
+            opacity: 0.9;
+        }
+
+        .content {
+            flex: 1;
+            padding: 40px;
+            margin-left: 280px;
+            max-width: calc(100vw - 280px);
+            transition: margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        header {
+            margin-bottom: 50px;
+            text-align: left;
+        }
+
+        h1 {
+            font-size: 2.8rem;
+            font-weight: 300;
+            margin-bottom: 10px;
+            letter-spacing: -0.5px;
+            background: linear-gradient(135deg, var(--text-primary), var(--text-secondary));
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .subtitle {
+            font-size: 1.1rem;
+            color: var(--text-secondary);
+            font-weight: 300;
+            letter-spacing: 0.5px;
+        }
+
+        .section {
+            margin-bottom: 35px;
+            padding-bottom: 25px;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .section h3 {
+            font-size: 1rem;
+            margin-bottom: 20px;
+            color: var(--text-primary);
+            font-weight: 500;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            display: flex;
+            align-items: center;
+        }
+
+        .section h3::before {
+            content: "";
+            display: inline-block;
+            width: 4px;
+            height: 16px;
+            background: var(--accent-primary);
+            margin-right: 12px;
+            border-radius: 2px;
+        }
+
+        .radio-group {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .radio-group label {
+            display: flex;
+            align-items: center;
+            cursor: pointer;
+            padding: 12px 15px;
+            border-radius: 8px;
+            transition: all 0.2s ease;
+            border: 1px solid transparent;
+        }
+
+        .radio-group label:hover {
+            background: var(--bg-card);
+            border-color: var(--border-light);
+        }
+
+        .radio-group input {
+            margin-right: 12px;
+            width: 18px;
+            height: 18px;
+            accent-color: var(--accent-primary);
+            background: transparent;
+        }
+
+        .slider-container {
+            margin-top: 20px;
+        }
+
+        .slider-container label {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+            font-weight: 400;
+            color: var(--text-primary);
+        }
+
+        input[type="range"] {
+            width: 100%;
+            height: 4px;
+            border-radius: 2px;
+            background: var(--border-light);
+            outline: none;
+            -webkit-appearance: none;
+            appearance: none;
+        }
+
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: var(--text-primary);
+            cursor: pointer;
+            border: 3px solid var(--bg-surface);
+            box-shadow: 0 2px 8px var(--shadow-color);
+            transition: all 0.2s ease;
+        }
+
+        input[type="range"]::-webkit-slider-thumb:hover {
+            transform: scale(1.1);
+            box-shadow: 0 4px 12px var(--shadow-color);
+        }
+
+        .slider-value {
+            font-weight: 500;
+            color: var(--text-primary);
+            background: var(--bg-card);
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            min-width: 40px;
+            text-align: center;
+        }
+
+        .info-box {
+            background: var(--bg-card);
+            padding: 20px;
+            border-radius: 12px;
+            font-size: 0.9rem;
+            border: 1px solid var(--border-color);
+            color: var(--text-secondary);
+        }
+
+        .info-box ol {
+            padding-left: 20px;
+            margin-top: 12px;
+        }
+
+        .info-box li {
+            margin-bottom: 8px;
+            line-height: 1.5;
+        }
+
+        form {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 40px;
+            flex-wrap: wrap;
+            background: var(--bg-surface);
+            padding: 30px;
+            border-radius: 16px;
+            border: 1px solid var(--border-color);
+        }
+
+        .input-group {
+            flex: 1;
+            min-width: 300px;
+        }
+
+        input[type="text"] {
+            width: 100%;
+            padding: 16px 20px;
+            background: var(--bg-card);
+            border: 1px solid var(--border-light);
+            border-radius: 10px;
+            font-size: 16px;
+            transition: all 0.2s ease;
+            color: var(--text-primary);
+        }
+
+        input[type="text"]:focus {
+            border-color: var(--accent-primary);
+            outline: none;
+            box-shadow: 0 0 0 2px rgba(58, 134, 255, 0.1);
+        }
+
+        button {
+            padding: 16px 35px;
+            background: var(--bg-card);
+            color: var(--text-primary);
+            border: 1px solid var(--border-light);
+            border-radius: 10px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 500;
+            transition: all 0.2s ease;
+            min-width: 140px;
+        }
+
+        button:hover {
+            background: var(--accent-primary);
+            border-color: var(--accent-primary);
+            transform: translateY(-1px);
+        }
+
+        button:active {
+            transform: translateY(0);
+        }
+
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .primary-button {
+            background: var(--accent-primary);
+            border-color: var(--accent-primary);
+        }
+
+        .chart-container {
+            background: var(--bg-surface);
+            border-radius: 16px;
+            padding: 25px;
+            border: 1px solid var(--border-color);
+            margin-bottom: 30px;
+            position: relative;
+        }
+
+        .chart-container::before {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, var(--accent-primary), transparent);
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        .alert {
+            padding: 16px 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            font-weight: 400;
+            border: 1px solid;
+            backdrop-filter: blur(10px);
+        }
+
+        .alert-success {
+            background: rgba(6, 214, 160, 0.1);
+            border-color: var(--accent-success);
+            color: var(--accent-success);
+        }
+
+        .alert-warning {
+            background: rgba(255, 209, 102, 0.1);
+            border-color: var(--accent-warning);
+            color: var(--accent-warning);
+        }
+
+        .alert-error {
+            background: rgba(239, 71, 111, 0.1);
+            border-color: var(--accent-error);
+            color: var(--accent-error);
+        }
+
+        .alert-info {
+            background: rgba(58, 134, 255, 0.1);
+            border-color: var(--accent-primary);
+            color: var(--accent-primary);
+        }
+
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 2px solid rgba(255, 255, 255, 0.2);
+            border-radius: 50%;
+            border-top-color: var(--text-primary);
+            animation: spin 1s ease-in-out infinite;
+            margin-right: 10px;
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        .progress-container {
+            margin: 20px 0;
+            background: var(--bg-surface);
+            padding: 25px;
+            border-radius: 12px;
+            border: 1px solid var(--border-color);
+        }
+
+        .progress-bar {
+            height: 6px;
+            background-color: var(--border-light);
+            border-radius: 3px;
+            overflow: hidden;
+            margin-bottom: 12px;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--accent-primary), var(--accent-secondary));
+            width: 0%;
+            transition: width 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+            border-radius: 3px;
+        }
+
+        .page-list {
+            max-height: 400px;
+            overflow-y: auto;
+            border: 1px solid var(--border-color);
+            border-radius: 10px;
+            background: var(--bg-surface);
+        }
+
+        .page-item {
+            padding: 18px 20px;
+            border-bottom: 1px solid var(--border-color);
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .page-item:hover {
+            background: var(--bg-card);
+        }
+
+        .page-item:last-child {
+            border-bottom: none;
+        }
+
+        .page-url {
+            font-weight: 400;
+            margin-bottom: 8px;
+            color: var(--text-primary);
+            font-size: 0.95rem;
+        }
+
+        .page-changes {
+            color: var(--accent-primary);
+            font-size: 0.85rem;
+            font-weight: 500;
+        }
+
+        .expander {
+            margin-top: 15px;
+            border: 1px solid var(--border-color);
+            border-radius: 10px;
+            overflow: hidden;
+            background: var(--bg-surface);
+        }
+
+        .expander-header {
+            padding: 18px 20px;
+            background: var(--bg-card);
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-weight: 500;
+            color: var(--text-primary);
+            transition: background 0.2s ease;
+        }
+
+        .expander-header:hover {
+            background: var(--bg-secondary);
+        }
+
+        .expander-content {
+            padding: 20px;
+            background: var(--bg-surface);
+            border-top: 1px solid var(--border-color);
+        }
+
+        .columns {
+            display: flex;
+            gap: 20px;
+        }
+
+        .column {
+            flex: 1;
+        }
+
+        select {
+            width: 100%;
+            padding: 14px 15px;
+            background: var(--bg-card);
+            border: 1px solid var(--border-light);
+            border-radius: 8px;
+            font-size: 15px;
+            margin-bottom: 15px;
+            color: var(--text-primary);
+            font-weight: 400;
+        }
+
+        pre {
+            background: var(--bg-card);
+            padding: 20px;
+            border-radius: 8px;
+            overflow-x: auto;
+            font-size: 0.85rem;
+            border: 1px solid var(--border-color);
+            max-height: 300px;
+            overflow-y: auto;
+            color: var(--text-secondary);
+            font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+        }
+
+        .diff-added {
+            background: rgba(6, 214, 160, 0.2);
+            color: var(--accent-success);
+            padding: 2px 4px;
+            border-radius: 3px;
+            border-left: 2px solid var(--accent-success);
+        }
+
+        .diff-removed {
+            background: rgba(239, 71, 111, 0.2);
+            color: var(--accent-error);
+            padding: 2px 4px;
+            border-radius: 3px;
+            border-left: 2px solid var(--accent-error);
+        }
+
+        .filter-options {
+            margin-bottom: 25px;
+        }
+
+        .filter-options label {
+            display: block;
+            margin-bottom: 10px;
+            cursor: pointer;
+            padding: 12px 15px;
+            border-radius: 8px;
+            transition: all 0.2s ease;
+            border: 1px solid transparent;
+            background: var(--bg-card);
+        }
+
+        .filter-options label:hover {
+            border-color: var(--border-light);
+            background: var(--bg-surface);
+        }
+
+        .download-section {
+            background: var(--bg-surface);
+            border-radius: 16px;
+            padding: 30px;
+            border: 1px solid var(--border-color);
+        }
+
+        .section-header {
+            font-size: 1.6rem;
+            margin: 40px 0 30px 0;
+            padding-bottom: 15px;
+            border-bottom: 1px solid var(--border-color);
+            color: var(--text-primary);
+            font-weight: 300;
+            letter-spacing: -0.3px;
+        }
+
+        .results-section {
+            margin-top: 30px;
+        }
+
+        .mobile-menu-btn {
+            display: none;
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            z-index: 1001;
+            background: var(--bg-card);
+            color: var(--text-primary);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 12px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            width: 44px;
+            height: 44px;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .mobile-menu-btn:hover {
+            background: var(--bg-surface);
+            border-color: var(--accent-primary);
+        }
+
+        .mobile-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.8);
+            z-index: 999;
+            backdrop-filter: blur(4px);
+        }
+
+        @media (max-width: 1024px) {
+            .sidebar {
+                transform: translateX(-100%);
+                width: 320px;
+                background: var(--bg-surface);
+            }
+
+            .sidebar.active {
+                transform: translateX(0);
+                box-shadow: 0 0 50px var(--shadow-color);
+            }
+
+            .content {
+                margin-left: 0;
+                max-width: 100%;
+                padding: 80px 25px 25px;
+            }
+
+            .mobile-menu-btn {
+                display: flex;
+            }
+
+            .mobile-overlay.active {
+                display: block;
+            }
+
+            .columns {
+                flex-direction: column;
+            }
+
+            form {
+                flex-direction: column;
+                padding: 25px;
+            }
+
+            .input-group {
+                min-width: 100%;
+            }
+
+            h1 {
+                font-size: 2.2rem;
+            }
+
+            .section-header {
+                font-size: 1.4rem;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .sidebar {
+                width: 100%;
+                max-width: 280px;
+            }
+
+            .content {
+                padding: 70px 20px 20px;
+            }
+
+            h1 {
+                font-size: 2rem;
+            }
+
+            .subtitle {
+                font-size: 1rem;
+            }
+
+            form {
+                padding: 20px;
+            }
+
+            .chart-container {
+                padding: 20px;
+            }
+
+            button {
+                width: 100%;
+            }
+        }
+
+        @media (max-width: 480px) {
+            h1 {
+                font-size: 1.8rem;
+            }
+
+            .content {
+                padding: 70px 15px 15px;
+            }
+
+            form {
+                padding: 20px 15px;
+            }
+
+            .chart-container {
+                padding: 15px;
+            }
+
+            .section-header {
+                font-size: 1.3rem;
+            }
+        }
+
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: var(--bg-surface);
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: var(--border-light);
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--text-muted);
+        }
+
+        .js-plotly-plot .plotly .modebar {
+            background: transparent !important;
+        }
+
+        .js-plotly-plot .plotly .modebar-btn path {
+            fill: var(--text-secondary) !important;
+        }
+
+        .js-plotly-plot .plotly .main-svg {
+            background: transparent !important;
+        }
+    </style>
+</head>
+
+<body>
+    <button class="mobile-menu-btn" id="mobileMenuBtn">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M3 12h18M3 6h18M3 18h18" />
+        </svg>
+    </button>
+    <div class="mobile-overlay" id="mobileOverlay"></div>
+
+    <div class="container">
+        <div class="sidebar" id="sidebar">
+            <div class="logo-container">
+                <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/0/01/Wayback_Machine_logo_2010.svg/1200px-Wayback_Machine_logo_2010.svg.png"
+                    alt="Wayback Machine" class="logo">
+                <div class="app-title">ARCHIVE ANALYSER</div>
+            </div>
+
+            <div class="section">
+                <h3>Visualisation Options</h3>
+                <div class="radio-group">
+                    <label><input type="radio" name="visType" value="line" checked> Stacked Line Chart</label>
+                    <label><input type="radio" name="visType" value="bar"> Stacked Bar Chart</label>
+                </div>
+
+                <div class="slider-container">
+                    <label>Top folders to display: <span id="folderCountValue" class="slider-value">10</span></label>
+                    <input type="range" id="folderCount" min="5" max="50" value="10">
+                </div>
+            </div>
+
+            <div class="section">
+                <h3>About This Tool</h3>
+                <div class="info-box">
+                    Analyse website evolution through Wayback Machine archives:
+                    <ol>
+                        <li>URL Retrieval from Internet Archive</li>
+                        <li>Folder Structure Evolution</li>
+                        <li>HTTP Status Code Analysis</li>
+                        <li>Frequently Changed Pages</li>
+                        <li>robots.txt Change Tracking</li>
+                    </ol>
+                </div>
+            </div>
+        </div>
+
+        <div class="content">
+            <header>
+                <h1>Wayback Machine Analyser</h1>
+                <div class="subtitle">Explore website evolution through historical archives</div>
+            </header>
+
+            <form id="domainForm">
+                <div class="input-group">
+                    <input type="text" id="domainInput" placeholder="Enter domain (e.g., example.com)" required>
+                </div>
+                <button type="submit" id="submitButton" class="primary-button">Analyse Website</button>
+            </form>
+
+            <div id="alerts"></div>
+            <div id="progressContainer" class="progress-container hidden">
+                <div class="progress-bar">
+                    <div class="progress-fill" id="progressFill"></div>
+                </div>
+                <div id="progressText">Processing...</div>
+            </div>
+
+            <div id="results" class="hidden">
+                <div class="results-section">
+                    <h2 class="section-header">Analysis Results</h2>
+
+                    <div class="section">
+                        <h3>Folder Structure Evolution</h3>
+                        <div class="chart-container">
+                            <div id="folderViz"></div>
+                        </div>
+                    </div>
+
+                    <div class="section">
+                        <h3>Status Code Evolution</h3>
+                        <div class="chart-container">
+                            <div id="statusViz"></div>
+                        </div>
+                    </div>
+
+                    <div class="section">
+                        <h3>Frequently Changed Pages</h3>
+                        <div class="chart-container">
+                            <div id="changesViz"></div>
+                        </div>
+                        <div id="pageListContainer"></div>
+                        <div id="pageDetails" class="hidden">
+                            <h4>Change History</h4>
+                            <div id="pageHistory"></div>
+                        </div>
+                    </div>
+
+                    <div class="section">
+                        <h3>robots.txt Changes</h3>
+                        <div class="chart-container">
+                            <div id="robotsViz"></div>
+                        </div>
+                        <div id="robotsComparison">
+                            <h4>Compare robots.txt Versions</h4>
+                            <div class="columns">
+                                <div class="column">
+                                    <select id="version1"></select>
+                                    <pre id="content1"></pre>
+                                </div>
+                                <div class="column">
+                                    <select id="version2"></select>
+                                    <pre id="content2"></pre>
+                                </div>
+                            </div>
+                            <div id="diffResult"></div>
+                        </div>
+                    </div>
+
+                    <div class="section">
+                        <h3>Download Data</h3>
+                        <div class="download-section">
+                            <div class="filter-options">
+                                <h4>Filter Options</h4>
+                                <label><input type="radio" name="filterType" value="all" checked> All (HTML, Images,
+                                    CSS, JS, etc.)</label>
+                                <label><input type="radio" name="filterType" value="html"> HTML only</label>
+                                <label><input type="radio" name="filterType" value="html-images"> HTML + Images</label>
+                                <label><input type="checkbox" id="uniqueOnly"> Export only unique URLs</label>
+                            </div>
+                            <button id="downloadButton">Download Filtered URLs</button>
+                            <div id="downloadInfo"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        class WaybackAnalyser {
+            constructor() {
+                this.uniqueUrls = [];
+                this.domain = '';
+                this.visType = 'line';
+                this.topFoldersCount = 10;
+                this.robotsData = [];
+                this.initializeEventListeners();
+                this.setupMobileMenu();
+                this.setupPlotlyTheme();
+            }
+
+            setupPlotlyTheme() {
+                // Set Plotly to use dark theme
+                const darkTheme = {
+                    paper_bgcolor: 'transparent',
+                    plot_bgcolor: 'transparent',
+                    font: { color: '#ffffff' },
+                    xaxis: {
+                        gridcolor: 'rgba(255,255,255,0.1)',
+                        linecolor: 'rgba(255,255,255,0.2)',
+                        zerolinecolor: 'rgba(255,255,255,0.1)',
+                    },
+                    yaxis: {
+                        gridcolor: 'rgba(255,255,255,0.1)',
+                        linecolor: 'rgba(255,255,255,0.2)',
+                        zerolinecolor: 'rgba(255,255,255,0.1)',
+                    },
+                    legend: {
+                        font: { color: '#ffffff' }
+                    }
+                };
+                Plotly.setPlotConfig({
+                    modeBarButtonsToRemove: ['sendDataToCloud'],
+                    displaylogo: false,
+                    plotGlPixelRatio: 2
+                });
+            }
+
+            setupMobileMenu() {
+                const mobileMenuBtn = document.getElementById('mobileMenuBtn');
+                const sidebar = document.getElementById('sidebar');
+                const overlay = document.getElementById('mobileOverlay');
+
+                const toggleMenu = () => {
+                    sidebar.classList.toggle('active');
+                    overlay.classList.toggle('active');
+                    document.body.style.overflow = sidebar.classList.contains('active') ? 'hidden' : '';
+                };
+
+                mobileMenuBtn.addEventListener('click', toggleMenu);
+                overlay.addEventListener('click', toggleMenu);
+
+                sidebar.addEventListener('click', (e) => {
+                    if (window.innerWidth <= 1024) {
+                        toggleMenu();
+                    }
+                });
+            }
+
+            initializeEventListeners() {
+                document.getElementById('domainForm').addEventListener('submit', (e) => {
+                    e.preventDefault();
+                    this.fetchUrls();
+                });
+
+                document.querySelectorAll('input[name="visType"]').forEach(radio => {
+                    radio.addEventListener('change', (e) => {
+                        this.visType = e.target.value;
+                        this.updateVisualisations();
+                    });
+                });
+
+                document.getElementById('folderCount').addEventListener('input', (e) => {
+                    this.topFoldersCount = e.target.value;
+                    document.getElementById('folderCountValue').textContent = e.target.value;
+                    this.updateVisualisations();
+                });
+
+                document.getElementById('downloadButton').addEventListener('click', () => {
+                    this.downloadUrls();
+                });
+            }
+
+            async fetchUrls() {
+                const domain = document.getElementById('domainInput').value.trim();
+                if (!domain) {
+                    this.showAlert('Please enter a domain', 'warning');
+                    return;
+                }
+
+                this.domain = domain;
+                this.showProgress(0, 'Fetching URLs... This may take a while for large websites.');
+                document.getElementById('submitButton').disabled = true;
+                document.getElementById('submitButton').textContent = 'Processing...';
+
+                try {
+                    const urls = await this.getUniqueUrls(domain);
+                    this.uniqueUrls = urls;
+
+                    if (urls.length > 0) {
+                        this.showAlert(`Found ${urls.length} URLs`, 'success');
+                        document.getElementById('results').classList.remove('hidden');
+                        this.updateAllVisualisations();
+                        document.getElementById('results').scrollIntoView({
+                            behavior: 'smooth',
+                            block: 'start'
+                        });
+                    } else {
+                        this.showAlert('No URLs found. Check the domain name.', 'warning');
+                    }
+                } catch (error) {
+                    this.showAlert(`Error fetching URLs: ${error.message}`, 'error');
+                } finally {
+                    this.hideProgress();
+                    document.getElementById('submitButton').disabled = false;
+                    document.getElementById('submitButton').textContent = 'Analyse Website';
+                }
+            }
+
+            async getUniqueUrls(domain, retries = 3) {
+                domain = domain.replace(/^https?:\/\//, '').replace(/\/$/, '');
+
+                const proxyUrls = [
+                    'https://corsproxy.io/?',
+                    'https://api.allorigins.win/raw?url=',
+                    'https://cors-anywhere.herokuapp.com/'
+                ];
+
+                const baseUrl = "http://web.archive.org/cdx/search/cdx";
+                const params = new URLSearchParams({
+                    url: `${domain}/*`,
+                    output: "json",
+                    fl: "original,timestamp,statuscode,digest",
+                    pageSize: "500"
+                });
+
+                let lastError = null;
+
+                for (let attempt = 0; attempt < retries; attempt++) {
+                    for (const proxyUrl of proxyUrls) {
+                        try {
+                            const fullUrl = `${baseUrl}?${params}`;
+                            let apiUrl;
+
+                            if (proxyUrl.includes('corsproxy.io')) {
+                                apiUrl = `${proxyUrl}${encodeURIComponent(fullUrl)}`;
+                            } else if (proxyUrl.includes('allorigins.win')) {
+                                apiUrl = `${proxyUrl}${encodeURIComponent(fullUrl)}`;
+                            } else {
+                                apiUrl = `${proxyUrl}${fullUrl}`;
+                            }
+
+                            this.showProgress(10, `Attempt ${attempt + 1}: Fetching data...`);
+                            const response = await fetch(apiUrl, {
+                                method: 'GET',
+                                headers: { 'Accept': 'application/json' },
+                                mode: 'cors'
+                            });
+
+                            if (!response.ok) continue;
+
+                            const data = await response.json();
+                            if (!data || data.length <= 1) return [];
+
+                            const uniqueUrls = [];
+                            for (let i = 1; i < data.length; i++) {
+                                const item = data[i];
+                                const url = this.cleanUrl(item[0]);
+                                uniqueUrls.push({
+                                    url: url,
+                                    timestamp: item[1],
+                                    statuscode: item[2],
+                                    digest: item[3]
+                                });
+
+                                if (i % 50 === 0) {
+                                    const progress = 10 + (i / data.length) * 80;
+                                    this.showProgress(progress, `Processing ${i} of ${data.length} URLs...`);
+                                }
+                            }
+
+                            this.showProgress(100, 'Processing complete!');
+                            return uniqueUrls;
+                        } catch (error) {
+                            lastError = error;
+                            await this.sleep(1000);
+                        }
+                    }
+                }
+
+                throw new Error(`All attempts failed. Last error: ${lastError?.message || 'Unknown error'}`);
+            }
+
+            async sleep(ms) {
+                return new Promise(resolve => setTimeout(resolve, ms));
+            }
+
+            cleanUrl(url) {
+                try {
+                    if (!url.startsWith('http')) url = 'http://' + url;
+                    const urlObj = new URL(url);
+                    return `${urlObj.protocol}//${urlObj.hostname}${urlObj.pathname}${urlObj.search}${urlObj.hash}`;
+                } catch (e) {
+                    return url.replace(/\/\/.*@/, '//').replace(/^\/\//, 'http://');
+                }
+            }
+
+            getTopFolder(url) {
+                try {
+                    const urlObj = new URL(url);
+                    const path = urlObj.pathname.replace(/^\/|\/$/g, '');
+                    if (!path) return "Root";
+                    return `/${path.split('/')[0]}/`;
+                } catch (e) {
+                    return "Invalid URL";
+                }
+            }
+
+            groupStatusCode(code) {
+                try {
+                    const numCode = parseInt(code);
+                    if (numCode < 200) return '1xx';
+                    if (numCode < 300) return '2xx';
+                    if (numCode < 400) return '3xx';
+                    if (numCode < 500) return '4xx';
+                    return '5xx';
+                } catch {
+                    return 'Unknown';
+                }
+            }
+
+            updateAllVisualisations() {
+                this.visualiseFolderTypesOverTime();
+                this.visualiseStatusCodesOverTime();
+                this.visualiseTopChangingPages();
+                this.visualiseRobotsChanges();
+            }
+
+            updateVisualisations() {
+                if (this.uniqueUrls.length > 0) {
+                    this.updateAllVisualisations();
+                }
+            }
+
+            visualiseFolderTypesOverTime() {
+                if (this.uniqueUrls.length === 0) return;
+
+                const data = {};
+                this.uniqueUrls.forEach(item => {
+                    const year = item.timestamp.substring(0, 4);
+                    const folder = this.getTopFolder(item.url);
+                    if (!data[year]) data[year] = {};
+                    if (!data[year][folder]) data[year][folder] = 0;
+                    data[year][folder]++;
+                });
+
+                const years = Object.keys(data).sort();
+                const allFolders = new Set();
+                years.forEach(year => Object.keys(data[year]).forEach(folder => allFolders.add(folder)));
+
+                const folderTotals = {};
+                allFolders.forEach(folder => {
+                    folderTotals[folder] = years.reduce((sum, year) => sum + (data[year][folder] || 0), 0);
+                });
+
+                const sortedFolders = Object.keys(folderTotals).sort((a, b) => folderTotals[b] - folderTotals[a]);
+                const topFolders = sortedFolders.slice(0, this.topFoldersCount);
+
+                const traces = topFolders.map(folder => ({
+                    x: years,
+                    y: years.map(year => data[year][folder] || 0),
+                    type: this.visType === 'line' ? 'scatter' : 'bar',
+                    mode: this.visType === 'line' ? 'lines' : null,
+                    stackgroup: this.visType === 'line' ? 'one' : null,
+                    name: folder,
+                    marker: { color: '#3a86ff' }
+                }));
+
+                const layout = {
+                    title: 'Evolution of Website Structure Over Time',
+                    xaxis: { title: 'Year', type: 'category' },
+                    yaxis: { title: 'Number of URLs' },
+                    barmode: this.visType === 'bar' ? 'stack' : null,
+                    height: 500,
+                    font: { color: '#ffffff' },
+                    paper_bgcolor: 'transparent',
+                    plot_bgcolor: 'transparent',
+                    legend: { font: { color: '#ffffff' } }
+                };
+
+                Plotly.newPlot('folderViz', traces, layout);
+            }
+
+            visualiseStatusCodesOverTime() {
+                if (this.uniqueUrls.length === 0) return;
+
+                const data = {};
+                this.uniqueUrls.forEach(item => {
+                    const year = item.timestamp.substring(0, 4);
+                    const statusGroup = this.groupStatusCode(item.statuscode);
+                    if (!data[year]) data[year] = {};
+                    if (!data[year][statusGroup]) data[year][statusGroup] = 0;
+                    data[year][statusGroup]++;
+                });
+
+                const years = Object.keys(data).sort();
+                const statusGroups = ['1xx', '2xx', '3xx', '4xx', '5xx', 'Unknown'];
+                const colors = ['#3a86ff', '#06d6a0', '#ffd166', '#ff9e00', '#ef476f', '#888888'];
+
+                const traces = statusGroups.map((group, index) => ({
+                    x: years,
+                    y: years.map(year => data[year][group] || 0),
+                    type: this.visType === 'line' ? 'scatter' : 'bar',
+                    mode: this.visType === 'line' ? 'lines' : null,
+                    stackgroup: this.visType === 'line' ? 'one' : null,
+                    name: group,
+                    marker: { color: colors[index] }
+                }));
+
+                const layout = {
+                    title: 'Evolution of Status Codes Over Time',
+                    xaxis: { title: 'Year', type: 'category' },
+                    yaxis: { title: 'Number of URLs' },
+                    barmode: this.visType === 'bar' ? 'stack' : null,
+                    height: 500,
+                    font: { color: '#ffffff' },
+                    paper_bgcolor: 'transparent',
+                    plot_bgcolor: 'transparent',
+                    legend: { font: { color: '#ffffff' } }
+                };
+
+                Plotly.newPlot('statusViz', traces, layout);
+            }
+
+            getTopChangingPages() {
+                const pageChanges = {};
+                this.uniqueUrls.forEach(item => {
+                    if (!pageChanges[item.url]) pageChanges[item.url] = new Set();
+                    pageChanges[item.url].add(item.digest);
+                });
+
+                return Object.keys(pageChanges)
+                    .map(url => ({ url, changes: pageChanges[url].size }))
+                    .sort((a, b) => b.changes - a.changes)
+                    .slice(0, this.topFoldersCount);
+            }
+
+            visualiseTopChangingPages() {
+                if (this.uniqueUrls.length === 0) return;
+
+                const topChangingPages = this.getTopChangingPages();
+                const trace = {
+                    x: topChangingPages.map(item => item.changes),
+                    y: topChangingPages.map(item => {
+                        const maxLength = 60;
+                        return item.url.length > maxLength ?
+                            item.url.substring(0, maxLength) + '...' :
+                            item.url;
+                    }),
+                    type: 'bar',
+                    orientation: 'h',
+                    marker: { color: '#3a86ff' }
+                };
+
+                const layout = {
+                    title: `Top ${this.topFoldersCount} Frequently Changed Pages`,
+                    xaxis: { title: 'Number of Changes' },
+                    yaxis: { title: 'Page', automargin: true },
+                    height: Math.max(400, topChangingPages.length * 30),
+                    margin: { l: 200 },
+                    font: { color: '#ffffff' },
+                    paper_bgcolor: 'transparent',
+                    plot_bgcolor: 'transparent'
+                };
+
+                Plotly.newPlot('changesViz', [trace], layout);
+                this.createPageList(topChangingPages);
+            }
+
+            createPageList(pages) {
+                const pageList = document.createElement('div');
+                pageList.className = 'page-list';
+
+                pages.forEach(page => {
+                    const pageItem = document.createElement('div');
+                    pageItem.className = 'page-item';
+                    pageItem.innerHTML = `
+            <div class="page-url">${page.url}</div>
+            <div class="page-changes">Changes: ${page.changes}</div>
+          `;
+                    pageItem.addEventListener('click', () => this.showPageHistory(page.url));
+                    pageList.appendChild(pageItem);
+                });
+
+                document.getElementById('pageListContainer').innerHTML = '<h4>Click on a page to view its change history:</h4>';
+                document.getElementById('pageListContainer').appendChild(pageList);
+            }
+
+            showPageHistory(pageUrl) {
+                const pageUrls = this.uniqueUrls
+                    .filter(item => item.url === pageUrl)
+                    .sort((a, b) => b.timestamp.localeCompare(a.timestamp))
+                    .slice(0, 50);
+
+                let historyHTML = '';
+                pageUrls.forEach((item, index) => {
+                    const date = this.formatTimestamp(item.timestamp);
+                    historyHTML += `
+            <div class="expander">
+              <div class="expander-header">
+                <span>${date}</span>
+                <span>Status: ${item.statuscode}</span>
+              </div>
+              <div class="expander-content">
+                <p><strong>URL:</strong> ${item.url}</p>
+                <p><strong>Digest:</strong> ${item.digest}</p>
+                <a href="https://web.archive.org/web/${item.timestamp}/${item.url}" target="_blank" style="color: #3a86ff;">View Version</a>
+              </div>
+            </div>
+          `;
+                });
+
+                document.getElementById('pageHistory').innerHTML = historyHTML;
+                document.getElementById('pageDetails').classList.remove('hidden');
+
+                document.querySelectorAll('.expander-header').forEach(header => {
+                    header.addEventListener('click', () => {
+                        const content = header.nextElementSibling;
+                        content.style.display = content.style.display === 'none' ? 'block' : 'none';
+                    });
+                });
+            }
+
+            async fetchRobotsData() {
+                if (this.robotsData.length > 0) return this.robotsData;
+
+                const proxyUrl = 'https://corsproxy.io/?';
+                const baseUrl = "http://web.archive.org/cdx/search/cdx";
+                const params = new URLSearchParams({
+                    url: `${this.domain}/robots.txt`,
+                    output: "json",
+                    fl: "timestamp,statuscode,digest,original",
+                    filter: "statuscode:200",
+                    collapse: "digest"
+                });
+
+                try {
+                    const fullUrl = `${baseUrl}?${params}`;
+                    const apiUrl = `${proxyUrl}${encodeURIComponent(fullUrl)}`;
+                    const response = await fetch(apiUrl);
+
+                    if (!response.ok) return [];
+
+                    const data = await response.json();
+                    this.robotsData = data && data.length > 1 ? data.slice(1) : [];
+                    return this.robotsData;
+                } catch (error) {
+                    return [];
+                }
+            }
+
+            async visualiseRobotsChanges() {
+                const robotsData = await this.fetchRobotsData();
+
+                if (robotsData.length === 0) {
+                    document.getElementById('robotsViz').innerHTML = '<p style="color: #888;">No robots.txt changes found.</p>';
+                    return;
+                }
+
+                const changes = {};
+                robotsData.forEach(item => {
+                    const digest = item[2];
+                    if (!changes[digest]) {
+                        changes[digest] = {
+                            timestamp: item[0],
+                            digest: digest,
+                            original: item[3]
+                        };
+                    }
+                });
+
+                const uniqueChanges = Object.values(changes)
+                    .sort((a, b) => a.timestamp.localeCompare(b.timestamp));
+
+                const trace = {
+                    x: uniqueChanges.map(change => this.formatTimestamp(change.timestamp)),
+                    y: new Array(uniqueChanges.length).fill(1),
+                    mode: 'markers+lines',
+                    marker: { size: 12, color: '#3a86ff' },
+                    line: { color: '#3a86ff', width: 2 }
+                };
+
+                const layout = {
+                    title: 'Timeline of Unique robots.txt Changes',
+                    xaxis: { title: 'Date' },
+                    yaxis: { showticklabels: false, showgrid: false },
+                    height: 300,
+                    showlegend: false,
+                    font: { color: '#ffffff' },
+                    paper_bgcolor: 'transparent',
+                    plot_bgcolor: 'transparent'
+                };
+
+                Plotly.newPlot('robotsViz', [trace], layout);
+                this.populateVersionSelectors(uniqueChanges);
+            }
+
+            populateVersionSelectors(changes) {
+                const version1 = document.getElementById('version1');
+                const version2 = document.getElementById('version2');
+
+                version1.innerHTML = '';
+                version2.innerHTML = '';
+
+                changes.forEach((change, index) => {
+                    const option1 = document.createElement('option');
+                    const option2 = document.createElement('option');
+                    const date = this.formatTimestamp(change.timestamp);
+
+                    option1.textContent = option2.textContent = date;
+                    option1.value = option2.value = index;
+                    version1.appendChild(option1);
+                    version2.appendChild(option2);
+                });
+
+                if (changes.length > 1) version2.value = 1;
+
+                version1.addEventListener('change', () => this.compareRobotsVersions());
+                version2.addEventListener('change', () => this.compareRobotsVersions());
+                this.compareRobotsVersions();
+            }
+
+            async compareRobotsVersions() {
+                const version1Index = document.getElementById('version1').value;
+                const version2Index = document.getElementById('version2').value;
+
+                if (!version1Index || !version2Index) return;
+
+                const changes = Object.values(this.robotsData.reduce((acc, item) => {
+                    const digest = item[2];
+                    if (!acc[digest]) {
+                        acc[digest] = {
+                            timestamp: item[0],
+                            digest: digest,
+                            original: item[3]
+                        };
+                    }
+                    return acc;
+                }, {})).sort((a, b) => a.timestamp.localeCompare(b.timestamp));
+
+                const version1 = changes[version1Index];
+                const version2 = changes[version2Index];
+
+                try {
+                    const content1 = await this.fetchRobotsContent(version1.timestamp);
+                    const content2 = await this.fetchRobotsContent(version2.timestamp);
+
+                    document.getElementById('content1').textContent = content1 || 'Content not available';
+                    document.getElementById('content2').textContent = content2 || 'Content not available';
+
+                    if (content1 && content2) {
+                        this.showDiff(content1, content2);
+                    }
+                } catch (error) {
+                    console.warn('Error comparing robots versions:', error);
+                }
+            }
+
+            async fetchRobotsContent(timestamp) {
+                const proxyUrl = 'https://corsproxy.io/?';
+                const url = `https://web.archive.org/web/${timestamp}id_/${this.domain}/robots.txt`;
+
+                try {
+                    const response = await fetch(`${proxyUrl}${encodeURIComponent(url)}`);
+                    return response.ok ? await response.text() : null;
+                } catch (error) {
+                    return null;
+                }
+            }
+
+            showDiff(text1, text2) {
+                const dmp = new diff_match_patch();
+                const diffs = dmp.diff_main(text1, text2);
+                dmp.diff_cleanupSemantic(diffs);
+
+                let diffHTML = '<h4>Differences:</h4><pre>';
+                diffs.forEach(([operation, text]) => {
+                    const lines = text.split('\n');
+                    lines.forEach(line => {
+                        if (line.trim() === '') return;
+                        if (operation === 1) {
+                            diffHTML += `<div class="diff-added">+ ${line}</div>`;
+                        } else if (operation === -1) {
+                            diffHTML += `<div class="diff-removed">- ${line}</div>`;
+                        } else {
+                            diffHTML += `<div>  ${line}</div>`;
+                        }
+                    });
+                });
+                diffHTML += '</pre>';
+                document.getElementById('diffResult').innerHTML = diffHTML;
+            }
+
+            downloadUrls() {
+                const filterType = document.querySelector('input[name="filterType"]:checked').value;
+                const uniqueOnly = document.getElementById('uniqueOnly').checked;
+
+                let filteredUrls = this.uniqueUrls.filter(item => this.applyFilter(item.url, filterType));
+
+                if (uniqueOnly) {
+                    const uniqueUrls = {};
+                    filteredUrls.forEach(item => {
+                        if (!uniqueUrls[item.url]) uniqueUrls[item.url] = item;
+                    });
+                    filteredUrls = Object.values(uniqueUrls);
+                }
+
+                let csvContent = "URL,Timestamp,Status Code,Digest\n";
+                filteredUrls.forEach(item => {
+                    csvContent += `"${item.url}","${item.timestamp}","${item.statuscode}","${item.digest}"\n`;
+                });
+
+                const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+                const link = document.createElement('a');
+                const url = URL.createObjectURL(blob);
+
+                link.setAttribute('href', url);
+                link.setAttribute('download', `${this.domain}_urls.csv`);
+                link.style.visibility = 'hidden';
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+
+                document.getElementById('downloadInfo').innerHTML =
+                    `<div class="alert alert-success">Downloaded ${filteredUrls.length} URLs</div>`;
+            }
+
+            applyFilter(url, filterType) {
+                if (filterType === 'all') return true;
+                if (filterType === 'html') {
+                    return url.endsWith('.html') || url.endsWith('.htm') || url.endsWith('/') || url.includes('robots.txt');
+                }
+                if (filterType === 'html-images') {
+                    return url.endsWith('.html') || url.endsWith('.htm') || url.endsWith('/') ||
+                        url.includes('robots.txt') ||
+                        url.match(/\.(jpg|jpeg|png|gif|svg|webp)$/i);
+                }
+                return true;
+            }
+
+            formatTimestamp(timestamp) {
+                const year = timestamp.substring(0, 4);
+                const month = timestamp.substring(4, 6);
+                const day = timestamp.substring(6, 8);
+                const hour = timestamp.substring(8, 10);
+                const minute = timestamp.substring(10, 12);
+                const second = timestamp.substring(12, 14);
+                return `${year}-${month}-${day} ${hour}:${minute}:${second}`;
+            }
+
+            showAlert(message, type) {
+                const alertsDiv = document.getElementById('alerts');
+                const alert = document.createElement('div');
+                alert.className = `alert alert-${type}`;
+                alert.textContent = message;
+                alertsDiv.appendChild(alert);
+
+                setTimeout(() => alert.remove(), 5000);
+            }
+
+            showProgress(percent, message) {
+                document.getElementById('progressContainer').classList.remove('hidden');
+                document.getElementById('progressFill').style.width = `${percent}%`;
+                document.getElementById('progressText').textContent = message;
+            }
+
+            hideProgress() {
+                document.getElementById('progressContainer').classList.add('hidden');
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            new WaybackAnalyser();
+        });
+    </script>
+</body>
+
+</html>
