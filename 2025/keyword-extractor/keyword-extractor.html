@@ -1,0 +1,1134 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Keyword Extractor</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --primary-color: #3b82f6;
+            --secondary-color: #1e40af;
+            --accent-color: #60a5fa;
+            --background-color: #000000;
+            --card-bg: #111111;
+            --text-color: #ffffff;
+            --border-color: #333333;
+            --success-color: #10b981;
+            --warning-color: #f59e0b;
+            --error-color: #ef4444;
+            --gray-color: #666666;
+            --border-radius: 4px;
+            --transition: all 0.2s ease;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+            line-height: 1.4;
+            color: var(--text-color);
+            background-color: var(--background-color);
+            min-height: 100vh;
+            padding: 15px;
+            font-size: 13px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .app-title {
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 20px;
+            color: var(--primary-color);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .input-section {
+            background-color: var(--card-bg);
+            padding: 15px;
+            border-radius: var(--border-radius);
+            margin-bottom: 15px;
+            border: 1px solid var(--border-color);
+        }
+
+        .url-input-container {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 12px;
+        }
+
+        #urlInput {
+            flex: 1;
+            padding: 10px 12px;
+            border: 1px solid var(--border-color);
+            border-radius: var(--border-radius);
+            font-size: 13px;
+            transition: var(--transition);
+            background-color: #1a1a1a;
+            color: var(--text-color);
+        }
+
+        #urlInput:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.1);
+        }
+
+        .btn-primary {
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            padding: 10px 16px;
+            border-radius: var(--border-radius);
+            font-size: 13px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: var(--transition);
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            white-space: nowrap;
+        }
+
+        .btn-primary:hover {
+            background-color: var(--secondary-color);
+        }
+
+        .options {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            padding-top: 12px;
+            border-top: 1px solid var(--border-color);
+        }
+
+        .option-group {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            align-items: center;
+        }
+
+        .checkbox-label {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            cursor: pointer;
+            color: var(--text-color);
+            font-size: 12px;
+        }
+
+        .checkbox-label input[type="checkbox"] {
+            width: 14px;
+            height: 14px;
+            cursor: pointer;
+            accent-color: var(--primary-color);
+        }
+
+        .option-group label:not(.checkbox-label) {
+            font-weight: 500;
+            color: var(--text-color);
+            font-size: 12px;
+        }
+
+        .option-group input[type="number"] {
+            width: 55px;
+            padding: 5px 8px;
+            border: 1px solid var(--border-color);
+            border-radius: 3px;
+            text-align: center;
+            background-color: #1a1a1a;
+            color: var(--text-color);
+            font-size: 12px;
+        }
+
+        .loading {
+            padding: 30px 15px;
+            margin-bottom: 15px;
+            background-color: var(--card-bg);
+            border-radius: var(--border-radius);
+            border: 1px solid var(--border-color);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .spinner {
+            border: 3px solid rgba(255, 255, 255, 0.1);
+            border-radius: 50%;
+            border-top: 3px solid var(--primary-color);
+            width: 30px;
+            height: 30px;
+            animation: spin 1s linear infinite;
+            margin-bottom: 10px;
+        }
+
+        @keyframes spin {
+            0% {
+                transform: rotate(0deg);
+            }
+
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+
+        .results-section {
+            background-color: var(--card-bg);
+            border-radius: var(--border-radius);
+            padding: 15px;
+            border: 1px solid var(--border-color);
+        }
+
+        .results-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            padding-bottom: 12px;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .results-header h2 {
+            color: var(--primary-color);
+            font-size: 16px;
+            font-weight: 600;
+        }
+
+        .btn-secondary {
+            background-color: transparent;
+            color: var(--primary-color);
+            border: 1px solid var(--primary-color);
+            padding: 6px 10px;
+            border-radius: var(--border-radius);
+            font-size: 11px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: var(--transition);
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .btn-secondary:hover {
+            background-color: var(--primary-color);
+            color: white;
+        }
+
+        .results-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 12px;
+            margin-bottom: 15px;
+        }
+
+        @media (max-width: 1200px) {
+            .results-container {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        @media (max-width: 768px) {
+            .results-container {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .result-category {
+            background-color: #1a1a1a;
+            border-radius: var(--border-radius);
+            padding: 12px;
+            border: 1px solid var(--border-color);
+        }
+
+        .result-category h3 {
+            margin-bottom: 10px;
+            color: var(--accent-color);
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 13px;
+            font-weight: 600;
+        }
+
+        .keywords-list {
+            min-height: 120px;
+            max-height: 200px;
+            overflow-y: auto;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+            align-items: flex-start;
+            padding: 2px;
+        }
+
+        .keyword-tag {
+            background-color: #222222;
+            border: 1px solid #333333;
+            border-radius: 3px;
+            padding: 4px 8px;
+            font-size: 11px;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            transition: var(--transition);
+        }
+
+        .keyword-tag.high-frequency {
+            background-color: rgba(59, 130, 246, 0.1);
+            border-color: rgba(59, 130, 246, 0.3);
+            color: var(--accent-color);
+        }
+
+        .keyword-tag.key-phrase {
+            background-color: rgba(139, 92, 246, 0.1);
+            border-color: rgba(139, 92, 246, 0.3);
+            color: #a78bfa;
+        }
+
+        .keyword-tag.latent {
+            background-color: rgba(34, 197, 94, 0.1);
+            border-color: rgba(34, 197, 94, 0.3);
+            color: #86efac;
+        }
+
+        .keyword-tag .frequency {
+            font-size: 10px;
+            background-color: rgba(255, 255, 255, 0.05);
+            border-radius: 2px;
+            padding: 1px 4px;
+            margin-left: 3px;
+        }
+
+        .no-data {
+            color: var(--gray-color);
+            font-style: italic;
+            text-align: left;
+            width: 100%;
+            padding: 20px;
+            font-size: 12px;
+        }
+
+        .stats {
+            display: flex;
+            justify-content: space-around;
+            background-color: #1a1a1a;
+            padding: 10px;
+            border-radius: var(--border-radius);
+            margin-top: 12px;
+            border: 1px solid var(--border-color);
+        }
+
+        .stat {
+            text-align: left;
+        }
+
+        .stat-label {
+            display: block;
+            font-weight: 500;
+            color: var(--gray-color);
+            margin-bottom: 3px;
+            font-size: 11px;
+        }
+
+        .stat-value {
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--primary-color);
+        }
+
+        .info-section {
+            background-color: var(--card-bg);
+            padding: 12px;
+            border-radius: var(--border-radius);
+            margin-top: 15px;
+            border: 1px solid var(--border-color);
+        }
+
+        .info-section h3 {
+            margin-bottom: 8px;
+            color: var(--accent-color);
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 13px;
+            font-weight: 600;
+        }
+
+        .info-section ul {
+            margin-left: 15px;
+            margin-bottom: 8px;
+        }
+
+        .info-section li {
+            margin-bottom: 3px;
+            color: var(--text-color);
+            font-size: 11px;
+            line-height: 1.4;
+        }
+
+        .note {
+            padding: 8px 10px;
+            background-color: rgba(245, 158, 11, 0.1);
+            border-left: 3px solid var(--warning-color);
+            border-radius: 2px;
+            margin-top: 8px;
+            color: var(--warning-color);
+            display: flex;
+            align-items: flex-start;
+            gap: 6px;
+            font-size: 11px;
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        .notification {
+            position: fixed;
+            top: 15px;
+            right: 15px;
+            padding: 10px 14px;
+            border-radius: var(--border-radius);
+            color: white;
+            font-weight: 500;
+            z-index: 1000;
+            font-size: 12px;
+            animation: slideIn 0.2s ease;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            max-width: 350px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .notification.success {
+            background-color: var(--success-color);
+        }
+
+        .notification.warning {
+            background-color: var(--warning-color);
+            color: #000;
+        }
+
+        .notification.error {
+            background-color: var(--error-color);
+        }
+
+        .notification.info {
+            background-color: var(--primary-color);
+        }
+
+        @keyframes slideIn {
+            from {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+
+        @keyframes fadeOut {
+            from {
+                opacity: 1;
+            }
+
+            to {
+                opacity: 0;
+            }
+        }
+
+        .keywords-list::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .keywords-list::-webkit-scrollbar-track {
+            background: #1a1a1a;
+            border-radius: 3px;
+        }
+
+        .keywords-list::-webkit-scrollbar-thumb {
+            background: var(--gray-color);
+            border-radius: 3px;
+        }
+
+        .keywords-list::-webkit-scrollbar-thumb:hover {
+            background: var(--accent-color);
+        }
+
+        @media (max-width: 768px) {
+            body {
+                padding: 10px;
+            }
+
+            .url-input-container {
+                flex-direction: column;
+            }
+
+            .btn-primary {
+                width: 100%;
+                justify-content: center;
+            }
+
+            .options {
+                flex-direction: column;
+                gap: 10px;
+            }
+
+            .option-group {
+                justify-content: space-between;
+            }
+
+            .stats {
+                flex-direction: column;
+                gap: 10px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <div class="input-section">
+            <div class="url-input-container">
+                <input type="url" id="urlInput"
+                    placeholder="Enter URL (e.g., https://en.wikipedia.org/wiki/Artificial_intelligence)"
+                    value="https://en.wikipedia.org/wiki/Artificial_intelligence">
+                <button id="extractBtn" class="btn-primary">
+                    <i class="fas fa-magic"></i> Extract Keywords
+                </button>
+            </div>
+
+            <div class="options">
+                <div class="option-group">
+                    <label class="checkbox-label">
+                        <input type="checkbox" id="removeStopwords" checked>
+                        <span>Remove stop words</span>
+                    </label>
+                    <label class="checkbox-label">
+                        <input type="checkbox" id="stemWords">
+                        <span>Stem words</span>
+                    </label>
+                </div>
+                <div class="option-group">
+                    <label for="maxKeywords">Max Keywords:</label>
+                    <input type="number" id="maxKeywords" min="5" max="100" value="20">
+
+                    <label for="minWordLength">Min Word Length:</label>
+                    <input type="number" id="minWordLength" min="2" max="10" value="3">
+                </div>
+            </div>
+        </div>
+
+        <div class="loading hidden" id="loading">
+            <div class="spinner"></div>
+            <p>Processing webpage content...</p>
+        </div>
+
+        <div class="results-section" id="resultsSection">
+            <div class="results-header">
+                <h2><i class="fas fa-chart-bar"></i> Extracted Keywords</h2>
+                <button id="copyBtn" class="btn-secondary">
+                    <i class="far fa-copy"></i> Copy Results
+                </button>
+            </div>
+
+            <div class="results-container">
+                <div class="result-category">
+                    <h3><i class="fas fa-fire"></i> High-Frequency Keywords</h3>
+                    <div class="keywords-list" id="highFrequencyKeywords">
+                        <p class="no-data">Enter a URL and click "Extract Keywords"</p>
+                    </div>
+                </div>
+
+                <div class="result-category">
+                    <h3><i class="fas fa-comments"></i> Key Phrases</h3>
+                    <div class="keywords-list" id="keyPhrases">
+                        <p class="no-data">Enter a URL and click "Extract Keywords"</p>
+                    </div>
+                </div>
+
+                <div class="result-category">
+                    <h3><i class="fas fa-brain"></i> Latent Keywords</h3>
+                    <div class="keywords-list" id="latentKeywords">
+                        <p class="no-data">Enter a URL and click "Extract Keywords"</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="stats">
+                <div class="stat">
+                    <span class="stat-label">Words Processed:</span>
+                    <span class="stat-value" id="wordsProcessed">0</span>
+                </div>
+                <div class="stat">
+                    <span class="stat-label">Unique Words:</span>
+                    <span class="stat-value" id="uniqueWords">0</span>
+                </div>
+                <div class="stat">
+                    <span class="stat-label">Extraction Time:</span>
+                    <span class="stat-value" id="extractionTime">0s</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const CORS_PROXIES = [
+            'https://api.allorigins.win/raw?url=',
+            'https://api.codetabs.com/v1/proxy?quest=',
+            'https://corsproxy.io/?',
+            (url) => `https://api.allorigins.win/get?url=${encodeURIComponent(url)}`
+        ];
+
+        const STOP_WORDS = new Set([
+            'a', 'an', 'the', 'and', 'or', 'but', 'in', 'on', 'at', 'to', 'for', 'of', 'with', 'by',
+            'is', 'are', 'was', 'were', 'be', 'been', 'being', 'have', 'has', 'had', 'do', 'does', 'did',
+            'will', 'would', 'shall', 'should', 'may', 'might', 'must', 'can', 'could', 'i', 'you', 'he',
+            'she', 'it', 'we', 'they', 'me', 'him', 'her', 'us', 'them', 'my', 'your', 'his', 'her',
+            'its', 'our', 'their', 'this', 'that', 'these', 'those', 'am', 'is', 'are', 'was', 'were',
+            'be', 'been', 'being', 'have', 'has', 'had', 'do', 'does', 'did', 'will', 'would', 'shall',
+            'should', 'may', 'might', 'must', 'can', 'could', 'i', 'you', 'he', 'she', 'it', 'we', 'they',
+            'what', 'which', 'who', 'whom', 'whose', 'where', 'when', 'why', 'how', 'all', 'any', 'both',
+            'each', 'few', 'more', 'most', 'other', 'some', 'such', 'no', 'nor', 'not', 'only', 'own',
+            'same', 'so', 'than', 'too', 'very', 's', 't', 'can', 'will', 'just', 'don', 'should', 'now'
+        ]);
+
+        const proxyHealth = new Map();
+        let lastRequestTime = 0;
+        const MIN_REQUEST_INTERVAL = 2000;
+
+        function porterStemmer(word) {
+            if (word.length < 3) return word.toLowerCase();
+
+            word = word.toLowerCase();
+
+            if (word.endsWith('sses')) {
+                word = word.slice(0, -2);
+            } else if (word.endsWith('ies')) {
+                word = word.slice(0, -2);
+            } else if (word.endsWith('ss')) {
+            } else if (word.endsWith('s')) {
+                word = word.slice(0, -1);
+            }
+
+            if (word.match(/(eed|eedly)$/)) {
+            } else if (word.match(/[aeiou].*(ed|edly|ing|ingly)$/)) {
+                word = word.replace(/(ed|edly|ing|ingly)$/, '');
+
+                if (word.match(/(at|bl|iz)$/)) {
+                    word += 'e';
+                } else if (word.match(/([^aeiouylsz])\1$/)) {
+                    word = word.slice(0, -1);
+                } else if (word.match(/^[^aeiou][aeiouy][^aeiouwxy]$/)) {
+                    word += 'e';
+                }
+            }
+
+            return word;
+        }
+
+        function extractTextFromHTML(html) {
+            const parser = new DOMParser();
+            const doc = parser.parseFromString(html, 'text/html');
+
+            const scripts = doc.querySelectorAll('script, style, noscript, iframe, svg, nav, header, footer');
+            scripts.forEach(el => el.remove());
+
+            let content = '';
+
+            const wikipediaSelectors = [
+                '#mw-content-text',
+                '.mw-parser-output',
+                '#bodyContent',
+                '.mw-body'
+            ];
+
+            for (const selector of wikipediaSelectors) {
+                const element = doc.querySelector(selector);
+                if (element && element.textContent && element.textContent.trim().length > 1000) {
+                    content = element.textContent;
+                    break;
+                }
+            }
+
+            if (!content || content.length < 1000) {
+                const generalSelectors = [
+                    'article',
+                    'main',
+                    '.content',
+                    '.post-content',
+                    '.entry-content',
+                    '.article-content',
+                    '#content',
+                    '#main-content',
+                    'section'
+                ];
+
+                for (const selector of generalSelectors) {
+                    const element = doc.querySelector(selector);
+                    if (element && element.textContent && element.textContent.trim().length > 1000) {
+                        content = element.textContent;
+                        break;
+                    }
+                }
+            }
+
+            if (!content || content.length < 1000) {
+                const allElements = doc.querySelectorAll('p, div, section, article');
+                let largestText = '';
+                let largestLength = 0;
+
+                allElements.forEach(element => {
+                    const text = element.textContent || '';
+                    const textLength = text.trim().length;
+                    if (textLength > largestLength && textLength > 500) {
+                        largestLength = textLength;
+                        largestText = text;
+                    }
+                });
+
+                if (largestText && largestLength > 1000) {
+                    content = largestText;
+                }
+            }
+
+            if (!content || content.length < 1000) {
+                content = doc.body.textContent || '';
+            }
+
+            if (content) {
+                content = content.replace(/\s+/g, ' ').trim();
+                content = content.replace(/\[\d+\]/g, '');
+                content = content.replace(/\([^)]*\)/g, ' ');
+                content = content.replace(/[^\w\s.,!?-]/g, ' ');
+                content = content.replace(/\s+/g, ' ').trim();
+            }
+
+            return content || '';
+        }
+
+        function tokenizeText(text, options = {}) {
+            const { removeStopwords = true, stemWords = false, minWordLength = 3 } = options;
+
+            if (!text || text.trim().length === 0) {
+                return [];
+            }
+
+            let tokens = text.toLowerCase()
+                .replace(/[^\w\s-]/g, ' ')
+                .replace(/\s+/g, ' ')
+                .trim()
+                .split(' ');
+
+            tokens = tokens.filter(token => {
+                if (token.length < minWordLength) return false;
+                if (/^\d+$/.test(token)) return false;
+                return true;
+            });
+
+            if (removeStopwords) {
+                tokens = tokens.filter(token => !STOP_WORDS.has(token));
+            }
+
+            if (stemWords) {
+                tokens = tokens.map(token => porterStemmer(token));
+            }
+
+            return tokens;
+        }
+
+        function extractNGrams(tokens, n, minWordLength) {
+            const ngrams = [];
+            for (let i = 0; i <= tokens.length - n; i++) {
+                const slice = tokens.slice(i, i + n);
+                const isValid = slice.every(word => word.length >= minWordLength);
+
+                if (isValid) {
+                    ngrams.push(slice.join(' '));
+                }
+            }
+            return ngrams;
+        }
+
+        function calculateKeywordScores(words) {
+            const frequencies = {};
+
+            words.forEach(word => {
+                frequencies[word] = (frequencies[word] || 0) + 1;
+            });
+
+            return { frequencies };
+        }
+
+        function findLatentKeywords(keywords, allWords, windowSize = 5, minWordLength) {
+            const coOccurrence = {};
+
+            for (let i = 0; i < allWords.length; i++) {
+                const windowStart = Math.max(0, i - windowSize);
+                const windowEnd = Math.min(allWords.length, i + windowSize);
+                const currentWord = allWords[i];
+
+                if (keywords.includes(currentWord)) {
+                    for (let j = windowStart; j < windowEnd; j++) {
+                        if (i === j) continue;
+                        const neighborWord = allWords[j];
+                        if (!keywords.includes(neighborWord) && neighborWord.length >= minWordLength) {
+                            coOccurrence[neighborWord] = (coOccurrence[neighborWord] || 0) + 1;
+                        }
+                    }
+                }
+            }
+
+            return Object.entries(coOccurrence)
+                .sort((a, b) => b[1] - a[1])
+                .slice(0, 15)
+                .map(([word, freq]) => ({ word, freq }));
+        }
+
+        async function fetchWithProxy(url) {
+            for (let i = 0; i < CORS_PROXIES.length; i++) {
+                const proxy = CORS_PROXIES[i];
+
+                try {
+                    let proxyUrl;
+                    if (typeof proxy === 'function') {
+                        proxyUrl = proxy(url);
+                    } else {
+                        proxyUrl = proxy + encodeURIComponent(url);
+                    }
+
+                    const controller = new AbortController();
+                    const timeoutId = setTimeout(() => controller.abort(), 15000);
+
+                    const response = await fetch(proxyUrl, {
+                        signal: controller.signal,
+                        headers: {
+                            'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+                            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+                        }
+                    });
+
+                    clearTimeout(timeoutId);
+
+                    if (!response.ok) {
+                        throw new Error(`HTTP ${response.status}`);
+                    }
+
+                    let content;
+                    if (proxyUrl.includes('api.allorigins.win/get')) {
+                        const data = await response.json();
+                        content = data.contents;
+                    } else {
+                        content = await response.text();
+                    }
+
+                    if (!content || content.length < 100) {
+                        throw new Error('Empty response');
+                    }
+
+                    return content;
+
+                } catch (error) {
+                    continue;
+                }
+            }
+
+            throw new Error('All proxies failed');
+        }
+
+        const urlInput = document.getElementById('urlInput');
+        const extractBtn = document.getElementById('extractBtn');
+        const loadingElement = document.getElementById('loading');
+        const resultsSection = document.getElementById('resultsSection');
+        const highFrequencyKeywordsEl = document.getElementById('highFrequencyKeywords');
+        const keyPhrasesEl = document.getElementById('keyPhrases');
+        const latentKeywordsEl = document.getElementById('latentKeywords');
+        const wordsProcessedEl = document.getElementById('wordsProcessed');
+        const uniqueWordsEl = document.getElementById('uniqueWords');
+        const extractionTimeEl = document.getElementById('extractionTime');
+        const copyBtn = document.getElementById('copyBtn');
+        const removeStopwordsCheckbox = document.getElementById('removeStopwords');
+        const stemWordsCheckbox = document.getElementById('stemWords');
+        const maxKeywordsInput = document.getElementById('maxKeywords');
+        const minWordLengthInput = document.getElementById('minWordLength');
+
+        function createKeywordTag(text, frequency, type) {
+            const tag = document.createElement('div');
+            tag.className = `keyword-tag ${type}`;
+
+            const textSpan = document.createElement('span');
+            textSpan.className = 'keyword-text';
+            textSpan.textContent = text;
+
+            const freqSpan = document.createElement('span');
+            freqSpan.className = 'frequency';
+            freqSpan.textContent = frequency;
+
+            tag.appendChild(textSpan);
+            tag.appendChild(freqSpan);
+
+            return tag;
+        }
+
+        function displayKeywords(keywords, element, type) {
+            element.innerHTML = '';
+
+            if (keywords.length === 0) {
+                const noData = document.createElement('p');
+                noData.className = 'no-data';
+                noData.textContent = 'No keywords found';
+                element.appendChild(noData);
+                return;
+            }
+
+            keywords.forEach(item => {
+                const tag = createKeywordTag(item.word, item.freq, type);
+                element.appendChild(tag);
+            });
+        }
+
+        function showNotification(message, type = 'info', duration = 4000) {
+            const existing = document.querySelectorAll('.notification');
+            existing.forEach(n => n.remove());
+
+            const notification = document.createElement('div');
+            notification.className = `notification ${type}`;
+
+            const icons = {
+                success: 'fas fa-check-circle',
+                warning: 'fas fa-exclamation-triangle',
+                error: 'fas fa-exclamation-circle',
+                info: 'fas fa-info-circle'
+            };
+
+            notification.innerHTML = `
+                <i class="${icons[type] || icons.info}"></i>
+                <span>${message}</span>
+            `;
+
+            document.body.appendChild(notification);
+
+            setTimeout(() => {
+                notification.style.animation = 'fadeOut 0.3s ease';
+                setTimeout(() => notification.remove(), 300);
+            }, duration);
+
+            notification.addEventListener('click', () => notification.remove());
+        }
+
+        function validateAndNormalizeUrl(url) {
+            let normalizedUrl = url.trim();
+
+            if (!normalizedUrl.startsWith('http://') && !normalizedUrl.startsWith('https://')) {
+                normalizedUrl = 'https://' + normalizedUrl;
+            }
+
+            normalizedUrl = normalizedUrl.replace(/\/+$/, '');
+
+            return normalizedUrl;
+        }
+
+        async function extractKeywords() {
+            const now = Date.now();
+            if (now - lastRequestTime < MIN_REQUEST_INTERVAL) {
+                showNotification(`Wait ${Math.ceil((MIN_REQUEST_INTERVAL - (now - lastRequestTime)) / 1000)}s`, 'warning');
+                return;
+            }
+            lastRequestTime = now;
+
+            const url = urlInput.value.trim();
+
+            if (!url) {
+                showNotification('Enter URL', 'warning');
+                return;
+            }
+
+            try {
+                urlInput.value = validateAndNormalizeUrl(url);
+                new URL(urlInput.value);
+            } catch (error) {
+                showNotification('Invalid URL', 'warning');
+                return;
+            }
+
+            loadingElement.classList.remove('hidden');
+            resultsSection.classList.add('hidden');
+
+            highFrequencyKeywordsEl.innerHTML = '<p class="no-data">Processing...</p>';
+            keyPhrasesEl.innerHTML = '<p class="no-data">Processing...</p>';
+            latentKeywordsEl.innerHTML = '<p class="no-data">Processing...</p>';
+
+            const startTime = Date.now();
+
+            try {
+                loadingElement.querySelector('p').textContent = 'Fetching webpage...';
+
+                const html = await fetchWithProxy(urlInput.value);
+
+                loadingElement.querySelector('p').textContent = 'Extracting text...';
+
+                const text = extractTextFromHTML(html);
+
+                if (!text || text.trim().length < 500) {
+                    throw new Error(`Not enough content (${text ? text.length : 0} chars)`);
+                }
+
+                loadingElement.querySelector('p').textContent = 'Processing keywords...';
+
+                const options = {
+                    removeStopwords: removeStopwordsCheckbox.checked,
+                    stemWords: stemWordsCheckbox.checked,
+                    minWordLength: parseInt(minWordLengthInput.value)
+                };
+
+                const tokens = tokenizeText(text, options);
+
+                if (tokens.length < 10) {
+                    throw new Error(`Insufficient content (${tokens.length} tokens)`);
+                }
+
+                const uniqueWords = new Set(tokens).size;
+                const maxKeywords = parseInt(maxKeywordsInput.value);
+                const minWordLength = parseInt(minWordLengthInput.value);
+
+                const { frequencies: wordFrequencies } = calculateKeywordScores(tokens);
+                const highFrequencyKeywords = Object.entries(wordFrequencies)
+                    .sort((a, b) => b[1] - a[1])
+                    .slice(0, maxKeywords)
+                    .map(([word, freq]) => ({ word, freq }));
+
+                const bigrams = extractNGrams(tokens, 2, minWordLength);
+                const trigrams = extractNGrams(tokens, 3, minWordLength);
+                const allPhrases = [...bigrams, ...trigrams];
+                const { frequencies: phraseFrequencies } = calculateKeywordScores(allPhrases);
+
+                const keyPhrases = Object.entries(phraseFrequencies)
+                    .sort((a, b) => b[1] - a[1])
+                    .slice(0, Math.floor(maxKeywords / 2))
+                    .map(([phrase, freq]) => ({ word: phrase, freq }));
+
+                const topKeywords = highFrequencyKeywords.slice(0, 20).map(k => k.word);
+                const latentKeywords = findLatentKeywords(topKeywords, tokens, 5, minWordLength);
+
+                const endTime = Date.now();
+                const extractionTime = ((endTime - startTime) / 1000).toFixed(2);
+
+                wordsProcessedEl.textContent = tokens.length.toLocaleString();
+                uniqueWordsEl.textContent = uniqueWords.toLocaleString();
+                extractionTimeEl.textContent = `${extractionTime}s`;
+
+                displayKeywords(highFrequencyKeywords, highFrequencyKeywordsEl, 'high-frequency');
+                displayKeywords(keyPhrases, keyPhrasesEl, 'key-phrase');
+                displayKeywords(latentKeywords, latentKeywordsEl, 'latent');
+
+                window.lastResults = {
+                    highFrequencyKeywords,
+                    keyPhrases,
+                    latentKeywords,
+                    url: urlInput.value,
+                    timestamp: new Date().toISOString()
+                };
+
+                resultsSection.classList.remove('hidden');
+                showNotification(`Extracted ${tokens.length.toLocaleString()} words`, 'success');
+
+            } catch (error) {
+                console.error('Extraction error:', error);
+
+                let errorMessage;
+                if (error.message.includes('All proxies failed')) {
+                    errorMessage = 'Unable to fetch webpage';
+                } else if (error.message.includes('Not enough content')) {
+                    errorMessage = 'Not enough text content';
+                } else if (error.message.includes('Insufficient content')) {
+                    errorMessage = 'Insufficient content for analysis';
+                } else {
+                    errorMessage = `Error: ${error.message}`;
+                }
+
+                showNotification(errorMessage, 'error');
+
+                highFrequencyKeywordsEl.innerHTML = '<p class="no-data">Extraction failed</p>';
+                keyPhrasesEl.innerHTML = '<p class="no-data">Extraction failed</p>';
+                latentKeywordsEl.innerHTML = '<p class="no-data">Extraction failed</p>';
+
+                wordsProcessedEl.textContent = '0';
+                uniqueWordsEl.textContent = '0';
+                extractionTimeEl.textContent = '0s';
+
+                resultsSection.classList.remove('hidden');
+
+            } finally {
+                loadingElement.classList.add('hidden');
+            }
+        }
+
+        function copyResultsToClipboard() {
+            if (!window.lastResults) {
+                showNotification('No results', 'warning');
+                return;
+            }
+
+            const results = window.lastResults;
+            let text = `Keyword Extraction Results\n`;
+            text += `URL: ${results.url}\n`;
+            text += `Extracted: ${new Date(results.timestamp).toLocaleString()}\n\n`;
+
+            text += `HIGH-FREQUENCY KEYWORDS:\n`;
+            results.highFrequencyKeywords.forEach((item, i) => {
+                text += `${i + 1}. ${item.word} (${item.freq})\n`;
+            });
+
+            text += `\nKEY PHRASES:\n`;
+            results.keyPhrases.forEach((item, i) => {
+                text += `${i + 1}. ${item.word} (${item.freq})\n`;
+            });
+
+            text += `\nLATENT SEMANTIC KEYWORDS:\n`;
+            results.latentKeywords.forEach((item, i) => {
+                text += `${i + 1}. ${item.word} (${item.freq})\n`;
+            });
+
+            navigator.clipboard.writeText(text).then(() => {
+                showNotification('Copied to clipboard', 'success', 2000);
+                copyBtn.innerHTML = '<i class="fas fa-check"></i> Copied';
+                setTimeout(() => {
+                    copyBtn.innerHTML = '<i class="far fa-copy"></i> Copy Results';
+                }, 2000);
+            }).catch(err => {
+                console.error('Failed to copy:', err);
+                showNotification('Copy failed', 'error');
+            });
+        }
+
+        extractBtn.addEventListener('click', extractKeywords);
+        urlInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') extractKeywords();
+        });
+
+        copyBtn.addEventListener('click', copyResultsToClipboard);
+
+        window.addEventListener('DOMContentLoaded', () => {
+            setTimeout(() => {
+                showNotification('Ready to extract keywords', 'info', 3000);
+            }, 500);
+        });
+    </script>
+</body>
+
+</html>

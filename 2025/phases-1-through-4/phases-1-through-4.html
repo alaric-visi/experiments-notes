@@ -1,0 +1,1444 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover" />
+    <title>Mathematical Visualizations</title>
+    <style>
+        :root {
+            color-scheme: dark;
+        }
+
+        html,
+        body {
+            margin: 0;
+            height: 100%;
+            overflow: hidden;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        }
+
+        body {
+            background: #000;
+        }
+
+        canvas {
+            display: block;
+            width: 100vw;
+            height: 100vh;
+            touch-action: none;
+            image-rendering: optimizeQuality;
+            opacity: 0;
+            transition: opacity 0.8s ease;
+            position: fixed;
+            top: 0;
+            left: 0;
+        }
+
+        canvas.active {
+            opacity: 1;
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            canvas {
+                filter: saturate(0.5) brightness(0.85);
+            }
+        }
+
+        .controls {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            z-index: 100;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .phase-btn {
+            background: rgba(255, 255, 255, 0.92);
+            color: #000;
+            border: 1px solid rgba(0, 0, 0, 0.2);
+            border-radius: 6px;
+            padding: 10px 20px;
+            font-size: 14px;
+            font-weight: 500;
+            letter-spacing: 0.5px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+            backdrop-filter: blur(4px);
+            min-width: 100px;
+            text-align: center;
+        }
+
+        .phase-btn:hover {
+            background: rgba(255, 255, 255, 0.98);
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+        }
+
+        .phase-btn.active {
+            background: rgba(255, 255, 255, 1);
+            box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.8);
+            font-weight: 600;
+        }
+
+        .phase-btn:active {
+            transform: translateY(0);
+        }
+
+        .title {
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            color: rgba(255, 255, 255, 0.8);
+            font-size: 14px;
+            font-weight: 500;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            z-index: 100;
+            background: rgba(0, 0, 0, 0.3);
+            padding: 8px 16px;
+            border-radius: 20px;
+            backdrop-filter: blur(4px);
+            transition: opacity 0.5s ease;
+        }
+    </style>
+</head>
+
+<body>
+    <canvas id="hopfCanvas"></canvas>
+    <canvas id="kleinCanvas"></canvas>
+    <canvas id="lorenzCanvas"></canvas>
+    <canvas id="mandelbulbCanvas"></canvas>
+
+    <div class="controls">
+        <button class="phase-btn active" id="phase1Btn">Phase 1</button>
+        <button class="phase-btn" id="phase2Btn">Phase 2</button>
+        <button class="phase-btn" id="phase3Btn">Phase 3</button>
+        <button class="phase-btn" id="phase4Btn">Phase 4</button>
+    </div>
+
+    <div class="title" id="title">Hopf Fibration</div>
+
+    <script>
+        let currentAnimation = 'hopf';
+        let hopfAnimationId = null;
+        let kleinAnimationId = null;
+        let lorenzAnimationId = null;
+        let mandelbulbAnimationId = null;
+        let hopfInitialized = false;
+        let kleinInitialized = false;
+        let lorenzInitialized = false;
+        let mandelbulbInitialized = false;
+
+        const hopfCanvas = document.getElementById('hopfCanvas');
+        const kleinCanvas = document.getElementById('kleinCanvas');
+        const lorenzCanvas = document.getElementById('lorenzCanvas');
+        const mandelbulbCanvas = document.getElementById('mandelbulbCanvas');
+        const phase1Btn = document.getElementById('phase1Btn');
+        const phase2Btn = document.getElementById('phase2Btn');
+        const phase3Btn = document.getElementById('phase3Btn');
+        const phase4Btn = document.getElementById('phase4Btn');
+        const title = document.getElementById('title');
+
+        let hopfAnimation = null;
+        let kleinAnimation = null;
+        let lorenzAnimation = null;
+        let mandelbulbAnimation = null;
+
+        function switchAnimation(animation) {
+            if (animation === currentAnimation) return;
+
+            phase1Btn.classList.remove('active');
+            phase2Btn.classList.remove('active');
+            phase3Btn.classList.remove('active');
+            phase4Btn.classList.remove('active');
+
+            if (animation === 'hopf') {
+                phase1Btn.classList.add('active');
+                title.textContent = 'Hopf Fibration';
+                document.body.style.background = 'radial-gradient(1300px 850px at 50% 42%, #0a0d14, #030508 62%, #000 100%)';
+            } else if (animation === 'klein') {
+                phase2Btn.classList.add('active');
+                title.textContent = 'Klein Bottle';
+                document.body.style.background = 'radial-gradient(1400px 900px at 50% 45%, #120a14, #080208 55%, #000 100%)';
+            } else if (animation === 'lorenz') {
+                phase3Btn.classList.add('active');
+                title.textContent = 'Lorenz Attractor';
+                document.body.style.background = 'radial-gradient(1200px 900px at 55% 40%, #0d0a10, #040306 60%, #000 100%)';
+            } else if (animation === 'mandelbulb') {
+                phase4Btn.classList.add('active');
+                title.textContent = 'Mandelbulb';
+                document.body.style.background = 'radial-gradient(1100px 850px at 48% 45%, #14080a, #06020a 58%, #000 100%)';
+            }
+
+            hopfCanvas.classList.remove('active');
+            kleinCanvas.classList.remove('active');
+            lorenzCanvas.classList.remove('active');
+            mandelbulbCanvas.classList.remove('active');
+
+            if (hopfAnimationId !== null) {
+                cancelAnimationFrame(hopfAnimationId);
+                hopfAnimationId = null;
+            }
+            if (kleinAnimationId !== null) {
+                cancelAnimationFrame(kleinAnimationId);
+                kleinAnimationId = null;
+            }
+            if (lorenzAnimationId !== null) {
+                cancelAnimationFrame(lorenzAnimationId);
+                lorenzAnimationId = null;
+            }
+            if (mandelbulbAnimationId !== null) {
+                cancelAnimationFrame(mandelbulbAnimationId);
+                mandelbulbAnimationId = null;
+            }
+
+            setTimeout(() => {
+                if (animation === 'hopf') {
+                    if (!hopfInitialized) {
+                        initHopfAnimation();
+                        hopfInitialized = true;
+                    }
+                    hopfCanvas.classList.add('active');
+                    if (hopfAnimation) {
+                        hopfAnimationId = requestAnimationFrame(hopfAnimation.frame);
+                    }
+                } else if (animation === 'klein') {
+                    if (!kleinInitialized) {
+                        initKleinAnimation();
+                        kleinInitialized = true;
+                    }
+                    kleinCanvas.classList.add('active');
+                    if (kleinAnimation) {
+                        kleinAnimationId = requestAnimationFrame(kleinAnimation.frame);
+                    }
+                } else if (animation === 'lorenz') {
+                    if (!lorenzInitialized) {
+                        initLorenzAnimation();
+                        lorenzInitialized = true;
+                    }
+                    lorenzCanvas.classList.add('active');
+                    if (lorenzAnimation) {
+                        lorenzAnimationId = requestAnimationFrame(lorenzAnimation.frame);
+                    }
+                } else if (animation === 'mandelbulb') {
+                    if (!mandelbulbInitialized) {
+                        initMandelbulbAnimation();
+                        mandelbulbInitialized = true;
+                    }
+                    mandelbulbCanvas.classList.add('active');
+                    if (mandelbulbAnimation) {
+                        mandelbulbAnimationId = requestAnimationFrame(mandelbulbAnimation.frame);
+                    }
+                }
+            }, 50);
+
+            currentAnimation = animation;
+        }
+
+        phase1Btn.addEventListener('click', () => switchAnimation('hopf'));
+        phase2Btn.addEventListener('click', () => switchAnimation('klein'));
+        phase3Btn.addEventListener('click', () => switchAnimation('lorenz'));
+        phase4Btn.addEventListener('click', () => switchAnimation('mandelbulb'));
+
+        function initHopfAnimation() {
+            const canvas = hopfCanvas;
+            const ctx = canvas.getContext('2d', { alpha: false });
+
+            let cx = 0, cy = 0, baseScale = 180;
+            const setSize = () => {
+                const dpr = Math.max(1, Math.min(3, window.devicePixelRatio || 1));
+                const w = Math.floor(canvas.clientWidth || window.innerWidth);
+                const h = Math.floor(canvas.clientHeight || window.innerHeight);
+                canvas.width = Math.floor(w * dpr);
+                canvas.height = Math.floor(h * dpr);
+                ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+                cx = w / 2;
+                cy = h / 2;
+                baseScale = Math.min(w, h) * 0.38;
+            };
+
+            const MAX_FIBERS_DESKTOP = 45;
+            const MAX_FIBERS_MOBILE = 22;
+            const POINTS_PER_FIBER = 120;
+            const TRAIL_FADE = 0.032;
+            const REDUCED_MOTION = matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+            const isMobile = /Mobi|Android/i.test(navigator.userAgent) ||
+                Math.min(window.innerWidth, window.innerHeight) < 768;
+            const FIBER_COUNT = REDUCED_MOTION ? 12 : (isMobile ? MAX_FIBERS_MOBILE : MAX_FIBERS_DESKTOP);
+
+            const GLOW_COUNT = isMobile ? 200 : 400;
+            const glows = new Array(GLOW_COUNT).fill(0).map(() => ({
+                x: Math.random(),
+                y: Math.random(),
+                r: Math.random() * 1.6 + 0.4,
+                phase: Math.random() * Math.PI * 2,
+                speed: 0.4 + Math.random() * 0.8
+            }));
+
+            function drawGlows(time) {
+                const w = cx * 2, h = cy * 2;
+                ctx.save();
+                ctx.globalCompositeOperation = 'source-over';
+                for (let i = 0; i < GLOW_COUNT; i++) {
+                    const g = glows[i];
+                    const pulse = 0.35 + 0.65 * Math.sin(time * 0.0012 * g.speed + g.phase);
+                    ctx.globalAlpha = 0.12 + 0.28 * pulse;
+                    ctx.beginPath();
+                    ctx.arc(g.x * w, g.y * h, g.r, 0, Math.PI * 2);
+                    const hue = (190 + 100 * Math.sin(g.phase + time * 0.0004)) % 360;
+                    ctx.fillStyle = `hsla(${hue}, 90%, 68%, 1)`;
+                    ctx.fill();
+                }
+                ctx.restore();
+            }
+
+            function quaternionToS3(theta, phi, psi) {
+                const a = Math.cos(theta / 2) * Math.cos(psi);
+                const b = Math.cos(theta / 2) * Math.sin(psi);
+                const c = Math.sin(theta / 2) * Math.cos(phi + psi);
+                const d = Math.sin(theta / 2) * Math.sin(phi + psi);
+                return [a, b, c, d];
+            }
+
+            function hopfMap(q) {
+                const [a, b, c, d] = q;
+                const denom = 1 - d;
+                if (Math.abs(denom) < 0.001) return [0, 0, 100];
+
+                const x = a / denom;
+                const y = b / denom;
+                const z = c / denom;
+                return [x, y, z];
+            }
+
+            function generateFiber(baseTheta, basePhi, samples) {
+                const points = [];
+                for (let i = 0; i < samples; i++) {
+                    const psi = (i / samples) * Math.PI * 2;
+                    const q = quaternionToS3(baseTheta, basePhi, psi);
+                    const p = hopfMap(q);
+                    points.push(p);
+                }
+                return points;
+            }
+
+            function generateVillarceauCircle(u, v, samples) {
+                const points = [];
+                const R = 2.2;
+                const r = 0.8;
+
+                for (let i = 0; i < samples; i++) {
+                    const t = (i / samples) * Math.PI * 2;
+
+                    const a = (R + r * Math.cos(v)) * Math.cos(u + t);
+                    const b = (R + r * Math.cos(v)) * Math.sin(u + t);
+                    const c = r * Math.sin(v) * Math.cos(t);
+                    const d = r * Math.sin(v) * Math.sin(t);
+
+                    const norm = Math.sqrt(a * a + b * b + c * c + d * d) || 1;
+                    const q = [a / norm, b / norm, c / norm, d / norm];
+                    points.push(hopfMap(q));
+                }
+                return points;
+            }
+
+            const fibers = [];
+            const fiberColors = [];
+            const fiberEnergies = new Float32Array(FIBER_COUNT);
+
+            for (let i = 0; i < FIBER_COUNT; i++) {
+                const u = (i / FIBER_COUNT) * Math.PI * 2;
+                const v = Math.sin(u * 3) * 0.6;
+
+                const useVillarceau = i % 3 === 0;
+
+                if (useVillarceau) {
+                    fibers.push(generateVillarceauCircle(u, v, POINTS_PER_FIBER));
+                } else {
+                    const theta = Math.PI * 0.3 + (i / FIBER_COUNT) * Math.PI * 0.6;
+                    const phi = u;
+                    fibers.push(generateFiber(theta, phi, POINTS_PER_FIBER));
+                }
+
+                const hue = (u / (Math.PI * 2)) * 280 + 160;
+                fiberColors.push(hue);
+                fiberEnergies[i] = Math.random();
+            }
+
+            const prevPositions = fibers.map(f => f.map(() => [0, 0]));
+            const specialPoints = new Array(Math.floor(FIBER_COUNT * 0.25)).fill(0).map(() => ({
+                fiberIdx: Math.floor(Math.random() * FIBER_COUNT),
+                pointIdx: Math.floor(Math.random() * POINTS_PER_FIBER),
+                phase: Math.random() * Math.PI * 2
+            }));
+
+            let t0 = performance.now();
+            let mouseX = 0, mouseY = 0;
+
+            function handlePointerMove(e) {
+                const w = canvas.clientWidth || window.innerWidth;
+                const h = canvas.clientHeight || window.innerHeight;
+                mouseX = (e.clientX / w) * 2 - 1;
+                mouseY = (e.clientY / h) * 2 - 1;
+            }
+
+            function handleResize() {
+                setSize();
+            }
+
+            window.addEventListener('pointermove', handlePointerMove, { passive: true });
+            window.addEventListener('resize', handleResize, { passive: true });
+            setSize();
+
+            ctx.globalCompositeOperation = 'lighter';
+            ctx.lineCap = 'round';
+            ctx.lineJoin = 'round';
+
+            function fadeFrame() {
+                ctx.save();
+                ctx.globalCompositeOperation = 'source-over';
+                ctx.fillStyle = `rgba(0,0,0,${TRAIL_FADE})`;
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+                ctx.restore();
+            }
+
+            function rotate3D(p, rx, ry, rz) {
+                let x = p[0], y = p[1], z = p[2];
+
+                let c = Math.cos(rx), s = Math.sin(rx);
+                let y1 = c * y - s * z, z1 = s * y + c * z;
+                y = y1; z = z1;
+
+                c = Math.cos(ry); s = Math.sin(ry);
+                let x1 = c * x + s * z;
+                z1 = -s * x + c * z;
+                x = x1; z = z1;
+
+                c = Math.cos(rz); s = Math.sin(rz);
+                x1 = c * x - s * y;
+                y1 = s * x + c * y;
+
+                return [x1, y1, z1];
+            }
+
+            function project(p, breathing) {
+                const scale = baseScale * breathing;
+                const perspective = 4.5;
+                const depth = perspective + p[2];
+                const factor = scale / (depth < 0.1 ? 0.1 : depth);
+
+                return [
+                    cx + p[0] * factor,
+                    cy + p[1] * factor,
+                    factor
+                ];
+            }
+
+            function hopfFrame(now) {
+                if (currentAnimation !== 'hopf') return;
+
+                const dt = Math.max(0.001, Math.min(0.033, (now - t0) / 1000));
+                t0 = now;
+
+                fadeFrame();
+                drawGlows(now);
+
+                const T = now * 0.001;
+                const breathing = 1.0 + 0.14 * Math.sin(T * 0.65) + 0.07 * Math.cos(T * 0.38 + 1.1);
+
+                const rx = 0.35 * T + 0.45 * Math.sin(T * 0.7) + mouseY * 0.5;
+                const ry = 0.5 * T + 0.35 * Math.cos(T * 0.85) + mouseX * 0.6;
+                const rz = 0.25 * T + 0.25 * Math.sin(T * 0.55 + 0.8);
+
+                ctx.save();
+
+                for (let i = 0; i < FIBER_COUNT; i++) {
+                    const fiber = fibers[i];
+                    const prev = prevPositions[i];
+                    const hue = fiberColors[i];
+
+                    fiberEnergies[i] += dt * 0.5;
+                    const energy = 0.6 + 0.4 * Math.sin(fiberEnergies[i]);
+
+                    for (let j = 0; j < POINTS_PER_FIBER; j++) {
+                        let p = fiber[j];
+                        p = rotate3D(p, rx, ry, rz);
+
+                        const [sx, sy, sc] = project(p, breathing);
+                        const [px, py] = prev[j];
+
+                        const loopPos = j / POINTS_PER_FIBER;
+                        const loopAlpha = 0.5 + 0.5 * Math.sin(loopPos * Math.PI);
+                        const depthAlpha = 0.7 * loopAlpha * (0.55 + 0.45 * Math.min(1, sc / (baseScale * 0.024)));
+
+                        ctx.globalAlpha = depthAlpha * energy;
+                        ctx.lineWidth = Math.max(0.9, Math.min(4.5, sc * 0.014));
+                        ctx.strokeStyle = `hsla(${hue}, 92%, 62%, 1)`;
+
+                        ctx.beginPath();
+                        ctx.moveTo(px || sx, py || sy);
+                        ctx.lineTo(sx, sy);
+                        ctx.stroke();
+
+                        prev[j] = [sx, sy];
+                    }
+                }
+
+                ctx.globalAlpha = 0.88;
+                for (let i = 0; i < specialPoints.length; i++) {
+                    const sp = specialPoints[i];
+                    const fiber = fibers[sp.fiberIdx];
+                    let p = fiber[sp.pointIdx];
+
+                    p = rotate3D(p, rx, ry, rz);
+                    const [sx, sy, sc] = project(p, breathing);
+
+                    const pulse = 0.65 + 0.35 * Math.sin(T * 1.8 + sp.phase);
+                    const size = Math.max(2.2, Math.min(5.5, sc * 0.018 * pulse));
+
+                    ctx.beginPath();
+                    ctx.arc(sx, sy, size, 0, Math.PI * 2);
+                    const hue = fiberColors[sp.fiberIdx];
+                    ctx.fillStyle = `hsla(${hue}, 100%, 72%, ${0.85 * pulse})`;
+                    ctx.fill();
+
+                    ctx.globalAlpha = 0.4 * pulse;
+                    ctx.beginPath();
+                    ctx.arc(sx, sy, size * 1.8, 0, Math.PI * 2);
+                    ctx.strokeStyle = `hsla(${hue}, 100%, 75%, 0.6)`;
+                    ctx.lineWidth = 1;
+                    ctx.stroke();
+                }
+
+                ctx.restore();
+
+                if (currentAnimation === 'hopf') {
+                    hopfAnimationId = requestAnimationFrame(hopfFrame);
+                }
+            }
+
+            ctx.fillStyle = '#000';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            hopfAnimation = {
+                frame: hopfFrame,
+                canvas: canvas,
+                ctx: ctx
+            };
+        }
+
+        function initKleinAnimation() {
+            const canvas = kleinCanvas;
+            const ctx = canvas.getContext('2d', { alpha: false });
+
+            let cx = 0, cy = 0, baseScale = 300, breathScale = 1;
+            const setSize = () => {
+                const dpr = Math.max(1, Math.min(3, window.devicePixelRatio || 1));
+                const w = Math.floor(canvas.clientWidth || window.innerWidth);
+                const h = Math.floor(canvas.clientHeight || window.innerHeight);
+                canvas.width = Math.floor(w * dpr);
+                canvas.height = Math.floor(h * dpr);
+                ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+                cx = w / 2;
+                cy = h / 2;
+                baseScale = Math.min(w, h) * 1.12;
+            };
+
+            const MAX_CURVES_DESKTOP = 140;
+            const MAX_CURVES_MOBILE = 70;
+            const POINTS_PER_CURVE = 42;
+            const TRAIL_FADE = 0.055;
+            const LINE_ALPHA = 0.72;
+            const REDUCED_MOTION = matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+            const isMobile = /Mobi|Android/i.test(navigator.userAgent) ||
+                Math.min(window.innerWidth, window.innerHeight) < 768;
+            const CURVE_COUNT = REDUCED_MOTION ? 35 : (isMobile ? MAX_CURVES_MOBILE : MAX_CURVES_DESKTOP);
+
+            const NEBULA_COUNT = (isMobile ? 180 : 360);
+            const nebula = new Array(NEBULA_COUNT).fill(0).map(() => ({
+                x: Math.random(),
+                y: Math.random(),
+                r: Math.random() * 1.8 + 0.4,
+                p: Math.random() * Math.PI * 2,
+                spd: 0.3 + Math.random() * 0.7
+            }));
+
+            function drawNebula(time) {
+                const w = cx * 2, h = cy * 2;
+                ctx.save();
+                ctx.globalCompositeOperation = 'source-over';
+                for (let i = 0; i < NEBULA_COUNT; i++) {
+                    const n = nebula[i];
+                    const pulse = 0.4 + 0.6 * Math.sin(time * 0.001 * n.spd + n.p);
+                    ctx.globalAlpha = 0.1 + 0.35 * pulse;
+                    ctx.beginPath();
+                    ctx.arc(n.x * w, n.y * h, n.r, 0, Math.PI * 2);
+                    const hue = (280 + 80 * Math.sin(n.p + time * 0.0003)) % 360;
+                    ctx.fillStyle = `hsla(${hue}, 85%, 65%, 1)`;
+                    ctx.fill();
+                }
+                ctx.restore();
+            }
+
+            function kleinBottle(u, v) {
+                const r = 4 * (1 - Math.cos(u) / 2);
+
+                if (u < Math.PI) {
+                    const x = 6 * Math.cos(u) * (1 + Math.sin(u)) + r * Math.cos(u) * Math.cos(v);
+                    const y = 16 * Math.sin(u) + r * Math.sin(u) * Math.cos(v);
+                    const z = r * Math.sin(v);
+                    return [x, y, z];
+                } else {
+                    const x = 6 * Math.cos(u) * (1 + Math.sin(u)) - r * Math.cos(v);
+                    const y = 16 * Math.sin(u);
+                    const z = r * Math.sin(v);
+                    return [x, y, z];
+                }
+            }
+
+            function torusKnot(t, p, q) {
+                const r = 2 + Math.cos(q * t);
+                const x = r * Math.cos(p * t);
+                const y = r * Math.sin(p * t);
+                const z = Math.sin(q * t);
+                return [x, y, z];
+            }
+
+            const curves = [];
+            const curveColors = [];
+            const curveTypes = new Uint8Array(CURVE_COUNT);
+
+            for (let i = 0; i < CURVE_COUNT; i++) {
+                const points = [];
+                const isKlein = i < CURVE_COUNT * 0.6;
+                curveTypes[i] = isKlein ? 0 : 1;
+
+                if (isKlein) {
+                    const u_offset = (i / (CURVE_COUNT * 0.6)) * Math.PI * 2;
+                    for (let j = 0; j < POINTS_PER_CURVE; j++) {
+                        const t = j / (POINTS_PER_CURVE - 1);
+                        const v = t * Math.PI * 2;
+                        const u = u_offset + t * Math.PI * 0.3;
+                        points.push(kleinBottle(u, v));
+                    }
+                    const hue = (u_offset / (Math.PI * 2)) * 180 + 180;
+                    curveColors.push(hue);
+                } else {
+                    const p = 2 + Math.floor(Math.random() * 3);
+                    const q = 3 + Math.floor(Math.random() * 4);
+                    const phase = Math.random() * Math.PI * 2;
+                    for (let j = 0; j < POINTS_PER_CURVE; j++) {
+                        const t = (j / (POINTS_PER_CURVE - 1)) * Math.PI * 2 + phase;
+                        points.push(torusKnot(t, p, q));
+                    }
+                    curveColors.push(Math.random() * 360);
+                }
+                curves.push(points);
+            }
+
+            const prevPositions = curves.map(c => c.map(() => [0, 0]));
+            const glowParticles = new Array(Math.floor(CURVE_COUNT * 0.15)).fill(0).map(() => ({
+                curveIdx: Math.floor(Math.random() * CURVE_COUNT),
+                pointIdx: Math.floor(Math.random() * POINTS_PER_CURVE),
+                phase: Math.random() * Math.PI * 2
+            }));
+
+            let t0 = performance.now();
+            let pointerX = 0, pointerY = 0;
+
+            function handlePointerMove(e) {
+                const w = canvas.clientWidth || window.innerWidth;
+                const h = canvas.clientHeight || window.innerHeight;
+                pointerX = (e.clientX / w) * 2 - 1;
+                pointerY = (e.clientY / h) * 2 - 1;
+            }
+
+            function handleResize() {
+                setSize();
+            }
+
+            window.addEventListener('pointermove', handlePointerMove, { passive: true });
+            window.addEventListener('resize', handleResize, { passive: true });
+            setSize();
+
+            ctx.globalCompositeOperation = 'lighter';
+            ctx.lineCap = 'round';
+            ctx.lineJoin = 'round';
+
+            function fadeFrame() {
+                ctx.save();
+                ctx.globalCompositeOperation = 'source-over';
+                ctx.fillStyle = `rgba(0,0,0,${TRAIL_FADE})`;
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+                ctx.restore();
+            }
+
+            function rotateX(p, angle) {
+                const c = Math.cos(angle), s = Math.sin(angle);
+                return [p[0], c * p[1] - s * p[2], s * p[1] + c * p[2]];
+            }
+
+            function rotateY(p, angle) {
+                const c = Math.cos(angle), s = Math.sin(angle);
+                return [c * p[0] + s * p[2], p[1], -s * p[0] + c * p[2]];
+            }
+
+            function rotateZ(p, angle) {
+                const c = Math.cos(angle), s = Math.sin(angle);
+                return [c * p[0] - s * p[1], s * p[0] + c * p[1], p[2]];
+            }
+
+            function project3D(p) {
+                const zCam = 35;
+                const focalLength = baseScale * breathScale * 0.85;
+                const denom = zCam - p[2];
+                const scale = focalLength / (denom <= 0.1 ? 0.1 : denom);
+
+                const sx = cx + p[0] * scale;
+                const sy = cy + p[1] * scale;
+                return [sx, sy, scale];
+            }
+
+            function kleinFrame(now) {
+                if (currentAnimation !== 'klein') return;
+
+                const dt = Math.max(0.001, Math.min(0.033, (now - t0) / 1000));
+                t0 = now;
+
+                fadeFrame();
+                drawNebula(now);
+
+                const T = now * 0.001;
+                breathScale = 1.0 + 0.15 * Math.sin(T * 0.7) + 0.08 * Math.cos(T * 0.4 + 0.9);
+
+                const rx = 0.4 * T + 0.5 * Math.sin(T * 0.6) + pointerY * 0.4;
+                const ry = 0.55 * T + 0.4 * Math.cos(T * 0.8) + pointerX * 0.5;
+                const rz = 0.3 * T + 0.3 * Math.sin(T * 0.5 + 1.2);
+
+                ctx.save();
+
+                for (let i = 0; i < CURVE_COUNT; i++) {
+                    const curve = curves[i];
+                    const prev = prevPositions[i];
+                    const hue = curveColors[i];
+                    const isKlein = curveTypes[i] === 0;
+
+                    ctx.strokeStyle = `hsla(${hue}, ${isKlein ? 95 : 85}%, ${isKlein ? 58 : 65}%, ${LINE_ALPHA})`;
+
+                    for (let j = 0; j < POINTS_PER_CURVE - 1; j++) {
+                        let p = curve[j];
+                        p = rotateX(p, rx);
+                        p = rotateY(p, ry);
+                        p = rotateZ(p, rz);
+
+                        const [sx, sy, sc] = project3D(p);
+                        const [px, py] = prev[j];
+
+                        const depthAlpha = LINE_ALPHA * (0.5 + 0.5 * Math.min(1, sc / (baseScale * 0.02)));
+                        ctx.globalAlpha = depthAlpha;
+                        ctx.lineWidth = Math.max(0.8, Math.min(5, sc * 0.012));
+
+                        ctx.beginPath();
+                        ctx.moveTo(px || sx, py || sy);
+                        ctx.lineTo(sx, sy);
+                        ctx.stroke();
+
+                        prev[j] = [sx, sy];
+                    }
+                }
+
+                ctx.globalAlpha = 0.85;
+                for (let i = 0; i < glowParticles.length; i++) {
+                    const gp = glowParticles[i];
+                    const curve = curves[gp.curveIdx];
+                    let p = curve[gp.pointIdx];
+
+                    p = rotateX(p, rx);
+                    p = rotateY(p, ry);
+                    p = rotateZ(p, rz);
+
+                    const [sx, sy, sc] = project3D(p);
+                    const pulse = 0.6 + 0.4 * Math.sin(T * 2 + gp.phase);
+                    const size = Math.max(2, Math.min(6, sc * 0.015 * pulse));
+
+                    ctx.beginPath();
+                    ctx.arc(sx, sy, size, 0, Math.PI * 2);
+                    const hue = curveColors[gp.curveIdx];
+                    ctx.fillStyle = `hsla(${hue}, 100%, 70%, ${0.8 * pulse})`;
+                    ctx.fill();
+                }
+
+                ctx.restore();
+
+                if (currentAnimation === 'klein') {
+                    kleinAnimationId = requestAnimationFrame(kleinFrame);
+                }
+            }
+
+            ctx.fillStyle = '#000';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            kleinAnimation = {
+                frame: kleinFrame,
+                canvas: canvas,
+                ctx: ctx
+            };
+        }
+
+        function initLorenzAnimation() {
+            const canvas = lorenzCanvas;
+            const ctx = canvas.getContext('2d', { alpha: false });
+
+            let cx = 0, cy = 0, baseScale = 8;
+            const setSize = () => {
+                const dpr = Math.max(1, Math.min(3, window.devicePixelRatio || 1));
+                const w = Math.floor(canvas.clientWidth || window.innerWidth);
+                const h = Math.floor(canvas.clientHeight || window.innerHeight);
+                canvas.width = Math.floor(w * dpr);
+                canvas.height = Math.floor(h * dpr);
+                ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+                cx = w / 2;
+                cy = h / 2;
+                baseScale = Math.min(w, h) * 0.045;
+            };
+
+            const MAX_ATTRACTORS_DESKTOP = 18;
+            const MAX_ATTRACTORS_MOBILE = 10;
+            const HISTORY_LENGTH = 700;
+            const TRAIL_FADE = 0.038;
+            const REDUCED_MOTION = matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+            const isMobile = /Mobi|Android/i.test(navigator.userAgent) ||
+                Math.min(window.innerWidth, window.innerHeight) < 768;
+            const ATTRACTOR_COUNT = REDUCED_MOTION ? 6 : (isMobile ? MAX_ATTRACTORS_MOBILE : MAX_ATTRACTORS_DESKTOP);
+
+            const DUST_COUNT = isMobile ? 150 : 300;
+            const dust = new Array(DUST_COUNT).fill(0).map(() => ({
+                x: Math.random(),
+                y: Math.random(),
+                z: Math.random(),
+                r: Math.random() * 1.2 + 0.2,
+                vx: (Math.random() - 0.5) * 0.0002,
+                vy: (Math.random() - 0.5) * 0.0002,
+                phase: Math.random() * Math.PI * 2
+            }));
+
+            function drawDust(time) {
+                const w = cx * 2, h = cy * 2;
+                ctx.save();
+                ctx.globalCompositeOperation = 'source-over';
+                for (let i = 0; i < DUST_COUNT; i++) {
+                    const d = dust[i];
+                    d.x = (d.x + d.vx + 1) % 1;
+                    d.y = (d.y + d.vy + 1) % 1;
+
+                    const twinkle = 0.4 + 0.6 * Math.sin(time * 0.001 + d.phase);
+                    ctx.globalAlpha = 0.05 + 0.15 * twinkle;
+                    ctx.beginPath();
+                    ctx.arc(d.x * w, d.y * h, d.r, 0, Math.PI * 2);
+                    const hue = (30 + 30 * d.z) % 360;
+                    ctx.fillStyle = `hsla(${hue}, 50%, 50%, 1)`;
+                    ctx.fill();
+                }
+                ctx.restore();
+            }
+
+            class LorenzAttractor {
+                constructor(x0, y0, z0, sigma, rho, beta, hue) {
+                    this.x = x0;
+                    this.y = y0;
+                    this.z = z0;
+                    this.sigma = sigma;
+                    this.rho = rho;
+                    this.beta = beta;
+                    this.hue = hue;
+                    this.history = [];
+                    this.energy = 0;
+                }
+
+                step(dt) {
+                    const dx = this.sigma * (this.y - this.x);
+                    const dy = this.x * (this.rho - this.z) - this.y;
+                    const dz = this.x * this.y - this.beta * this.z;
+
+                    this.x += dx * dt;
+                    this.y += dy * dt;
+                    this.z += dz * dt;
+
+                    this.energy = Math.sqrt(dx * dx + dy * dy + dz * dz);
+
+                    this.history.push([this.x, this.y, this.z]);
+                    if (this.history.length > HISTORY_LENGTH) {
+                        this.history.shift();
+                    }
+                }
+            }
+
+            const attractors = [];
+            const baseParams = { sigma: 10, rho: 28, beta: 8 / 3 };
+
+            for (let i = 0; i < ATTRACTOR_COUNT; i++) {
+                const angle = (i / ATTRACTOR_COUNT) * Math.PI * 2;
+                const radius = 0.1 + Math.random() * 0.4;
+
+                const x0 = radius * Math.cos(angle);
+                const y0 = radius * Math.sin(angle);
+                const z0 = 20 + Math.random() * 8;
+
+                const sigma = baseParams.sigma + (Math.random() - 0.5) * 1.0;
+                const rho = baseParams.rho + (Math.random() - 0.5) * 2;
+                const beta = baseParams.beta + (Math.random() - 0.5) * 0.3;
+
+                const hue = (i / ATTRACTOR_COUNT) * 360;
+
+                attractors.push(new LorenzAttractor(x0, y0, z0, sigma, rho, beta, hue));
+            }
+
+            let t0 = performance.now();
+            let rotX = 0, rotY = 0, rotZ = 0;
+            let targetRotX = 0, targetRotY = 0;
+
+            function handlePointerMove(e) {
+                const w = canvas.clientWidth || window.innerWidth;
+                const h = canvas.clientHeight || window.innerHeight;
+                targetRotX = ((e.clientY / h) * 2 - 1) * 0.4;
+                targetRotY = ((e.clientX / w) * 2 - 1) * 0.5;
+            }
+
+            function handleResize() {
+                setSize();
+            }
+
+            window.addEventListener('pointermove', handlePointerMove, { passive: true });
+            window.addEventListener('resize', handleResize, { passive: true });
+            setSize();
+
+            ctx.globalCompositeOperation = 'lighter';
+            ctx.lineCap = 'round';
+            ctx.lineJoin = 'round';
+
+            function fadeFrame() {
+                ctx.save();
+                ctx.globalCompositeOperation = 'source-over';
+                ctx.fillStyle = `rgba(0,0,0,${TRAIL_FADE})`;
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+                ctx.restore();
+            }
+
+            function rotatePoint(p, rx, ry, rz) {
+                let x = p[0], y = p[1], z = p[2];
+
+                let c = Math.cos(rx), s = Math.sin(rx);
+                let y1 = c * y - s * z;
+                let z1 = s * y + c * z;
+                y = y1; z = z1;
+
+                c = Math.cos(ry); s = Math.sin(ry);
+                let x1 = c * x + s * z;
+                z1 = -s * x + c * z;
+                x = x1; z = z1;
+
+                c = Math.cos(rz); s = Math.sin(rz);
+                x1 = c * x - s * y;
+                y1 = s * x + c * y;
+
+                return [x1, y1, z1];
+            }
+
+            function project(p) {
+                const perspective = 280;
+                const scale = baseScale * (perspective / (perspective + p[2]));
+                return [
+                    cx + p[0] * scale,
+                    cy - p[1] * scale,
+                    scale
+                ];
+            }
+
+            function lorenzFrame(now) {
+                if (currentAnimation !== 'lorenz') return;
+
+                const dt = Math.max(0.001, Math.min(0.033, (now - t0) / 1000));
+                t0 = now;
+
+                fadeFrame();
+                drawDust(now);
+
+                const T = now * 0.001;
+
+                rotX += (targetRotX - rotX) * 0.03;
+                rotY += (targetRotY - rotY) * 0.03;
+                rotZ = T * 0.12;
+
+                ctx.save();
+
+                for (let i = 0; i < ATTRACTOR_COUNT; i++) {
+                    const attr = attractors[i];
+
+                    const steps = 2;
+                    for (let s = 0; s < steps; s++) {
+                        attr.step(dt / steps);
+                    }
+
+                    const history = attr.history;
+                    if (history.length < 2) continue;
+
+                    for (let j = 1; j < history.length; j++) {
+                        const p1 = rotatePoint(history[j - 1], rotX, rotY, rotZ);
+                        const p2 = rotatePoint(history[j], rotY, rotY, rotZ);
+
+                        const [x1, y1, s1] = project(p1);
+                        const [x2, y2, s2] = project(p2);
+
+                        const age = j / history.length;
+                        const alpha = 0.5 * age * age;
+
+                        const hueShift = (history[j][2] / 50) * 40;
+                        const hue = (attr.hue + hueShift) % 360;
+
+                        ctx.strokeStyle = `hsla(${hue}, 70%, 55%, ${alpha})`;
+                        ctx.lineWidth = Math.max(0.3, Math.min(2.5, s2 * 0.02 * (0.7 + 0.3 * age)));
+
+                        ctx.beginPath();
+                        ctx.moveTo(x1, y1);
+                        ctx.lineTo(x2, y2);
+                        ctx.stroke();
+                    }
+
+                    const current = rotatePoint([attr.x, attr.y, attr.z], rotX, rotY, rotZ);
+                    const [cx_pt, cy_pt, sc] = project(current);
+
+                    ctx.save();
+                    ctx.globalAlpha = 0.7;
+                    ctx.beginPath();
+                    const energyFactor = Math.min(1, attr.energy / 40);
+                    ctx.arc(cx_pt, cy_pt, Math.max(1.0, Math.min(3.0, sc * 0.025 * (1 + energyFactor))), 0, Math.PI * 2);
+                    ctx.fillStyle = `hsla(${attr.hue}, 90%, 65%, 0.7)`;
+                    ctx.fill();
+                    ctx.restore();
+                }
+
+                ctx.globalAlpha = 0.05;
+                ctx.lineWidth = 0.6;
+                for (let i = 0; i < ATTRACTOR_COUNT; i++) {
+                    const a1 = attractors[i];
+                    const p1 = rotatePoint([a1.x, a1.y, a1.z], rotX, rotY, rotZ);
+                    const [x1, y1] = project(p1);
+
+                    for (let j = i + 1; j < Math.min(i + 3, ATTRACTOR_COUNT); j++) {
+                        const a2 = attractors[j];
+                        const dx = a1.x - a2.x;
+                        const dy = a1.y - a2.y;
+                        const dz = a1.z - a2.z;
+                        const dist = Math.sqrt(dx * dx + dy * dy + dz * dz);
+
+                        if (dist < 20) {
+                            const p2 = rotatePoint([a2.x, a2.y, a2.z], rotX, rotY, rotZ);
+                            const [x2, y2] = project(p2);
+
+                            const hueMix = (a1.hue + a2.hue) / 2;
+                            ctx.strokeStyle = `hsla(${hueMix}, 60%, 50%, ${0.05 * (1 - dist / 20)})`;
+                            ctx.beginPath();
+                            ctx.moveTo(x1, y1);
+                            ctx.lineTo(x2, y2);
+                            ctx.stroke();
+                        }
+                    }
+                }
+
+                ctx.restore();
+
+                if (currentAnimation === 'lorenz') {
+                    lorenzAnimationId = requestAnimationFrame(lorenzFrame);
+                }
+            }
+
+            ctx.fillStyle = '#000';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            lorenzAnimation = {
+                frame: lorenzFrame,
+                canvas: canvas,
+                ctx: ctx
+            };
+        }
+
+        function initMandelbulbAnimation() {
+            const canvas = mandelbulbCanvas;
+            const ctx = canvas.getContext('2d', { alpha: false });
+
+            let cx = 0, cy = 0, baseScale = 160;
+            const setSize = () => {
+                const dpr = Math.max(1, Math.min(3, window.devicePixelRatio || 1));
+                const w = Math.floor(canvas.clientWidth || window.innerWidth);
+                const h = Math.floor(canvas.clientHeight || window.innerHeight);
+                canvas.width = Math.floor(w * dpr);
+                canvas.height = Math.floor(h * dpr);
+                ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+                cx = w / 2;
+                cy = h / 2;
+                baseScale = Math.min(w, h) * 0.32;
+            };
+
+            const MAX_RAYS_DESKTOP = 3200;
+            const MAX_RAYS_MOBILE = 1600;
+            const MAX_STEPS = 48;
+            const TRAIL_FADE = 0.038;
+            const REDUCED_MOTION = matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+            const isMobile = /Mobi|Android/i.test(navigator.userAgent) ||
+                Math.min(window.innerWidth, window.innerHeight) < 768;
+            const RAY_COUNT = REDUCED_MOTION ? 800 : (isMobile ? MAX_RAYS_MOBILE : MAX_RAYS_DESKTOP);
+
+            const FOG_COUNT = isMobile ? 160 : 320;
+            const fog = new Array(FOG_COUNT).fill(0).map(() => ({
+                x: Math.random(),
+                y: Math.random(),
+                r: Math.random() * 2.2 + 0.5,
+                vx: (Math.random() - 0.5) * 0.00015,
+                vy: (Math.random() - 0.5) * 0.00015,
+                phase: Math.random() * Math.PI * 2
+            }));
+
+            function drawFog(time) {
+                const w = cx * 2, h = cy * 2;
+                ctx.save();
+                ctx.globalCompositeOperation = 'source-over';
+                for (let i = 0; i < FOG_COUNT; i++) {
+                    const f = fog[i];
+                    f.x = (f.x + f.vx + 1) % 1;
+                    f.y = (f.y + f.vy + 1) % 1;
+
+                    const drift = 0.25 + 0.75 * Math.sin(time * 0.0018 + f.phase);
+                    ctx.globalAlpha = 0.06 + 0.2 * drift;
+                    ctx.beginPath();
+                    ctx.arc(f.x * w, f.y * h, f.r, 0, Math.PI * 2);
+                    const hue = (320 + 50 * Math.sin(f.phase)) % 360;
+                    ctx.fillStyle = `hsla(${hue}, 75%, 55%, 1)`;
+                    ctx.fill();
+                }
+                ctx.restore();
+            }
+
+            function mandelbulbDistance(pos, power, maxIter) {
+                let x = pos[0], y = pos[1], z = pos[2];
+                const cx = x, cy = y, cz = z;
+
+                let dr = 1.0;
+                let r = 0.0;
+
+                for (let i = 0; i < maxIter; i++) {
+                    r = Math.sqrt(x * x + y * y + z * z);
+
+                    if (r > 2.0) break;
+
+                    let theta = Math.atan2(Math.sqrt(x * x + y * y), z);
+                    let phi = Math.atan2(y, x);
+
+                    dr = Math.pow(r, power - 1) * power * dr + 1.0;
+
+                    const zr = Math.pow(r, power);
+                    theta = theta * power;
+                    phi = phi * power;
+
+                    x = zr * Math.sin(theta) * Math.cos(phi) + cx;
+                    y = zr * Math.sin(theta) * Math.sin(phi) + cy;
+                    z = zr * Math.cos(theta) + cz;
+                }
+
+                return 0.5 * Math.log(r) * r / dr;
+            }
+
+            function julia3D(pos, c, power, maxIter) {
+                let x = pos[0], y = pos[1], z = pos[2];
+                const [cx, cy, cz] = c;
+
+                let r = 0.0;
+
+                for (let i = 0; i < maxIter; i++) {
+                    r = Math.sqrt(x * x + y * y + z * z);
+                    if (r > 2.0) return i / maxIter;
+
+                    let theta = Math.atan2(Math.sqrt(x * x + y * y), z);
+                    let phi = Math.atan2(y, x);
+
+                    const zr = Math.pow(r, power);
+                    theta = theta * power;
+                    phi = phi * power;
+
+                    x = zr * Math.sin(theta) * Math.cos(phi) + cx;
+                    y = zr * Math.sin(theta) * Math.sin(phi) + cy;
+                    z = zr * Math.cos(theta) + cz;
+                }
+
+                return 0.0;
+            }
+
+            class RayMarcher {
+                constructor(origin, direction, hue, power, useJulia) {
+                    this.origin = origin;
+                    this.direction = direction;
+                    this.hue = hue;
+                    this.power = power;
+                    this.useJulia = useJulia;
+                    this.juliaC = [
+                        Math.sin(hue * 0.02) * 0.3,
+                        Math.cos(hue * 0.02) * 0.3,
+                        Math.sin(hue * 0.03 + 1) * 0.2
+                    ];
+                    this.path = [];
+                    this.hit = false;
+                    this.brightness = 0;
+                }
+
+                march(maxDist) {
+                    let t = 0;
+                    const pos = [...this.origin];
+
+                    for (let step = 0; step < MAX_STEPS; step++) {
+                        pos[0] = this.origin[0] + this.direction[0] * t;
+                        pos[1] = this.origin[1] + this.direction[1] * t;
+                        pos[2] = this.origin[2] + this.direction[2] * t;
+
+                        let dist;
+                        if (this.useJulia) {
+                            const juliaVal = julia3D(pos, this.juliaC, this.power, 8);
+                            dist = 0.1 + juliaVal * 0.5;
+                        } else {
+                            dist = mandelbulbDistance(pos, this.power, 12);
+                        }
+
+                        this.path.push([...pos, dist]);
+
+                        if (dist < 0.005) {
+                            this.hit = true;
+                            this.brightness = 1.0 - (step / MAX_STEPS);
+                            break;
+                        }
+
+                        if (t > maxDist) break;
+
+                        t += dist * 0.8;
+                    }
+                }
+            }
+
+            const rays = [];
+            const goldenRatio = (1 + Math.sqrt(5)) / 2;
+
+            for (let i = 0; i < RAY_COUNT; i++) {
+                const theta = 2 * Math.PI * i / goldenRatio;
+                const phi = Math.acos(1 - 2 * (i + 0.5) / RAY_COUNT);
+
+                const direction = [
+                    Math.sin(phi) * Math.cos(theta),
+                    Math.sin(phi) * Math.sin(theta),
+                    Math.cos(phi)
+                ];
+
+                const origin = [-3, 0, 0];
+                const hue = (i / RAY_COUNT) * 360;
+                const power = 8 + Math.sin(i * 0.1) * 1.5;
+                const useJulia = i % 5 === 0;
+
+                rays.push(new RayMarcher(origin, direction, hue, power, useJulia));
+            }
+
+            let t0 = performance.now();
+            let needsReMarch = true;
+            let camAngleX = 0, camAngleY = 0;
+            let targetAngleX = 0, targetAngleY = 0;
+
+            function handlePointerMove(e) {
+                const w = canvas.clientWidth || window.innerWidth;
+                const h = canvas.clientHeight || window.innerHeight;
+                targetAngleX = ((e.clientY / h) * 2 - 1) * 0.8;
+                targetAngleY = ((e.clientX / w) * 2 - 1) * 1.2;
+            }
+
+            function handleResize() {
+                setSize();
+            }
+
+            window.addEventListener('pointermove', handlePointerMove, { passive: true });
+            window.addEventListener('resize', handleResize, { passive: true });
+            setSize();
+
+            ctx.globalCompositeOperation = 'lighter';
+            ctx.lineCap = 'round';
+            ctx.lineJoin = 'round';
+
+            function fadeFrame() {
+                ctx.save();
+                ctx.globalCompositeOperation = 'source-over';
+                ctx.fillStyle = `rgba(0,0,0,${TRAIL_FADE})`;
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+                ctx.restore();
+            }
+
+            function rotateY3D(p, angle) {
+                const c = Math.cos(angle), s = Math.sin(angle);
+                return [c * p[0] + s * p[2], p[1], -s * p[0] + c * p[2]];
+            }
+
+            function rotateX3D(p, angle) {
+                const c = Math.cos(angle), s = Math.sin(angle);
+                return [p[0], c * p[1] - s * p[2], s * p[1] + c * p[2]];
+            }
+
+            function project(p, breathing) {
+                const scale = baseScale * breathing;
+                const perspective = 3.8;
+                const depth = perspective + p[2];
+                const factor = scale / (depth < 0.1 ? 0.1 : depth);
+
+                return [
+                    cx + p[0] * factor,
+                    cy - p[1] * factor,
+                    factor
+                ];
+            }
+
+            function mandelbulbFrame(now) {
+                if (currentAnimation !== 'mandelbulb') return;
+
+                const dt = Math.max(0.001, Math.min(0.033, (now - t0) / 1000));
+                t0 = now;
+
+                fadeFrame();
+                drawFog(now);
+
+                const T = now * 0.001;
+                const breathing = 1.0 + 0.12 * Math.sin(T * 0.6) + 0.06 * Math.cos(T * 0.35 + 1.3);
+
+                camAngleX += (targetAngleX - camAngleX) * 0.04;
+                camAngleY += (targetAngleY - camAngleY) * 0.04;
+
+                const autoRotY = T * 0.2;
+                const totalRotY = autoRotY + camAngleY;
+
+                if (Math.floor(T * 2) % 3 === 0 && needsReMarch) {
+                    for (let i = 0; i < RAY_COUNT; i++) {
+                        rays[i].power = 8 + Math.sin(T * 0.5 + i * 0.1) * 1.5;
+                        rays[i].path = [];
+                        rays[i].march(5.0);
+                    }
+                    needsReMarch = false;
+                } else if (Math.floor(T * 2) % 3 !== 0) {
+                    needsReMarch = true;
+                }
+
+                ctx.save();
+
+                for (let i = 0; i < RAY_COUNT; i++) {
+                    const ray = rays[i];
+                    if (ray.path.length < 2) continue;
+
+                    const baseHue = ray.hue;
+                    const isJulia = ray.useJulia;
+
+                    for (let j = 1; j < ray.path.length; j++) {
+                        let p1 = ray.path[j - 1].slice(0, 3);
+                        let p2 = ray.path[j].slice(0, 3);
+
+                        p1 = rotateY3D(p1, totalRotY);
+                        p1 = rotateX3D(p1, camAngleX);
+                        p2 = rotateY3D(p2, totalRotY);
+                        p2 = rotateX3D(p2, camAngleX);
+
+                        const [x1, y1, s1] = project(p1, breathing);
+                        const [x2, y2, s2] = project(p2, breathing);
+
+                        const progress = j / ray.path.length;
+                        const distToSurface = ray.path[j][3];
+                        const proximity = Math.max(0, 1 - distToSurface * 20);
+
+                        let alpha = 0.4 * progress * (0.7 + 0.3 * proximity);
+                        if (ray.hit && j > ray.path.length - 5) {
+                            alpha = ray.brightness * (1 + progress);
+                        }
+
+                        const hueShift = proximity * 80 + progress * 30;
+                        const hue = (baseHue + hueShift) % 360;
+
+                        ctx.globalAlpha = alpha;
+                        ctx.lineWidth = Math.max(0.4, Math.min(3.5, s2 * 0.011 * (1 + proximity * 2)));
+                        ctx.strokeStyle = `hsla(${hue}, ${isJulia ? 85 : 95}%, ${60 + proximity * 15}%, 1)`;
+
+                        ctx.beginPath();
+                        ctx.moveTo(x1, y1);
+                        ctx.lineTo(x2, y2);
+                        ctx.stroke();
+                    }
+
+                    if (ray.hit) {
+                        let hitPos = ray.path[ray.path.length - 1].slice(0, 3);
+                        hitPos = rotateY3D(hitPos, totalRotY);
+                        hitPos = rotateX3D(hitPos, camAngleX);
+
+                        const [hx, hy, hs] = project(hitPos, breathing);
+
+                        ctx.save();
+                        ctx.globalAlpha = ray.brightness * 0.9;
+                        const glowSize = Math.max(1.8, Math.min(5, hs * 0.02));
+
+                        ctx.beginPath();
+                        ctx.arc(hx, hy, glowSize, 0, Math.PI * 2);
+                        ctx.fillStyle = `hsla(${ray.hue}, 100%, 75%, 0.95)`;
+                        ctx.fill();
+
+                        ctx.globalAlpha = ray.brightness * 0.4;
+                        ctx.beginPath();
+                        ctx.arc(hx, hy, glowSize * 2.2, 0, Math.PI * 2);
+                        ctx.strokeStyle = `hsla(${ray.hue}, 100%, 80%, 0.5)`;
+                        ctx.lineWidth = 1.2;
+                        ctx.stroke();
+                        ctx.restore();
+                    }
+                }
+
+                ctx.restore();
+
+                if (currentAnimation === 'mandelbulb') {
+                    mandelbulbAnimationId = requestAnimationFrame(mandelbulbFrame);
+                }
+            }
+
+            ctx.fillStyle = '#000';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            for (let i = 0; i < RAY_COUNT; i++) {
+                rays[i].march(5.0);
+            }
+
+            mandelbulbAnimation = {
+                frame: mandelbulbFrame,
+                canvas: canvas,
+                ctx: ctx
+            };
+        }
+
+        initHopfAnimation();
+        hopfInitialized = true;
+        hopfCanvas.classList.add('active');
+        hopfAnimationId = requestAnimationFrame(hopfAnimation.frame);
+
+        initKleinAnimation();
+        kleinInitialized = true;
+
+        initLorenzAnimation();
+        lorenzInitialized = true;
+
+        initMandelbulbAnimation();
+        mandelbulbInitialized = true;
+    </script>
+</body>
+
+</html>

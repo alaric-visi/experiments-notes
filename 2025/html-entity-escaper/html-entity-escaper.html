@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HTML Entity Escaper</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: #1a1a1a;
+            min-height: 100vh;
+            padding: 0;
+            margin: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .container {
+            background: #1a1a1a;
+            padding: 30px;
+            width: 100%;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        h1 {
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 28px;
+        }
+
+        .description {
+            color: #999;
+            margin-bottom: 25px;
+            font-size: 14px;
+        }
+
+        .section {
+            margin-bottom: 25px;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            color: #aaa;
+            font-weight: 600;
+            font-size: 14px;
+        }
+
+        textarea {
+            width: 100%;
+            flex: 1;
+            padding: 12px;
+            background: #2d2d2d;
+            color: #e0e0e0;
+            border: 2px solid #404040;
+            border-radius: 8px;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            resize: none;
+            transition: border-color 0.3s;
+        }
+
+        textarea:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        #output {
+            background: #252525;
+        }
+
+        button {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.3s, transform 0.1s;
+            width: 100%;
+        }
+
+        button:hover {
+            background: #5568d3;
+        }
+
+        button:active {
+            transform: scale(0.98);
+        }
+
+        button.copied {
+            background: #48bb78;
+        }
+
+        @media (max-width: 600px) {
+            .container {
+                padding: 20px;
+            }
+
+            h1 {
+                font-size: 24px;
+            }
+
+            textarea {
+                min-height: 120px;
+                font-size: 13px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <p class="description">Escape HTML entities: &lt; &gt; &amp; " '</p>
+
+        <div class="section">
+            <label for="input">Input Text:</label>
+            <textarea id="input" placeholder="Paste your text here..."></textarea>
+        </div>
+
+        <div class="section">
+            <label for="output">Escaped Output:</label>
+            <textarea id="output" readonly></textarea>
+        </div>
+
+        <button id="copyBtn">Copy to Clipboard</button>
+    </div>
+
+    <script>
+        const input = document.getElementById('input');
+        const output = document.getElementById('output');
+        const copyBtn = document.getElementById('copyBtn');
+
+        function escapeHtml(text) {
+            return text
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#39;');
+        }
+
+        input.addEventListener('input', () => {
+            output.value = escapeHtml(input.value);
+        });
+
+        copyBtn.addEventListener('click', async () => {
+            if (output.value) {
+                try {
+                    await navigator.clipboard.writeText(output.value);
+                    copyBtn.textContent = 'Copied!';
+                    copyBtn.classList.add('copied');
+
+                    setTimeout(() => {
+                        copyBtn.textContent = 'Copy to Clipboard';
+                        copyBtn.classList.remove('copied');
+                    }, 1500);
+                } catch (err) {
+                    output.select();
+                    document.execCommand('copy');
+                    copyBtn.textContent = 'Copied!';
+                    copyBtn.classList.add('copied');
+
+                    setTimeout(() => {
+                        copyBtn.textContent = 'Copy to Clipboard';
+                        copyBtn.classList.remove('copied');
+                    }, 1500);
+                }
+            }
+        });
+    </script>
+</body>
+
+</html>
