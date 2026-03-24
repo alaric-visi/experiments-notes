@@ -1,0 +1,1752 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ThreeJS: Experiments</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #000000;
+            color: #e0e0e0;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        .nav-container {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            z-index: 20;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            background: rgba(0, 0, 0, 0.4);
+            backdrop-filter: blur(8px);
+            padding: 16px;
+            border-radius: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+            transition: all 0.3s ease;
+        }
+
+        .nav-container:hover {
+            background: rgba(0, 0, 0, 0.5);
+            border-color: rgba(255, 255, 255, 0.12);
+        }
+
+        .nav-btn {
+            background: transparent;
+            color: rgba(255, 255, 255, 0.7);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+            padding: 14px 20px;
+            font-size: 15px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            min-width: 140px;
+            text-align: left;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .nav-btn::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, rgba(255, 105, 54, 0.1), transparent);
+            transform: translateX(-100%);
+            transition: transform 0.4s ease;
+        }
+
+        .nav-btn:hover {
+            color: #ffffff;
+            border-color: rgba(255, 105, 54, 0.3);
+            background: rgba(255, 105, 54, 0.05);
+            transform: translateX(4px);
+        }
+
+        .nav-btn:hover::before {
+            transform: translateX(0);
+        }
+
+        .nav-btn.active {
+            color: #ffffff;
+            background: rgba(255, 105, 54, 0.15);
+            border-color: rgba(255, 105, 54, 0.4);
+            box-shadow: 0 0 20px rgba(255, 105, 54, 0.2);
+        }
+
+        .nav-btn.active::after {
+            content: '';
+            position: absolute;
+            right: 12px;
+            width: 6px;
+            height: 6px;
+            background: #ff6936;
+            border-radius: 50%;
+            animation: pulse 2s infinite;
+        }
+
+        .nav-btn .icon {
+            font-size: 18px;
+            opacity: 0.8;
+            transition: opacity 0.3s ease, transform 0.3s ease;
+        }
+
+        .nav-btn:hover .icon {
+            opacity: 1;
+            transform: scale(1.1);
+        }
+
+        .nav-btn.active .icon {
+            opacity: 1;
+            color: #ff6936;
+        }
+
+        @keyframes pulse {
+            0% {
+                box-shadow: 0 0 0 0 rgba(255, 105, 54, 0.7);
+            }
+
+            70% {
+                box-shadow: 0 0 0 6px rgba(255, 105, 54, 0);
+            }
+
+            100% {
+                box-shadow: 0 0 0 0 rgba(255, 105, 54, 0);
+            }
+        }
+
+        .animation-container {
+            width: 100vw;
+            height: 100vh;
+            position: relative;
+        }
+
+        .canvas-wrapper {
+            width: 100%;
+            height: 100%;
+            position: relative;
+        }
+
+        #bgCanvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+            background-color: #000000;
+        }
+
+        #animationCanvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: block;
+            z-index: 2;
+        }
+
+        .loading {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 1.5rem;
+            color: #e0e0e0;
+            z-index: 100;
+            background: rgba(0, 0, 0, 0.7);
+            padding: 20px 40px;
+            border-radius: 12px;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        footer {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            text-align: center;
+            padding: 12px;
+            background: rgba(0, 0, 0, 0.3);
+            backdrop-filter: blur(5px);
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            font-size: 0.85rem;
+            opacity: 0.7;
+            color: #a0a0a0;
+            z-index: 10;
+        }
+
+        @media (max-width: 768px) {
+            .nav-container {
+                top: 10px;
+                left: 10px;
+                right: 10px;
+                flex-direction: row;
+                justify-content: center;
+                flex-wrap: wrap;
+                padding: 12px;
+                gap: 8px;
+            }
+
+            .nav-btn {
+                min-width: 80px;
+                padding: 12px 16px;
+                font-size: 14px;
+                justify-content: center;
+                text-align: center;
+            }
+
+            .nav-btn .text {
+                display: none;
+            }
+
+            .nav-btn .icon {
+                font-size: 20px;
+            }
+
+            .nav-btn:hover {
+                transform: translateY(-2px);
+            }
+
+            footer {
+                font-size: 0.75rem;
+                padding: 10px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .nav-container {
+                padding: 10px;
+                gap: 6px;
+            }
+
+            .nav-btn {
+                min-width: 60px;
+                padding: 10px;
+            }
+
+            .nav-btn .icon {
+                font-size: 18px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="nav-container">
+        <button class="nav-btn active" id="beeBtn">
+            <span class="icon">🐝</span>
+            <span class="text">Bee</span>
+        </button>
+        <button class="nav-btn" id="skullBtn">
+            <span class="icon">💀</span>
+            <span class="text">Skull</span>
+        </button>
+        <button class="nav-btn" id="caveBtn">
+            <span class="icon">🕳️</span>
+            <span class="text">Cave</span>
+        </button>
+        <button class="nav-btn" id="xenoBtn">
+            <span class="icon">👽</span>
+            <span class="text">Alien</span>
+        </button>
+    </div>
+
+    <div class="animation-container">
+        <div class="canvas-wrapper">
+            <div class="loading" id="loadingMessage">Loading Animation...</div>
+            <canvas id="bgCanvas"></canvas>
+            <canvas id="animationCanvas"></canvas>
+        </div>
+    </div>
+
+    <footer>
+        Created with Three.js | Click buttons to switch animations
+    </footer>
+
+    <script>
+        let currentAnimation = 'bee';
+        let scene, camera, renderer, bee, skull, caveStructure, xenomorph;
+        let animationId;
+
+        const colors = {
+            primary: 0xff6936,
+            dark1: 0x3b1d22,
+            dark2: 0x27161e,
+            dark3: 0x000000,
+            light: 0xe9e9f0
+        };
+
+        const bgCanvas = document.getElementById("bgCanvas");
+        const bgCtx = bgCanvas.getContext("2d");
+        const pixelSize = 8;
+        let cols, rows;
+        let pixels = [];
+
+        function initBackground() {
+            bgCanvas.width = window.innerWidth;
+            bgCanvas.height = window.innerHeight;
+            cols = Math.ceil(bgCanvas.width / pixelSize);
+            rows = Math.ceil(bgCanvas.height / pixelSize);
+
+            pixels = [];
+            for (let i = 0; i < cols * rows; i++) {
+                pixels.push({
+                    hue: Math.random() * 30,
+                    brightness: Math.random() * 0.3,
+                    speed: 0.001 + Math.random() * 0.003
+                });
+            }
+        }
+
+        function animateBackground() {
+            for (let y = 0; y < rows; y++) {
+                for (let x = 0; x < cols; x++) {
+                    const index = y * cols + x;
+                    const pixel = pixels[index];
+
+                    pixel.brightness += pixel.speed;
+                    if (pixel.brightness > 0.4) {
+                        pixel.brightness = 0;
+                        pixel.hue = Math.random() * 30;
+                    }
+
+                    const r = Math.floor(0 + pixel.brightness * 50);
+                    const g = Math.floor(0 + pixel.brightness * 20);
+                    const b = Math.floor(0 + pixel.brightness * 10);
+
+                    bgCtx.fillStyle = `rgb(${r}, ${g}, ${b})`;
+                    bgCtx.fillRect(x * pixelSize, y * pixelSize, pixelSize, pixelSize);
+                }
+            }
+            requestAnimationFrame(animateBackground);
+        }
+
+        function init() {
+            console.log('Initializing application...');
+
+            initBackground();
+            animateBackground();
+
+            renderer = new THREE.WebGLRenderer({
+                canvas: document.getElementById('animationCanvas'),
+                antialias: true,
+                alpha: true
+            });
+            updateRendererSize();
+
+            loadBeeAnimation();
+
+            window.addEventListener('resize', onWindowResize);
+
+            document.getElementById('beeBtn').addEventListener('click', () => switchAnimation('bee'));
+            document.getElementById('skullBtn').addEventListener('click', () => switchAnimation('skull'));
+            document.getElementById('caveBtn').addEventListener('click', () => switchAnimation('cave'));
+            document.getElementById('xenoBtn').addEventListener('click', () => switchAnimation('xeno'));
+
+            setTimeout(() => {
+                document.getElementById('loadingMessage').style.display = 'none';
+            }, 1000);
+        }
+
+        function updateRendererSize() {
+            const width = window.innerWidth;
+            const height = window.innerHeight;
+            renderer.setSize(width, height);
+            renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+        }
+
+        function switchAnimation(animationType) {
+            console.log(`Switching to ${animationType} animation`);
+
+            if (animationType === currentAnimation) {
+                console.log('Already on this animation');
+                return;
+            }
+
+            if (animationId) {
+                cancelAnimationFrame(animationId);
+                animationId = null;
+            }
+
+            if (scene) {
+                while (scene.children.length > 0) {
+                    scene.remove(scene.children[0]);
+                }
+            }
+
+            document.getElementById('beeBtn').classList.toggle('active', animationType === 'bee');
+            document.getElementById('skullBtn').classList.toggle('active', animationType === 'skull');
+            document.getElementById('caveBtn').classList.toggle('active', animationType === 'cave');
+            document.getElementById('xenoBtn').classList.toggle('active', animationType === 'xeno');
+
+            if (animationType === 'bee') {
+                loadBeeAnimation();
+            } else if (animationType === 'skull') {
+                loadSkullAnimation();
+            } else if (animationType === 'cave') {
+                loadCaveAnimation();
+            } else {
+                loadXenomorphAnimation();
+            }
+
+            currentAnimation = animationType;
+        }
+
+        function loadBeeAnimation() {
+            console.log("Loading detailed bee animation");
+            scene = new THREE.Scene();
+            scene.background = new THREE.Color(colors.dark3);
+
+            camera = new THREE.PerspectiveCamera(
+                50,
+                window.innerWidth / window.innerHeight,
+                0.1,
+                1000
+            );
+            updateBeeCameraPosition();
+
+            createDetailedBee();
+
+            const ambientLight = new THREE.AmbientLight(colors.light, 0.5);
+            scene.add(ambientLight);
+
+            const pointLight = new THREE.PointLight(colors.primary, 1.5, 100);
+            pointLight.position.set(5, 5, 5);
+            scene.add(pointLight);
+
+            const pointLight2 = new THREE.PointLight(colors.light, 0.8, 100);
+            pointLight2.position.set(-5, -3, 3);
+            scene.add(pointLight2);
+
+            const backLight = new THREE.PointLight(colors.primary, 0.6, 100);
+            backLight.position.set(0, 2, -8);
+            scene.add(backLight);
+
+            animateBee();
+        }
+
+        function loadSkullAnimation() {
+            console.log("Loading detailed skull animation");
+            scene = new THREE.Scene();
+            scene.background = new THREE.Color(colors.dark3);
+
+            camera = new THREE.PerspectiveCamera(
+                45,
+                window.innerWidth / window.innerHeight,
+                0.1,
+                1000
+            );
+
+            if (window.innerWidth < 768) {
+                camera.position.z = 6;
+                camera.position.y = 0;
+            } else {
+                camera.position.z = 5;
+                camera.position.y = 0;
+            }
+
+            createDetailedSkull();
+
+            const ambientLight = new THREE.AmbientLight(colors.light, 0.3);
+            scene.add(ambientLight);
+
+            const pointLight = new THREE.PointLight(colors.primary, 1, 100);
+            pointLight.position.set(5, 5, 5);
+            scene.add(pointLight);
+
+            const pointLight2 = new THREE.PointLight(colors.light, 0.5, 100);
+            pointLight2.position.set(-5, -5, 5);
+            scene.add(pointLight2);
+
+            animateSkull();
+        }
+
+        function loadCaveAnimation() {
+            console.log("Loading detailed cave animation");
+            scene = new THREE.Scene();
+            scene.background = new THREE.Color(colors.dark3);
+            scene.fog = new THREE.Fog(colors.dark3, 5, 15);
+
+            camera = new THREE.PerspectiveCamera(
+                60,
+                window.innerWidth / window.innerHeight,
+                0.1,
+                1000
+            );
+            updateCaveCameraPosition();
+
+            createDetailedCave();
+
+            const ambientLight = new THREE.AmbientLight(colors.primary, 0.3);
+            scene.add(ambientLight);
+
+            const caveLight1 = new THREE.PointLight(colors.primary, 1.5, 20);
+            caveLight1.position.set(3, 2, 2);
+            scene.add(caveLight1);
+
+            const caveLight2 = new THREE.PointLight(colors.light, 0.8, 15);
+            caveLight2.position.set(-4, -1, -3);
+            scene.add(caveLight2);
+
+            const caveLight3 = new THREE.PointLight(colors.primary, 1.0, 18);
+            caveLight3.position.set(0, 4, -5);
+            scene.add(caveLight3);
+
+            const rimLight = new THREE.PointLight(colors.light, 0.5, 25);
+            rimLight.position.set(0, -3, 8);
+            scene.add(rimLight);
+
+            animateCave();
+        }
+
+        function loadXenomorphAnimation() {
+            console.log("Loading xenomorph animation");
+            scene = new THREE.Scene();
+            scene.background = new THREE.Color(colors.dark3);
+
+            camera = new THREE.PerspectiveCamera(
+                45,
+                window.innerWidth / window.innerHeight,
+                0.1,
+                1000
+            );
+
+            if (window.innerWidth < 768) {
+                camera.position.z = 8;
+                camera.position.y = 0;
+            } else {
+                camera.position.z = 6;
+                camera.position.y = 0;
+            }
+
+            createDetailedXenomorph();
+
+            const ambientLight = new THREE.AmbientLight(colors.dark1, 0.5);
+            scene.add(ambientLight);
+
+            const pointLight = new THREE.PointLight(colors.primary, 2, 100);
+            pointLight.position.set(5, 5, 5);
+            scene.add(pointLight);
+
+            const pointLight2 = new THREE.PointLight(colors.light, 1.5, 100);
+            pointLight2.position.set(-5, -3, 3);
+            scene.add(pointLight2);
+
+            const rimLight = new THREE.PointLight(colors.primary, 1.2, 100);
+            rimLight.position.set(0, 0, -5);
+            scene.add(rimLight);
+
+            animateXenomorph();
+        }
+
+        function updateBeeCameraPosition() {
+            const aspect = window.innerWidth / window.innerHeight;
+
+            if (window.innerWidth < 480) {
+                camera.position.set(0, 0.5, 5.5);
+                camera.fov = 60;
+            } else if (window.innerWidth < 768) {
+                camera.position.set(0, 0.3, 5);
+                camera.fov = 55;
+            } else if (aspect < 1) {
+                camera.position.set(0, 0.2, 4.5);
+                camera.fov = 55;
+            } else {
+                camera.position.set(0, 0, 4);
+                camera.fov = 50;
+            }
+
+            camera.updateProjectionMatrix();
+        }
+
+        function createDetailedBee() {
+            const group = new THREE.Group();
+
+            const headGeom = new THREE.SphereGeometry(0.32, 32, 32);
+            const head = new THREE.Mesh(
+                headGeom,
+                new THREE.MeshBasicMaterial({ color: colors.dark1, wireframe: true })
+            );
+            head.position.set(0, 0.15, 1.1);
+            head.scale.set(1.1, 1.05, 1);
+            group.add(head);
+
+            const eyeGeom = new THREE.SphereGeometry(0.2, 20, 20, 0, Math.PI * 0.9);
+            const leftEye = new THREE.Mesh(
+                eyeGeom,
+                new THREE.MeshBasicMaterial({ color: colors.light, wireframe: true })
+            );
+            leftEye.position.set(-0.28, 0.2, 1.2);
+            leftEye.rotation.y = -Math.PI * 0.25;
+            leftEye.scale.set(1.15, 1.1, 0.9);
+            group.add(leftEye);
+
+            const rightEye = new THREE.Mesh(
+                eyeGeom,
+                new THREE.MeshBasicMaterial({ color: colors.light, wireframe: true })
+            );
+            rightEye.position.set(0.28, 0.2, 1.2);
+            rightEye.rotation.y = Math.PI * 0.25;
+            rightEye.scale.set(1.15, 1.1, 0.9);
+            group.add(rightEye);
+
+            for (let i = 0; i < 3; i++) {
+                const ocellusGeom = new THREE.SphereGeometry(0.04, 12, 12);
+                const ocellus = new THREE.Mesh(
+                    ocellusGeom,
+                    new THREE.MeshBasicMaterial({ color: colors.primary, wireframe: true })
+                );
+                ocellus.position.set((i - 1) * 0.1, 0.35, 1.15);
+                group.add(ocellus);
+            }
+
+            for (let side = -1; side <= 1; side += 2) {
+                const segments = 10;
+                for (let i = 0; i < segments; i++) {
+                    const segmentGeom = new THREE.CylinderGeometry(
+                        0.018 - i * 0.0012,
+                        0.02 - i * 0.0012,
+                        0.12,
+                        8
+                    );
+                    const segment = new THREE.Mesh(
+                        segmentGeom,
+                        new THREE.MeshBasicMaterial({ color: colors.dark1, wireframe: true })
+                    );
+
+                    let xOffset, yOffset, zOffset, rotZ, rotX;
+
+                    if (i < 2) {
+                        xOffset = side * (0.2 + i * 0.02);
+                        yOffset = 0.32 + i * 0.08;
+                        zOffset = 1.15;
+                        rotZ = side * 0.3;
+                        rotX = -0.2;
+                    } else {
+                        const bendIndex = i - 2;
+                        xOffset = side * (0.24 + bendIndex * 0.05);
+                        yOffset = 0.48 + bendIndex * 0.02;
+                        zOffset = 1.15 + bendIndex * 0.08;
+                        rotZ = side * (0.3 - bendIndex * 0.05);
+                        rotX = -0.2 - bendIndex * 0.1;
+                    }
+
+                    segment.position.set(xOffset, yOffset, zOffset);
+                    segment.rotation.z = rotZ;
+                    segment.rotation.x = rotX;
+                    group.add(segment);
+                }
+            }
+
+            const proboscisSegments = 6;
+            for (let i = 0; i < proboscisSegments; i++) {
+                const probGeom = new THREE.CylinderGeometry(0.015, 0.012, 0.08, 6);
+                const prob = new THREE.Mesh(
+                    probGeom,
+                    new THREE.MeshBasicMaterial({ color: colors.primary, wireframe: true })
+                );
+                const angle = i * 0.3;
+                prob.position.set(
+                    Math.sin(angle) * 0.12,
+                    0.05 - i * 0.05,
+                    1.15 + Math.cos(angle) * 0.12
+                );
+                prob.rotation.z = angle;
+                prob.rotation.x = Math.PI * 0.5;
+                group.add(prob);
+            }
+
+            const thoraxMain = new THREE.SphereGeometry(0.35, 28, 28);
+            const thorax = new THREE.Mesh(
+                thoraxMain,
+                new THREE.MeshBasicMaterial({ color: colors.primary, wireframe: true })
+            );
+            thorax.position.set(0, 0.1, 0.5);
+            thorax.scale.set(1, 0.95, 1.3);
+            group.add(thorax);
+
+            for (let i = 0; i < 12; i++) {
+                const fuzzGeom = new THREE.SphereGeometry(0.08, 12, 12);
+                const fuzz = new THREE.Mesh(
+                    fuzzGeom,
+                    new THREE.MeshBasicMaterial({ color: colors.primary, wireframe: true })
+                );
+                const angle = (i / 12) * Math.PI * 2;
+                fuzz.position.set(
+                    Math.cos(angle) * 0.3,
+                    0.1 + Math.sin(i) * 0.15,
+                    0.5 + Math.sin(angle) * 0.3
+                );
+                group.add(fuzz);
+            }
+
+            const legConfigs = [
+                { side: -1, z: 0.7, angle: 0.5, spread: 0.8 },
+                { side: 1, z: 0.7, angle: -0.5, spread: 0.8 },
+                { side: -1, z: 0.5, angle: 0.7, spread: 1.0 },
+                { side: 1, z: 0.5, angle: -0.7, spread: 1.0 },
+                { side: -1, z: 0.3, angle: 0.9, spread: 1.1 },
+                { side: 1, z: 0.3, angle: -0.9, spread: 1.1 }
+            ];
+
+            legConfigs.forEach((config) => {
+                const coxaGeom = new THREE.CylinderGeometry(0.04, 0.035, 0.12, 8);
+                const coxa = new THREE.Mesh(
+                    coxaGeom,
+                    new THREE.MeshBasicMaterial({ color: colors.dark1, wireframe: true })
+                );
+                coxa.position.set(config.side * 0.35, 0.1, config.z);
+                coxa.rotation.z = config.angle;
+                group.add(coxa);
+
+                const femurGeom = new THREE.CylinderGeometry(0.04, 0.032, 0.35, 8);
+                const femur = new THREE.Mesh(
+                    femurGeom,
+                    new THREE.MeshBasicMaterial({ color: colors.primary, wireframe: true })
+                );
+                const femurX = config.side * (0.35 + Math.cos(config.angle) * 0.06);
+                const femurY = 0.1 + Math.sin(config.angle) * 0.06;
+                femur.position.set(femurX, femurY, config.z);
+                femur.rotation.z = config.angle + config.side * 0.5;
+                femur.rotation.y = config.side * 0.3;
+                group.add(femur);
+
+                const tibiaGeom = new THREE.CylinderGeometry(0.032, 0.024, 0.4, 8);
+                const tibia = new THREE.Mesh(
+                    tibiaGeom,
+                    new THREE.MeshBasicMaterial({ color: colors.light, wireframe: true })
+                );
+                const tibiaX =
+                    config.side *
+                    (0.35 +
+                        Math.cos(config.angle + config.side * 0.5) * 0.23 * config.spread);
+                const tibiaY = femurY + Math.sin(config.angle + config.side * 0.5) * 0.23;
+                tibia.position.set(tibiaX, tibiaY, config.z);
+                tibia.rotation.z = config.angle + config.side * 1.0;
+                tibia.rotation.y = config.side * 0.3;
+                group.add(tibia);
+
+                if (config.z === 0.3) {
+                    const pollenGeom = new THREE.SphereGeometry(0.06, 12, 12);
+                    const pollen = new THREE.Mesh(
+                        pollenGeom,
+                        new THREE.MeshBasicMaterial({ color: colors.primary, wireframe: true })
+                    );
+                    pollen.position.set(tibiaX + config.side * 0.06, tibiaY - 0.1, config.z);
+                    group.add(pollen);
+                }
+
+                for (let t = 0; t < 4; t++) {
+                    const tarsusGeom = new THREE.CylinderGeometry(0.018, 0.015, 0.07, 6);
+                    const tarsus = new THREE.Mesh(
+                        tarsusGeom,
+                        new THREE.MeshBasicMaterial({ color: colors.dark1, wireframe: true })
+                    );
+                    const tarsusX =
+                        config.side *
+                        (0.35 +
+                            Math.cos(config.angle + config.side * 1.0) * 0.43 * config.spread +
+                            t * 0.04 * config.side);
+                    const tarsusY =
+                        tibiaY + Math.sin(config.angle + config.side * 1.0) * 0.43 - t * 0.035;
+                    tarsus.position.set(tarsusX, tarsusY, config.z + t * 0.03);
+                    tarsus.rotation.z = config.angle + config.side * 1.2;
+                    group.add(tarsus);
+                }
+            });
+
+            const abdomenSegments = 6;
+            for (let i = 0; i < abdomenSegments; i++) {
+                const scale = 0.55 - i * 0.06;
+                const segGeom = new THREE.SphereGeometry(0.32, 24, 24);
+                const isYellow = i % 2 === 0;
+                const segment = new THREE.Mesh(
+                    segGeom,
+                    new THREE.MeshBasicMaterial({
+                        color: isYellow ? colors.primary : colors.dark1,
+                        wireframe: true
+                    })
+                );
+                segment.position.set(0, 0.05 - i * 0.02, -0.1 - i * 0.28);
+                segment.scale.set(scale * 1.1, scale * 0.95, scale * 1.6);
+                group.add(segment);
+            }
+
+            const stingerGeom = new THREE.CylinderGeometry(0.01, 0.025, 0.25, 8);
+            const stinger = new THREE.Mesh(
+                stingerGeom,
+                new THREE.MeshBasicMaterial({ color: colors.light, wireframe: true })
+            );
+            stinger.position.set(0, 0, -1.9);
+            stinger.rotation.x = Math.PI;
+            group.add(stinger);
+
+            [-1, 1].forEach((side) => {
+                const frontWingShape = new THREE.Shape();
+                frontWingShape.moveTo(0, 0);
+                frontWingShape.bezierCurveTo(0.2, 0.15, 0.5, 0.25, 0.9, 0.28);
+                frontWingShape.bezierCurveTo(1.2, 0.28, 1.4, 0.2, 1.5, 0.05);
+                frontWingShape.bezierCurveTo(1.5, -0.15, 1.3, -0.35, 1.0, -0.5);
+                frontWingShape.bezierCurveTo(0.6, -0.65, 0.3, -0.68, 0.1, -0.6);
+                frontWingShape.bezierCurveTo(0, -0.4, 0, -0.2, 0, 0);
+
+                const frontWingGeom = new THREE.ShapeGeometry(frontWingShape);
+                const frontWing = new THREE.Mesh(
+                    frontWingGeom,
+                    new THREE.MeshBasicMaterial({
+                        color: colors.light,
+                        wireframe: true,
+                        side: THREE.DoubleSide,
+                        transparent: true,
+                        opacity: 0.9
+                    })
+                );
+                frontWing.position.set(side * 0.25, 0.4, 0.45);
+                frontWing.rotation.x = -0.15;
+                frontWing.rotation.y = side * 0.3;
+                frontWing.rotation.z = side * 0.1;
+                group.add(frontWing);
+
+                const veinPositions = [
+                    [0.1, 0, 0.8, -0.2],
+                    [0.3, 0.1, 1.0, -0.1],
+                    [0.5, 0.15, 1.2, -0.2],
+                    [0.2, -0.1, 0.7, -0.4],
+                    [0.4, 0, 0.9, -0.35]
+                ];
+
+                veinPositions.forEach((vein) => {
+                    const veinCurve = new THREE.QuadraticBezierCurve3(
+                        new THREE.Vector3(vein[0], 0, vein[1]),
+                        new THREE.Vector3(
+                            (vein[0] + vein[2]) / 2,
+                            0.05,
+                            (vein[1] + vein[3]) / 2
+                        ),
+                        new THREE.Vector3(vein[2], 0, vein[3])
+                    );
+                    const veinGeom = new THREE.TubeGeometry(veinCurve, 6, 0.008, 4, false);
+                    const veinMesh = new THREE.Mesh(
+                        veinGeom,
+                        new THREE.MeshBasicMaterial({ color: colors.primary, wireframe: true })
+                    );
+                    veinMesh.position.set(side * 0.25, 0.4, 0.45);
+                    veinMesh.rotation.x = -0.15;
+                    veinMesh.rotation.y = side * 0.3;
+                    veinMesh.rotation.z = side * 0.1;
+                    group.add(veinMesh);
+                });
+
+                const hindWingShape = new THREE.Shape();
+                hindWingShape.moveTo(0, 0);
+                hindWingShape.bezierCurveTo(0.15, 0.08, 0.35, 0.12, 0.6, 0.1);
+                hindWingShape.bezierCurveTo(0.75, 0.08, 0.85, 0, 0.85, -0.12);
+                hindWingShape.bezierCurveTo(0.8, -0.28, 0.6, -0.38, 0.35, -0.4);
+                hindWingShape.bezierCurveTo(0.15, -0.38, 0.05, -0.25, 0, -0.1);
+                hindWingShape.lineTo(0, 0);
+
+                const hindWingGeom = new THREE.ShapeGeometry(hindWingShape);
+                const hindWing = new THREE.Mesh(
+                    hindWingGeom,
+                    new THREE.MeshBasicMaterial({
+                        color: colors.light,
+                        wireframe: true,
+                        side: THREE.DoubleSide,
+                        transparent: true,
+                        opacity: 0.8
+                    })
+                );
+                hindWing.position.set(side * 0.32, 0.32, 0.15);
+                hindWing.rotation.x = -0.2;
+                hindWing.rotation.y = side * 0.5;
+                hindWing.rotation.z = side * 0.15;
+                group.add(hindWing);
+            });
+
+            bee = group;
+            scene.add(bee);
+        }
+
+        function animateBee() {
+            animationId = requestAnimationFrame(animateBee);
+
+            if (bee) {
+                bee.rotation.y += 0.004;
+                bee.rotation.x = Math.sin(Date.now() * 0.001) * 0.06;
+                bee.position.y = Math.sin(Date.now() * 0.0015) * 0.08;
+
+                bee.rotation.z = Math.sin(Date.now() * 0.002) * 0.02;
+            }
+
+            renderer.render(scene, camera);
+        }
+
+        function createDetailedSkull() {
+            const group = new THREE.Group();
+
+            const craniumGeom = new THREE.SphereGeometry(
+                1,
+                64,
+                64,
+                0,
+                Math.PI * 2,
+                0,
+                Math.PI * 0.72
+            );
+            const cranium = new THREE.Mesh(
+                craniumGeom,
+                new THREE.MeshBasicMaterial({
+                    color: colors.primary,
+                    wireframe: true,
+                    wireframeLinewidth: 1
+                })
+            );
+            cranium.scale.set(1.05, 1.2, 1.28);
+            cranium.position.y = 0.45;
+            cranium.position.z = -0.12;
+            group.add(cranium);
+
+            const backSkullGeom = new THREE.SphereGeometry(
+                0.88,
+                48,
+                48,
+                Math.PI * 0.75,
+                Math.PI * 0.5,
+                0,
+                Math.PI * 0.75
+            );
+            const backSkull = new THREE.Mesh(
+                backSkullGeom,
+                new THREE.MeshBasicMaterial({ color: colors.light, wireframe: true })
+            );
+            backSkull.position.set(0, 0.4, -0.85);
+            backSkull.scale.set(1.02, 1.15, 1.05);
+            group.add(backSkull);
+
+            const upperFaceGeom = new THREE.SphereGeometry(
+                0.78,
+                40,
+                40,
+                0,
+                Math.PI * 2,
+                Math.PI * 0.42,
+                Math.PI * 0.38
+            );
+            const upperFace = new THREE.Mesh(
+                upperFaceGeom,
+                new THREE.MeshBasicMaterial({ color: colors.primary, wireframe: true })
+            );
+            upperFace.position.set(0, 0.05, 0.68);
+            upperFace.scale.set(1.08, 0.95, 1.25);
+            group.add(upperFace);
+
+            const jawCurve = new THREE.Shape();
+            jawCurve.moveTo(-0.58, 0);
+            jawCurve.bezierCurveTo(-0.62, -0.15, -0.6, -0.3, -0.48, -0.42);
+            jawCurve.bezierCurveTo(-0.3, -0.52, -0.15, -0.56, 0, -0.58);
+            jawCurve.bezierCurveTo(0.15, -0.56, 0.3, -0.52, 0.48, -0.42);
+            jawCurve.bezierCurveTo(0.6, -0.3, 0.62, -0.15, 0.58, 0);
+
+            const jawGeom = new THREE.ExtrudeGeometry(jawCurve, {
+                depth: 0.28,
+                bevelEnabled: true,
+                bevelThickness: 0.02,
+                bevelSize: 0.02,
+                bevelSegments: 3
+            });
+            const jaw = new THREE.Mesh(
+                jawGeom,
+                new THREE.MeshBasicMaterial({ color: colors.light, wireframe: true })
+            );
+            jaw.position.set(0, -0.72, 0.32);
+            jaw.rotation.x = Math.PI * 0.08;
+            group.add(jaw);
+
+            const ramusGeom = new THREE.BoxGeometry(0.14, 0.65, 0.32, 6, 10, 6);
+            const leftRamus = new THREE.Mesh(
+                ramusGeom,
+                new THREE.MeshBasicMaterial({ color: colors.primary, wireframe: true })
+            );
+            leftRamus.position.set(-0.6, -0.38, -0.08);
+            leftRamus.rotation.z = -0.12;
+            leftRamus.rotation.x = -0.1;
+            group.add(leftRamus);
+
+            const rightRamus = new THREE.Mesh(
+                ramusGeom,
+                new THREE.MeshBasicMaterial({ color: colors.primary, wireframe: true })
+            );
+            rightRamus.position.set(0.6, -0.38, -0.08);
+            rightRamus.rotation.z = 0.12;
+            rightRamus.rotation.x = -0.1;
+            group.add(rightRamus);
+
+            const eyeGeom = new THREE.SphereGeometry(0.24, 24, 24);
+            const leftEye = new THREE.Mesh(
+                eyeGeom,
+                new THREE.MeshBasicMaterial({ color: colors.dark1, wireframe: true })
+            );
+            leftEye.position.set(-0.33, 0.28, 0.82);
+            leftEye.scale.set(1.15, 1.08, 0.65);
+            group.add(leftEye);
+
+            const rightEye = new THREE.Mesh(
+                eyeGeom,
+                new THREE.MeshBasicMaterial({ color: colors.dark1, wireframe: true })
+            );
+            rightEye.position.set(0.33, 0.28, 0.82);
+            rightEye.scale.set(1.15, 1.08, 0.65);
+            group.add(rightEye);
+
+            const noseShape = new THREE.Shape();
+            noseShape.moveTo(0, 0.18);
+            noseShape.bezierCurveTo(-0.08, 0.16, -0.13, 0.08, -0.13, 0);
+            noseShape.bezierCurveTo(-0.13, -0.12, -0.11, -0.2, -0.09, -0.24);
+            noseShape.lineTo(0, -0.28);
+            noseShape.lineTo(0.09, -0.24);
+            noseShape.bezierCurveTo(0.11, -0.2, 0.13, -0.12, 0.13, 0);
+            noseShape.bezierCurveTo(0.13, 0.08, 0.08, 0.16, 0, 0.18);
+
+            const noseGeom = new THREE.ExtrudeGeometry(noseShape, {
+                depth: 0.15,
+                bevelEnabled: true,
+                bevelThickness: 0.01,
+                bevelSize: 0.01,
+                bevelSegments: 2
+            });
+            const nose = new THREE.Mesh(
+                noseGeom,
+                new THREE.MeshBasicMaterial({ color: colors.light, wireframe: true })
+            );
+            nose.position.set(0, 0.02, 0.88);
+            group.add(nose);
+
+            const zygomaticGeom = new THREE.SphereGeometry(
+                0.2,
+                20,
+                20,
+                0,
+                Math.PI * 0.85
+            );
+            const leftZygomatic = new THREE.Mesh(
+                zygomaticGeom,
+                new THREE.MeshBasicMaterial({ color: colors.primary, wireframe: true })
+            );
+            leftZygomatic.position.set(-0.56, 0.12, 0.58);
+            leftZygomatic.rotation.y = -Math.PI * 0.28;
+            leftZygomatic.scale.set(1.25, 0.85, 1.05);
+            group.add(leftZygomatic);
+
+            const rightZygomatic = new THREE.Mesh(
+                zygomaticGeom,
+                new THREE.MeshBasicMaterial({ color: colors.primary, wireframe: true })
+            );
+            rightZygomatic.position.set(0.56, 0.12, 0.58);
+            rightZygomatic.rotation.y = Math.PI * 1.28;
+            rightZygomatic.scale.set(1.25, 0.85, 1.05);
+            group.add(rightZygomatic);
+
+            const archCurve = new THREE.EllipseCurve(
+                0,
+                0,
+                0.22,
+                0.18,
+                0,
+                Math.PI * 0.65,
+                false,
+                0
+            );
+            const archPoints = archCurve.getPoints(16);
+            const archGeom = new THREE.TubeGeometry(
+                new THREE.CatmullRomCurve3(
+                    archPoints.map((p) => new THREE.Vector3(p.x, p.y, 0))
+                ),
+                16,
+                0.045,
+                8,
+                false
+            );
+            const leftArch = new THREE.Mesh(
+                archGeom,
+                new THREE.MeshBasicMaterial({ color: colors.light, wireframe: true })
+            );
+            leftArch.position.set(-0.68, 0.08, 0.12);
+            leftArch.rotation.x = Math.PI * 0.5;
+            leftArch.rotation.z = Math.PI * 0.18;
+            group.add(leftArch);
+
+            const rightArch = new THREE.Mesh(
+                archGeom,
+                new THREE.MeshBasicMaterial({ color: colors.light, wireframe: true })
+            );
+            rightArch.position.set(0.68, 0.08, 0.12);
+            rightArch.rotation.x = Math.PI * 0.5;
+            rightArch.rotation.z = -Math.PI * 0.18;
+            group.add(rightArch);
+
+            const browGeom = new THREE.CylinderGeometry(0.04, 0.05, 0.35, 12);
+            const leftBrow = new THREE.Mesh(
+                browGeom,
+                new THREE.MeshBasicMaterial({ color: colors.primary, wireframe: true })
+            );
+            leftBrow.position.set(-0.25, 0.4, 0.85);
+            leftBrow.rotation.z = Math.PI * 0.5;
+            group.add(leftBrow);
+
+            const rightBrow = new THREE.Mesh(
+                browGeom,
+                new THREE.MeshBasicMaterial({ color: colors.primary, wireframe: true })
+            );
+            rightBrow.position.set(0.25, 0.4, 0.85);
+            rightBrow.rotation.z = Math.PI * 0.5;
+            group.add(rightBrow);
+
+            const temporalGeom = new THREE.SphereGeometry(0.25, 16, 16, 0, Math.PI * 0.5);
+            const leftTemporal = new THREE.Mesh(
+                temporalGeom,
+                new THREE.MeshBasicMaterial({ color: colors.light, wireframe: true })
+            );
+            leftTemporal.position.set(-0.85, 0.15, -0.1);
+            leftTemporal.rotation.y = Math.PI * 0.5;
+            leftTemporal.scale.set(1, 1.2, 0.8);
+            group.add(leftTemporal);
+
+            const rightTemporal = new THREE.Mesh(
+                temporalGeom,
+                new THREE.MeshBasicMaterial({ color: colors.light, wireframe: true })
+            );
+            rightTemporal.position.set(0.85, 0.15, -0.1);
+            rightTemporal.rotation.y = -Math.PI * 0.5;
+            rightTemporal.scale.set(1, 1.2, 0.8);
+            group.add(rightTemporal);
+
+            for (let i = 0; i < 12; i++) {
+                const toothGeom = new THREE.BoxGeometry(0.055, 0.12, 0.055, 2, 2, 2);
+                const tooth = new THREE.Mesh(
+                    toothGeom,
+                    new THREE.MeshBasicMaterial({ color: colors.light, wireframe: true })
+                );
+                const angle = (i - 5.5) * 0.18;
+                const radius = 0.5;
+                tooth.position.set(
+                    Math.sin(angle) * radius,
+                    -0.35,
+                    Math.cos(angle) * radius + 0.45
+                );
+                tooth.rotation.y = angle;
+                group.add(tooth);
+            }
+
+            for (let i = 0; i < 12; i++) {
+                const toothGeom = new THREE.BoxGeometry(0.055, 0.12, 0.055, 2, 2, 2);
+                const tooth = new THREE.Mesh(
+                    toothGeom,
+                    new THREE.MeshBasicMaterial({ color: colors.light, wireframe: true })
+                );
+                const angle = (i - 5.5) * 0.18;
+                const radius = 0.48;
+                tooth.position.set(
+                    Math.sin(angle) * radius,
+                    -0.85,
+                    Math.cos(angle) * radius + 0.42
+                );
+                tooth.rotation.y = angle;
+                group.add(tooth);
+            }
+
+            const foramenGeom = new THREE.TorusGeometry(0.2, 0.05, 12, 20);
+            const foramen = new THREE.Mesh(
+                foramenGeom,
+                new THREE.MeshBasicMaterial({ color: colors.dark1, wireframe: true })
+            );
+            foramen.position.set(0, -0.5, -0.7);
+            foramen.rotation.x = Math.PI * 0.5;
+            group.add(foramen);
+
+            skull = group;
+            scene.add(skull);
+        }
+
+        function animateSkull() {
+            animationId = requestAnimationFrame(animateSkull);
+
+            if (skull) {
+                skull.rotation.y += 0.003;
+                skull.rotation.x = Math.sin(Date.now() * 0.0005) * 0.1;
+            }
+
+            renderer.render(scene, camera);
+        }
+
+
+        function updateCaveCameraPosition() {
+            const aspect = window.innerWidth / window.innerHeight;
+
+            if (window.innerWidth < 480) {
+                camera.position.set(0, 0.5, 4.5);
+                camera.fov = 65;
+            } else if (window.innerWidth < 768) {
+                camera.position.set(0, 0.3, 4);
+                camera.fov = 62;
+            } else if (aspect < 1) {
+                camera.position.set(0, 0.3, 4);
+                camera.fov = 62;
+            } else {
+                camera.position.set(0, 0.2, 3.5);
+                camera.fov = 60;
+            }
+
+            camera.updateProjectionMatrix();
+        }
+
+        function createDetailedCave() {
+            const group = new THREE.Group();
+
+            const caveTopGeom = new THREE.SphereGeometry(
+                1.8,
+                40,
+                40,
+                0,
+                Math.PI * 2,
+                0,
+                Math.PI * 0.5
+            );
+            const caveTop = new THREE.Mesh(
+                caveTopGeom,
+                new THREE.MeshBasicMaterial({ color: colors.primary, wireframe: true })
+            );
+            caveTop.position.y = 0.8;
+            caveTop.scale.set(1.3, 1.1, 1.5);
+            group.add(caveTop);
+
+            const caveFloorGeom = new THREE.SphereGeometry(
+                1.6,
+                36,
+                36,
+                0,
+                Math.PI * 2,
+                Math.PI * 0.5,
+                Math.PI * 0.5
+            );
+            const caveFloor = new THREE.Mesh(
+                caveFloorGeom,
+                new THREE.MeshBasicMaterial({ color: colors.dark1, wireframe: true })
+            );
+            caveFloor.position.y = -0.8;
+            caveFloor.scale.set(1.4, 0.6, 1.6);
+            group.add(caveFloor);
+
+            const wallSegments = 12;
+            for (let i = 0; i < wallSegments; i++) {
+                const angle = (i / wallSegments) * Math.PI * 2;
+                const wallGeom = new THREE.PlaneGeometry(0.8, 2.2, 8, 12);
+                const wall = new THREE.Mesh(
+                    wallGeom,
+                    new THREE.MeshBasicMaterial({
+                        color: i % 2 === 0 ? colors.primary : colors.light,
+                        wireframe: true,
+                        side: THREE.DoubleSide
+                    })
+                );
+                wall.position.set(Math.cos(angle) * 1.8, 0, Math.sin(angle) * 2.1);
+                wall.rotation.y = -angle;
+                group.add(wall);
+            }
+
+            const stalactitePositions = [
+                { x: 0, z: 0, size: 0.18, height: 1.2 },
+                { x: -0.8, z: 0.6, size: 0.14, height: 0.9 },
+                { x: 0.8, z: 0.6, size: 0.14, height: 0.9 },
+                { x: -0.6, z: -0.8, size: 0.12, height: 0.7 },
+                { x: 0.6, z: -0.8, size: 0.12, height: 0.7 },
+                { x: 0, z: 1.2, size: 0.15, height: 0.8 }
+            ];
+
+            stalactitePositions.forEach((pos) => {
+                const stalactiteGeom = new THREE.ConeGeometry(pos.size, pos.height, 10, 6);
+                const stalactite = new THREE.Mesh(
+                    stalactiteGeom,
+                    new THREE.MeshBasicMaterial({ color: colors.light, wireframe: true })
+                );
+                stalactite.position.set(pos.x, 1.8 - pos.height / 2, pos.z);
+                group.add(stalactite);
+            });
+
+            const stalagmitePositions = [
+                { x: -0.7, z: 0.4, size: 0.16, height: 0.8 },
+                { x: 0.7, z: 0.4, size: 0.16, height: 0.8 },
+                { x: -0.5, z: -0.6, size: 0.14, height: 0.6 },
+                { x: 0.5, z: -0.6, size: 0.14, height: 0.6 },
+                { x: 0, z: 1.0, size: 0.18, height: 0.9 }
+            ];
+
+            stalagmitePositions.forEach((pos) => {
+                const stalagmiteGeom = new THREE.ConeGeometry(pos.size, pos.height, 10, 6);
+                const stalagmite = new THREE.Mesh(
+                    stalagmiteGeom,
+                    new THREE.MeshBasicMaterial({ color: colors.primary, wireframe: true })
+                );
+                stalagmite.position.set(pos.x, -1.3 + pos.height / 2, pos.z);
+                stalagmite.rotation.x = Math.PI;
+                group.add(stalagmite);
+            });
+
+            const entranceTunnelSegments = 5;
+            for (let i = 0; i < entranceTunnelSegments; i++) {
+                const depth = 2.2 + i * 0.5;
+                const tunnelRadius = 0.7 - i * 0.08;
+
+                const tunnelGeom = new THREE.TorusGeometry(tunnelRadius, 0.12, 16, 24);
+                const tunnelRing = new THREE.Mesh(
+                    tunnelGeom,
+                    new THREE.MeshBasicMaterial({
+                        color: colors.light,
+                        wireframe: true
+                    })
+                );
+                tunnelRing.position.set(0, 0.1, -depth);
+                tunnelRing.rotation.y = Math.PI / 2;
+                group.add(tunnelRing);
+            }
+
+            const leftPassageSegments = 4;
+            for (let i = 0; i < leftPassageSegments; i++) {
+                const depth = 1.8 + i * 0.45;
+                const passageRadius = 0.45 - i * 0.06;
+
+                const passageGeom = new THREE.TorusGeometry(passageRadius, 0.08, 12, 20);
+                const passage = new THREE.Mesh(
+                    passageGeom,
+                    new THREE.MeshBasicMaterial({
+                        color: colors.dark1,
+                        wireframe: true
+                    })
+                );
+                passage.position.set(-depth * 0.8, -0.2, -depth * 0.4);
+                passage.rotation.y = Math.PI * 0.7;
+                passage.rotation.z = -0.2;
+                group.add(passage);
+            }
+
+            const rightPassageSegments = 4;
+            for (let i = 0; i < rightPassageSegments; i++) {
+                const depth = 1.8 + i * 0.45;
+                const passageRadius = 0.45 - i * 0.06;
+
+                const passageGeom = new THREE.TorusGeometry(passageRadius, 0.08, 12, 20);
+                const passage = new THREE.Mesh(
+                    passageGeom,
+                    new THREE.MeshBasicMaterial({
+                        color: colors.dark1,
+                        wireframe: true
+                    })
+                );
+                passage.position.set(depth * 0.8, -0.2, -depth * 0.4);
+                passage.rotation.y = -Math.PI * 0.7;
+                passage.rotation.z = 0.2;
+                group.add(passage);
+            }
+
+            const columnPositions = [
+                { x: -1.2, z: 0, height: 2.8 },
+                { x: 1.2, z: 0, height: 2.8 },
+                { x: -0.9, z: 1.4, height: 2.5 },
+                { x: 0.9, z: 1.4, height: 2.5 }
+            ];
+
+            columnPositions.forEach((pos) => {
+                const columnGeom = new THREE.CylinderGeometry(
+                    0.18,
+                    0.22,
+                    pos.height,
+                    12,
+                    8
+                );
+                const column = new THREE.Mesh(
+                    columnGeom,
+                    new THREE.MeshBasicMaterial({ color: colors.primary, wireframe: true })
+                );
+                column.position.set(pos.x, -0.1, pos.z);
+                group.add(column);
+
+                const capitalGeom = new THREE.CylinderGeometry(0.25, 0.18, 0.15, 12);
+                const capital = new THREE.Mesh(
+                    capitalGeom,
+                    new THREE.MeshBasicMaterial({ color: colors.light, wireframe: true })
+                );
+                capital.position.set(pos.x, pos.height / 2 - 0.1, pos.z);
+                group.add(capital);
+            });
+
+            const crystalPositions = [
+                { x: -1.0, y: 0.4, z: 0.8, size: 0.2 },
+                { x: 1.0, y: 0.4, z: 0.8, size: 0.2 },
+                { x: -0.5, y: -0.3, z: 1.5, size: 0.15 },
+                { x: 0.5, y: -0.3, z: 1.5, size: 0.15 },
+                { x: 0, y: 0.6, z: 0.5, size: 0.18 }
+            ];
+
+            crystalPositions.forEach((pos) => {
+                const crystalGeom = new THREE.OctahedronGeometry(pos.size, 1);
+                const crystal = new THREE.Mesh(
+                    crystalGeom,
+                    new THREE.MeshBasicMaterial({ color: colors.light, wireframe: true })
+                );
+                crystal.position.set(pos.x, pos.y, pos.z);
+                crystal.rotation.y = Math.random() * Math.PI;
+                group.add(crystal);
+            });
+
+            const floorRings = 4;
+            for (let i = 1; i <= floorRings; i++) {
+                const ringGeom = new THREE.TorusGeometry(i * 0.3, 0.03, 8, 24);
+                const ring = new THREE.Mesh(
+                    ringGeom,
+                    new THREE.MeshBasicMaterial({ color: colors.dark1, wireframe: true })
+                );
+                ring.position.y = -1.3;
+                ring.rotation.x = Math.PI / 2;
+                group.add(ring);
+            }
+
+            const archCount = 8;
+            for (let i = 0; i < archCount; i++) {
+                const angle = (i / archCount) * Math.PI * 2;
+                const archCurve = new THREE.QuadraticBezierCurve3(
+                    new THREE.Vector3(Math.cos(angle) * 1.6, -0.5, Math.sin(angle) * 1.8),
+                    new THREE.Vector3(Math.cos(angle) * 0.8, 1.5, Math.sin(angle) * 0.9),
+                    new THREE.Vector3(0, 1.8, 0)
+                );
+                const archGeom = new THREE.TubeGeometry(archCurve, 16, 0.06, 8, false);
+                const arch = new THREE.Mesh(
+                    archGeom,
+                    new THREE.MeshBasicMaterial({ color: colors.primary, wireframe: true })
+                );
+                group.add(arch);
+            }
+
+            const poolGeom = new THREE.CylinderGeometry(0.6, 0.5, 0.08, 24);
+            const pool = new THREE.Mesh(
+                poolGeom,
+                new THREE.MeshBasicMaterial({ color: colors.light, wireframe: true })
+            );
+            pool.position.set(0, -1.32, 0.8);
+            group.add(pool);
+
+            const veinPaths = [
+                { start: [-1.5, 0.5, 1], mid: [-0.8, 1.2, 0.5], end: [0, 1.6, 0] },
+                { start: [1.5, 0.5, 1], mid: [0.8, 1.2, 0.5], end: [0, 1.6, 0] },
+                { start: [-1.2, -0.8, 0], mid: [-0.5, 0, 0.8], end: [0, 0.5, 1.2] }
+            ];
+
+            veinPaths.forEach((path) => {
+                const veinCurve = new THREE.QuadraticBezierCurve3(
+                    new THREE.Vector3(...path.start),
+                    new THREE.Vector3(...path.mid),
+                    new THREE.Vector3(...path.end)
+                );
+                const veinGeom = new THREE.TubeGeometry(veinCurve, 12, 0.025, 6, false);
+                const vein = new THREE.Mesh(
+                    veinGeom,
+                    new THREE.MeshBasicMaterial({ color: colors.primary, wireframe: true })
+                );
+                group.add(vein);
+            });
+
+            caveStructure = group;
+            scene.add(caveStructure);
+        }
+
+        function animateCave() {
+            animationId = requestAnimationFrame(animateCave);
+
+            if (caveStructure) {
+                caveStructure.rotation.y += 0.002;
+                caveStructure.rotation.x = Math.sin(Date.now() * 0.0003) * 0.05;
+
+                caveStructure.scale.set(
+                    1 + Math.sin(Date.now() * 0.0008) * 0.01,
+                    1 + Math.cos(Date.now() * 0.0008) * 0.01,
+                    1 + Math.sin(Date.now() * 0.0008) * 0.01
+                );
+            }
+
+            renderer.render(scene, camera);
+        }
+
+        function createDetailedXenomorph() {
+            const group = new THREE.Group();
+
+            const craniumGeom = new THREE.SphereGeometry(0.7, 48, 48, 0, Math.PI * 2, 0, Math.PI * 0.65);
+            const cranium = new THREE.Mesh(
+                craniumGeom,
+                new THREE.MeshBasicMaterial({
+                    color: colors.primary,
+                    wireframe: true,
+                    wireframeLinewidth: 1
+                })
+            );
+            cranium.scale.set(1.2, 1, 3.5);
+            cranium.position.set(0, 0.3, -0.5);
+            cranium.rotation.x = -0.15;
+            group.add(cranium);
+
+            const backHeadGeom = new THREE.CylinderGeometry(0.55, 0.65, 2.5, 32, 16);
+            const backHead = new THREE.Mesh(
+                backHeadGeom,
+                new THREE.MeshBasicMaterial({ color: colors.dark1, wireframe: true })
+            );
+            backHead.position.set(0, 0.3, -2);
+            backHead.rotation.x = Math.PI * 0.5;
+            backHead.scale.set(1.1, 1, 0.85);
+            group.add(backHead);
+
+            for (let i = 0; i < 8; i++) {
+                const ridgeGeom = new THREE.TorusGeometry(0.6 + i * 0.03, 0.03, 8, 24);
+                const ridge = new THREE.Mesh(
+                    ridgeGeom,
+                    new THREE.MeshBasicMaterial({ color: colors.light, wireframe: true })
+                );
+                ridge.position.set(0, 0.3, -0.8 - i * 0.28);
+                ridge.rotation.x = Math.PI * 0.5;
+                ridge.scale.x = 1.1;
+                ridge.scale.y = 0.85;
+                group.add(ridge);
+            }
+
+            const faceGeom = new THREE.SphereGeometry(0.6, 32, 32, 0, Math.PI * 2, Math.PI * 0.3, Math.PI * 0.4);
+            const face = new THREE.Mesh(
+                faceGeom,
+                new THREE.MeshBasicMaterial({ color: colors.primary, wireframe: true })
+            );
+            face.position.set(0, 0, 0.8);
+            face.scale.set(1.1, 0.95, 1);
+            group.add(face);
+
+            const eyeSocketGeom = new THREE.SphereGeometry(0.15, 16, 16);
+            const leftEyeSocket = new THREE.Mesh(
+                eyeSocketGeom,
+                new THREE.MeshBasicMaterial({ color: colors.dark3, wireframe: true })
+            );
+            leftEyeSocket.position.set(-0.35, 0.15, 0.65);
+            leftEyeSocket.scale.set(1.3, 0.9, 0.6);
+            group.add(leftEyeSocket);
+
+            const rightEyeSocket = new THREE.Mesh(
+                eyeSocketGeom,
+                new THREE.MeshBasicMaterial({ color: colors.dark3, wireframe: true })
+            );
+            rightEyeSocket.position.set(0.35, 0.15, 0.65);
+            rightEyeSocket.scale.set(1.3, 0.9, 0.6);
+            group.add(rightEyeSocket);
+
+            const jawGeom = new THREE.SphereGeometry(0.5, 24, 24, 0, Math.PI * 2, Math.PI * 0.5, Math.PI * 0.5);
+            const jaw = new THREE.Mesh(
+                jawGeom,
+                new THREE.MeshBasicMaterial({ color: colors.dark1, wireframe: true })
+            );
+            jaw.position.set(0, -0.4, 0.6);
+            jaw.scale.set(1, 0.7, 1.2);
+            group.add(jaw);
+
+            const innerJawBase = new THREE.CylinderGeometry(0.08, 0.1, 0.3, 16);
+            const innerJaw = new THREE.Mesh(
+                innerJawBase,
+                new THREE.MeshBasicMaterial({ color: colors.light, wireframe: true })
+            );
+            innerJaw.position.set(0, -0.2, 0.9);
+            innerJaw.rotation.x = Math.PI * 0.4;
+            group.add(innerJaw);
+
+            const innerToothGeom = new THREE.ConeGeometry(0.04, 0.12, 8);
+            for (let i = 0; i < 4; i++) {
+                const tooth = new THREE.Mesh(
+                    innerToothGeom,
+                    new THREE.MeshBasicMaterial({ color: colors.light, wireframe: true })
+                );
+                const angle = (i - 1.5) * 0.3;
+                tooth.position.set(Math.sin(angle) * 0.08, -0.3, 0.95 + Math.cos(angle) * 0.05);
+                tooth.rotation.x = Math.PI;
+                group.add(tooth);
+            }
+
+            for (let i = 0; i < 16; i++) {
+                const toothGeom = new THREE.ConeGeometry(0.04, 0.25, 8);
+                const tooth = new THREE.Mesh(
+                    toothGeom,
+                    new THREE.MeshBasicMaterial({ color: colors.light, wireframe: true })
+                );
+                const angle = (i - 7.5) * 0.22;
+                const radius = 0.52;
+                tooth.position.set(Math.sin(angle) * radius, -0.45, Math.cos(angle) * radius + 0.6);
+                tooth.rotation.x = Math.PI;
+                tooth.rotation.y = angle;
+                group.add(tooth);
+            }
+
+            const mandibleGeom = new THREE.CylinderGeometry(0.08, 0.1, 0.6, 12);
+            const leftMandible = new THREE.Mesh(
+                mandibleGeom,
+                new THREE.MeshBasicMaterial({ color: colors.dark1, wireframe: true })
+            );
+            leftMandible.position.set(-0.45, -0.5, 0.3);
+            leftMandible.rotation.z = -0.3;
+            leftMandible.rotation.x = -0.2;
+            group.add(leftMandible);
+
+            const rightMandible = new THREE.Mesh(
+                mandibleGeom,
+                new THREE.MeshBasicMaterial({ color: colors.dark1, wireframe: true })
+            );
+            rightMandible.position.set(0.45, -0.5, 0.3);
+            rightMandible.rotation.z = 0.3;
+            rightMandible.rotation.x = -0.2;
+            group.add(rightMandible);
+
+            const tubeGeom = new THREE.CylinderGeometry(0.06, 0.08, 1.2, 12);
+            const leftTube = new THREE.Mesh(
+                tubeGeom,
+                new THREE.MeshBasicMaterial({ color: colors.light, wireframe: true })
+            );
+            leftTube.position.set(-0.7, 0.1, -0.5);
+            leftTube.rotation.z = -0.4;
+            leftTube.rotation.x = Math.PI * 0.5;
+            group.add(leftTube);
+
+            const rightTube = new THREE.Mesh(
+                tubeGeom,
+                new THREE.MeshBasicMaterial({ color: colors.light, wireframe: true })
+            );
+            rightTube.position.set(0.7, 0.1, -0.5);
+            rightTube.rotation.z = 0.4;
+            rightTube.rotation.x = Math.PI * 0.5;
+            group.add(rightTube);
+
+            const segmentGeom = new THREE.SphereGeometry(0.3, 16, 16, 0, Math.PI * 0.6);
+            for (let i = 0; i < 3; i++) {
+                const segment = new THREE.Mesh(
+                    segmentGeom,
+                    new THREE.MeshBasicMaterial({ color: colors.primary, wireframe: true })
+                );
+                segment.position.set(0, 0.5 - i * 0.15, 0.4 - i * 0.3);
+                segment.scale.set(1.3 - i * 0.1, 1, 1);
+                group.add(segment);
+            }
+
+            const neckGeom = new THREE.CylinderGeometry(0.4, 0.5, 0.8, 24);
+            const neck = new THREE.Mesh(
+                neckGeom,
+                new THREE.MeshBasicMaterial({ color: colors.dark1, wireframe: true })
+            );
+            neck.position.set(0, -0.9, 0);
+            neck.scale.set(1.2, 1, 1);
+            group.add(neck);
+
+            for (let i = 0; i < 5; i++) {
+                const vertebraGeom = new THREE.TorusGeometry(0.15, 0.04, 8, 16);
+                const vertebra = new THREE.Mesh(
+                    vertebraGeom,
+                    new THREE.MeshBasicMaterial({ color: colors.light, wireframe: true })
+                );
+                vertebra.position.set(0, 0.4 - i * 0.12, -1.5 - i * 0.2);
+                vertebra.rotation.x = Math.PI * 0.5;
+                group.add(vertebra);
+            }
+
+            const spineGeom = new THREE.ConeGeometry(0.08, 0.4, 8);
+            for (let i = 0; i < 4; i++) {
+                const leftSpine = new THREE.Mesh(
+                    spineGeom,
+                    new THREE.MeshBasicMaterial({ color: colors.light, wireframe: true })
+                );
+                leftSpine.position.set(-0.8, 0.3 - i * 0.15, -0.5 - i * 0.3);
+                leftSpine.rotation.z = -Math.PI * 0.3;
+                leftSpine.rotation.y = -Math.PI * 0.2;
+                group.add(leftSpine);
+
+                const rightSpine = new THREE.Mesh(
+                    spineGeom,
+                    new THREE.MeshBasicMaterial({ color: colors.light, wireframe: true })
+                );
+                rightSpine.position.set(0.8, 0.3 - i * 0.15, -0.5 - i * 0.3);
+                rightSpine.rotation.z = Math.PI * 0.3;
+                rightSpine.rotation.y = Math.PI * 0.2;
+                group.add(rightSpine);
+            }
+
+            xenomorph = group;
+            scene.add(xenomorph);
+        }
+
+        function animateXenomorph() {
+            animationId = requestAnimationFrame(animateXenomorph);
+
+            if (xenomorph) {
+                xenomorph.rotation.y += 0.004;
+                xenomorph.rotation.x = Math.sin(Date.now() * 0.0003) * 0.08;
+                xenomorph.scale.y = 1 + Math.sin(Date.now() * 0.001) * 0.02;
+            }
+
+            renderer.render(scene, camera);
+        }
+
+        // Window resize handler
+        function onWindowResize() {
+            updateRendererSize();
+            initBackground();
+
+            if (camera) {
+                camera.aspect = window.innerWidth / window.innerHeight;
+                camera.updateProjectionMatrix();
+
+                if (currentAnimation === 'bee') {
+                    updateBeeCameraPosition();
+                } else if (currentAnimation === 'skull') {
+                    if (window.innerWidth < 768) {
+                        camera.position.z = 6;
+                        camera.position.y = 0;
+                    } else {
+                        camera.position.z = 5;
+                        camera.position.y = 0;
+                    }
+                } else if (currentAnimation === 'cave') {
+                    updateCaveCameraPosition();
+                } else {
+                    if (window.innerWidth < 768) {
+                        camera.position.z = 8;
+                        camera.position.y = 0;
+                    } else {
+                        camera.position.z = 6;
+                        camera.position.y = 0;
+                    }
+                }
+            }
+        }
+
+        // Initialize when page loads
+        window.addEventListener('load', init);
+    </script>
+</body>
+
+</html>

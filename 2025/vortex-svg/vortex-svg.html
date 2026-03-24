@@ -1,0 +1,340 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vortex: SVG</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background: radial-gradient(circle at 50% 50%, #000814 0%, #000000 100%);
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen,
+                Ubuntu, Cantarell, sans-serif;
+            overflow: hidden;
+            cursor: crosshair;
+        }
+
+        .container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            width: 100%;
+            height: 100vh;
+            position: relative;
+        }
+
+        svg {
+            width: 100vw;
+            height: 100vh;
+            filter: drop-shadow(0 0 40px rgba(0, 200, 255, 0.4));
+        }
+
+        .spiral-path {
+            fill: none;
+            stroke-linecap: round;
+            animation: dash 3s linear infinite;
+        }
+
+        @keyframes dash {
+            to {
+                stroke-dashoffset: -1000;
+            }
+        }
+
+        .particle {
+            animation: orbit 4s linear infinite;
+        }
+
+        @keyframes orbit {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        .core-ring {
+            fill: none;
+            stroke-linecap: round;
+            animation: pulse 2s ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+
+            0%,
+            100% {
+                opacity: 0.6;
+                transform: scale(1);
+            }
+
+            50% {
+                opacity: 1;
+                transform: scale(1.1);
+            }
+        }
+
+        .trail {
+            position: absolute;
+            width: 4px;
+            height: 4px;
+            background: radial-gradient(circle,
+                    rgba(255, 255, 255, 0.9) 0%,
+                    transparent 70%);
+            border-radius: 50%;
+            pointer-events: none;
+            animation: fade-out 1s ease-out forwards;
+        }
+
+        @keyframes fade-out {
+            to {
+                opacity: 0;
+                transform: scale(0);
+            }
+        }
+
+        @media (max-width: 768px) {
+            svg {
+                filter: drop-shadow(0 0 30px rgba(0, 200, 255, 0.3));
+            }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+
+            .spiral-path,
+            .particle,
+            .core-ring {
+                animation: none;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <svg id="vortex" xmlns="http://www.w3.org/2000/svg">
+            <defs>
+                <filter id="glow">
+                    <feGaussianBlur stdDeviation="4" result="coloredBlur" />
+                    <feMerge>
+                        <feMergeNode in="coloredBlur" />
+                        <feMergeNode in="SourceGraphic" />
+                    </feMerge>
+                </filter>
+
+                <radialGradient id="vortexGrad">
+                    <stop offset="0%" class="grad-inner" style="stop-color: rgb(0, 200, 255)" />
+                    <stop offset="50%" class="grad-mid" style="stop-color: rgb(100, 100, 255)" />
+                    <stop offset="100%" class="grad-outer" style="stop-color: rgb(200, 0, 255)" />
+                </radialGradient>
+            </defs>
+
+            <g id="core-rings">
+                <circle class="core-ring" cx="50%" cy="50%" r="30" stroke="url(#vortexGrad)" stroke-width="2"
+                    opacity="0.8" />
+                <circle class="core-ring" cx="50%" cy="50%" r="50" stroke="url(#vortexGrad)" stroke-width="1.5"
+                    opacity="0.6" style="animation-delay: -0.5s" />
+                <circle class="core-ring" cx="50%" cy="50%" r="70" stroke="url(#vortexGrad)" stroke-width="1"
+                    opacity="0.4" style="animation-delay: -1s" />
+            </g>
+
+            <g id="spirals" filter="url(#glow)"></g>
+            <g id="particles" filter="url(#glow)"></g>
+        </svg>
+    </div>
+
+    <script>
+        const svg = document.getElementById("vortex");
+        const spiralsGroup = document.getElementById("spirals");
+        const particlesGroup = document.getElementById("particles");
+
+        let width = window.innerWidth;
+        let height = window.innerHeight;
+
+        svg.setAttribute("viewBox", `0 0 ${width} ${height}`);
+
+        window.addEventListener("resize", () => {
+            width = window.innerWidth;
+            height = window.innerHeight;
+            svg.setAttribute("viewBox", `0 0 ${width} ${height}`);
+        });
+
+        let time = 0;
+        let themeIndex = 0;
+
+        const themes = [
+            { inner: [0, 200, 255], mid: [100, 100, 255], outer: [200, 0, 255] },
+            { inner: [255, 50, 0], mid: [255, 150, 0], outer: [255, 200, 0] },
+            { inner: [0, 255, 150], mid: [0, 200, 200], outer: [0, 100, 255] },
+            { inner: [255, 0, 200], mid: [200, 0, 255], outer: [150, 0, 255] },
+            { inner: [255, 200, 0], mid: [255, 255, 100], outer: [200, 255, 0] }
+        ];
+
+        const numSpirals = 6;
+        for (let i = 0; i < numSpirals; i++) {
+            const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
+            path.classList.add("spiral-path");
+            path.setAttribute("stroke", "url(#vortexGrad)");
+            path.setAttribute("stroke-width", 2.5 - i * 0.3);
+            path.setAttribute("opacity", 0.7 - i * 0.1);
+            path.setAttribute("stroke-dasharray", "800");
+            path.style.animationDelay = `-${i * 0.5}s`;
+
+            const points = [];
+            const rotationOffset = (i / numSpirals) * Math.PI * 2;
+
+            for (let j = 0; j < 50; j++) {
+                const progress = j / 50;
+                const angle = progress * Math.PI * 6 + rotationOffset;
+                const radius = progress * 500;
+
+                const x = width / 2 + Math.cos(angle) * radius;
+                const y = height / 2 + Math.sin(angle) * radius;
+
+                points.push(`${j === 0 ? "M" : "L"} ${x} ${y}`);
+            }
+
+            path.setAttribute("d", points.join(" "));
+            spiralsGroup.appendChild(path);
+        }
+
+        for (let i = 0; i < 4; i++) {
+            const g = document.createElementNS("http://www.w3.org/2000/svg", "g");
+            g.classList.add("particle");
+            g.style.transformOrigin = `${width / 2}px ${height / 2}px`;
+            g.style.animationDelay = `-${i}s`;
+
+            for (let j = 0; j < 10; j++) {
+                const progress = j / 10;
+                const angle = progress * Math.PI * 2;
+                const radius = 150 + progress * 350;
+
+                const x = width / 2 + Math.cos(angle) * radius;
+                const y = height / 2 + Math.sin(angle) * radius;
+
+                const circle = document.createElementNS(
+                    "http://www.w3.org/2000/svg",
+                    "circle"
+                );
+                circle.setAttribute("cx", x);
+                circle.setAttribute("cy", y);
+                circle.setAttribute("r", 2.5 * (1 - progress) + 1);
+                circle.setAttribute("fill", "url(#vortexGrad)");
+                circle.setAttribute("opacity", (1 - progress) * 0.7);
+
+                g.appendChild(circle);
+            }
+
+            particlesGroup.appendChild(g);
+        }
+
+        setInterval(() => {
+            const spirals = document.querySelectorAll(".spiral-path");
+            const rings = document.querySelectorAll(".core-ring");
+
+            spirals.forEach((spiral) => {
+                spiral.style.transition =
+                    "stroke-width 0.6s ease-out, opacity 0.6s ease-out";
+                const currentWidth = parseFloat(spiral.getAttribute("stroke-width"));
+                spiral.setAttribute("stroke-width", currentWidth * 1.5);
+                spiral.setAttribute(
+                    "opacity",
+                    parseFloat(spiral.getAttribute("opacity")) * 1.3
+                );
+            });
+
+            rings.forEach((ring) => {
+                ring.style.transition = "r 0.6s ease-out";
+                const currentR = parseFloat(ring.getAttribute("r"));
+                ring.setAttribute("r", currentR * 1.4);
+            });
+
+            setTimeout(() => {
+                spirals.forEach((spiral, i) => {
+                    spiral.setAttribute("stroke-width", 2.5 - i * 0.3);
+                    spiral.setAttribute("opacity", 0.7 - i * 0.1);
+                });
+
+                rings.forEach((ring, i) => {
+                    ring.setAttribute("r", 30 + i * 20);
+                });
+            }, 1200);
+        }, 5000);
+
+        setInterval(() => {
+            themeIndex = (themeIndex + 1) % themes.length;
+            const theme = themes[themeIndex];
+
+            document.querySelector(
+                ".grad-inner"
+            ).style.stopColor = `rgb(${theme.inner[0]}, ${theme.inner[1]}, ${theme.inner[2]})`;
+            document.querySelector(
+                ".grad-mid"
+            ).style.stopColor = `rgb(${theme.mid[0]}, ${theme.mid[1]}, ${theme.mid[2]})`;
+            document.querySelector(
+                ".grad-outer"
+            ).style.stopColor = `rgb(${theme.outer[0]}, ${theme.outer[1]}, ${theme.outer[2]})`;
+
+            document.querySelector(".grad-inner").style.transition = "stop-color 2s ease";
+            document.querySelector(".grad-mid").style.transition = "stop-color 2s ease";
+            document.querySelector(".grad-outer").style.transition = "stop-color 2s ease";
+        }, 10000);
+
+        document.addEventListener("click", (e) => {
+            for (let i = 0; i < 20; i++) {
+                const particle = document.createElement("div");
+                particle.className = "trail";
+                particle.style.left = e.clientX + "px";
+                particle.style.top = e.clientY + "px";
+
+                const angle = (Math.PI * 2 * i) / 20;
+                const velocity = 80 + Math.random() * 150;
+                const vx = Math.cos(angle) * velocity;
+                const vy = Math.sin(angle) * velocity;
+
+                const hue = (themeIndex * 72 + Math.random() * 60) % 360;
+                particle.style.background = `radial-gradient(circle, hsla(${hue}, 100%, 70%, 0.9) 0%, transparent 70%)`;
+
+                document.body.appendChild(particle);
+
+                particle.animate(
+                    [
+                        { transform: "translate(0, 0) scale(1)", opacity: 1 },
+                        { transform: `translate(${vx}px, ${vy}px) scale(0)`, opacity: 0 }
+                    ],
+                    {
+                        duration: 1000,
+                        easing: "ease-out"
+                    }
+                );
+
+                setTimeout(() => particle.remove(), 1000);
+            }
+        });
+
+        document.addEventListener("keydown", (e) => {
+            if (e.code === "Space") {
+                e.preventDefault();
+                const animations = document.querySelectorAll(
+                    ".spiral-path, .particle, .core-ring"
+                );
+                animations.forEach((el) => {
+                    if (el.style.animationPlayState === "paused") {
+                        el.style.animationPlayState = "running";
+                    } else {
+                        el.style.animationPlayState = "paused";
+                    }
+                });
+            }
+        });
+    </script>
+</body>
+
+</html>

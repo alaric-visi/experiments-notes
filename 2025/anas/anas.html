@@ -1,0 +1,394 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Anas</title>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+            font-family: Arial, sans-serif;
+            width: 100vw;
+            height: 100vh;
+            position: fixed;
+            touch-action: none;
+            background: #000000;
+        }
+
+        #threeCanvas {
+            display: block;
+            position: fixed;
+            top: 0;
+            left: 0;
+            z-index: 1;
+        }
+
+        #info {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            color: #e9e9f0;
+            font-size: 12px;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.8);
+            z-index: 10;
+            pointer-events: none;
+        }
+
+        @media (min-width: 768px) {
+            #info {
+                top: 20px;
+                left: 20px;
+                font-size: 14px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script>
+        let scene, camera, renderer, pterosaur;
+        const colors = {
+            primary: 0x00ff88,
+            secondary: 0x00ddff,
+            accent: 0xff00ff,
+            bone: 0xffff00,
+            highlight: 0xff6600
+        };
+
+        function init() {
+            scene = new THREE.Scene();
+
+            camera = new THREE.PerspectiveCamera(
+                45,
+                window.innerWidth / window.innerHeight,
+                0.1,
+                1000
+            );
+
+            if (window.innerWidth < 768) {
+                camera.position.z = 10;
+                camera.position.y = 0;
+            } else {
+                camera.position.z = 8;
+                camera.position.y = 0;
+            }
+
+            renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+            renderer.setClearColor(0x000000, 1);
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+            renderer.domElement.id = "threeCanvas";
+            document.body.appendChild(renderer.domElement);
+
+            createPterosaur();
+
+            const ambientLight = new THREE.AmbientLight(0x222222, 0.5);
+            scene.add(ambientLight);
+
+            const pointLight = new THREE.PointLight(0x00ff88, 2, 100);
+            pointLight.position.set(5, 5, 5);
+            scene.add(pointLight);
+
+            const pointLight2 = new THREE.PointLight(0x00ddff, 1.5, 100);
+            pointLight2.position.set(-5, -3, 3);
+            scene.add(pointLight2);
+
+            const rimLight = new THREE.PointLight(0xff00ff, 1.2, 100);
+            rimLight.position.set(0, 0, -5);
+            scene.add(rimLight);
+
+            window.addEventListener("resize", onWindowResize);
+        }
+
+        function createPterosaur() {
+            const group = new THREE.Group();
+
+            const headGeom = new THREE.SphereGeometry(
+                0.4,
+                32,
+                32,
+                0,
+                Math.PI * 2,
+                0,
+                Math.PI * 0.6
+            );
+            const head = new THREE.Mesh(
+                headGeom,
+                new THREE.MeshBasicMaterial({ color: colors.primary, wireframe: true })
+            );
+            head.scale.set(1, 1.2, 1.8);
+            head.position.set(0, 0.2, 1.2);
+            head.rotation.x = -0.2;
+            group.add(head);
+
+            const crestGeom = new THREE.ConeGeometry(0.3, 1.2, 16, 8);
+            const crest = new THREE.Mesh(
+                crestGeom,
+                new THREE.MeshBasicMaterial({ color: colors.accent, wireframe: true })
+            );
+            crest.position.set(0, 0.8, 0.8);
+            crest.rotation.x = Math.PI * 0.6;
+            crest.rotation.z = Math.PI * 0.5;
+            crest.scale.set(0.8, 1, 0.4);
+            group.add(crest);
+
+            const beakGeom = new THREE.ConeGeometry(0.15, 1.2, 16);
+            const beak = new THREE.Mesh(
+                beakGeom,
+                new THREE.MeshBasicMaterial({ color: colors.bone, wireframe: true })
+            );
+            beak.position.set(0, 0, 2.2);
+            beak.rotation.x = Math.PI * 0.5;
+            group.add(beak);
+
+            const lowerJawGeom = new THREE.ConeGeometry(0.12, 1, 12);
+            const lowerJaw = new THREE.Mesh(
+                lowerJawGeom,
+                new THREE.MeshBasicMaterial({ color: colors.bone, wireframe: true })
+            );
+            lowerJaw.position.set(0, -0.15, 2.1);
+            lowerJaw.rotation.x = Math.PI * 0.5;
+            group.add(lowerJaw);
+
+            const eyeGeom = new THREE.SphereGeometry(0.12, 16, 16);
+            const leftEye = new THREE.Mesh(
+                eyeGeom,
+                new THREE.MeshBasicMaterial({ color: colors.highlight, wireframe: true })
+            );
+            leftEye.position.set(-0.25, 0.25, 1.4);
+            group.add(leftEye);
+
+            const rightEye = new THREE.Mesh(
+                eyeGeom,
+                new THREE.MeshBasicMaterial({ color: colors.highlight, wireframe: true })
+            );
+            rightEye.position.set(0.25, 0.25, 1.4);
+            group.add(rightEye);
+
+            const neckGeom = new THREE.CylinderGeometry(0.25, 0.3, 0.8, 16);
+            const neck = new THREE.Mesh(
+                neckGeom,
+                new THREE.MeshBasicMaterial({ color: colors.secondary, wireframe: true })
+            );
+            neck.position.set(0, -0.3, 0.6);
+            neck.rotation.x = -0.3;
+            group.add(neck);
+
+            const bodyGeom = new THREE.SphereGeometry(0.6, 24, 24);
+            const body = new THREE.Mesh(
+                bodyGeom,
+                new THREE.MeshBasicMaterial({ color: colors.primary, wireframe: true })
+            );
+            body.scale.set(0.8, 1, 1.5);
+            body.position.set(0, -0.5, -0.2);
+            group.add(body);
+
+            for (let i = 0; i < 5; i++) {
+                const vertebraGeom = new THREE.SphereGeometry(0.08, 12, 12);
+                const vertebra = new THREE.Mesh(
+                    vertebraGeom,
+                    new THREE.MeshBasicMaterial({ color: colors.bone, wireframe: true })
+                );
+                vertebra.position.set(0, -0.3 - i * 0.1, 0.5 - i * 0.3);
+                group.add(vertebra);
+            }
+
+            const wingArmGeom = new THREE.CylinderGeometry(0.08, 0.06, 2, 12);
+            const leftWingArm = new THREE.Mesh(
+                wingArmGeom,
+                new THREE.MeshBasicMaterial({ color: colors.secondary, wireframe: true })
+            );
+            leftWingArm.position.set(-1.2, -0.3, 0);
+            leftWingArm.rotation.z = Math.PI * 0.3;
+            group.add(leftWingArm);
+
+            const leftFingerGeom = new THREE.CylinderGeometry(0.05, 0.03, 3.5, 12);
+            const leftFinger = new THREE.Mesh(
+                leftFingerGeom,
+                new THREE.MeshBasicMaterial({ color: colors.accent, wireframe: true })
+            );
+            leftFinger.position.set(-2.8, 0.2, 0);
+            leftFinger.rotation.z = Math.PI * 0.15;
+            group.add(leftFinger);
+
+            const leftMembraneShape = new THREE.Shape();
+            leftMembraneShape.moveTo(0, 0);
+            leftMembraneShape.lineTo(-3, 1);
+            leftMembraneShape.lineTo(-3.5, -1);
+            leftMembraneShape.lineTo(0, -0.5);
+
+            const leftMembraneGeom = new THREE.ShapeGeometry(leftMembraneShape);
+            const leftMembrane = new THREE.Mesh(
+                leftMembraneGeom,
+                new THREE.MeshBasicMaterial({ color: colors.primary, wireframe: true })
+            );
+            leftMembrane.position.set(-0.8, -0.1, 0.1);
+            group.add(leftMembrane);
+
+            const rightWingArm = new THREE.Mesh(
+                wingArmGeom,
+                new THREE.MeshBasicMaterial({ color: colors.secondary, wireframe: true })
+            );
+            rightWingArm.position.set(1.2, -0.3, 0);
+            rightWingArm.rotation.z = -Math.PI * 0.3;
+            group.add(rightWingArm);
+
+            const rightFinger = new THREE.Mesh(
+                leftFingerGeom,
+                new THREE.MeshBasicMaterial({ color: colors.accent, wireframe: true })
+            );
+            rightFinger.position.set(2.8, 0.2, 0);
+            rightFinger.rotation.z = -Math.PI * 0.15;
+            group.add(rightFinger);
+
+            const rightMembraneShape = new THREE.Shape();
+            rightMembraneShape.moveTo(0, 0);
+            rightMembraneShape.lineTo(3, 1);
+            rightMembraneShape.lineTo(3.5, -1);
+            rightMembraneShape.lineTo(0, -0.5);
+
+            const rightMembraneGeom = new THREE.ShapeGeometry(rightMembraneShape);
+            const rightMembrane = new THREE.Mesh(
+                rightMembraneGeom,
+                new THREE.MeshBasicMaterial({ color: colors.primary, wireframe: true })
+            );
+            rightMembrane.position.set(0.8, -0.1, 0.1);
+            group.add(rightMembrane);
+
+            for (let i = 0; i < 4; i++) {
+                const ribGeom = new THREE.CylinderGeometry(0.02, 0.02, 1.5 + i * 0.3, 8);
+                const leftRib = new THREE.Mesh(
+                    ribGeom,
+                    new THREE.MeshBasicMaterial({ color: colors.bone, wireframe: true })
+                );
+                leftRib.position.set(-1.5 - i * 0.5, -0.1 + i * 0.15, 0.05);
+                leftRib.rotation.z = Math.PI * 0.25;
+                group.add(leftRib);
+
+                const rightRib = new THREE.Mesh(
+                    ribGeom,
+                    new THREE.MeshBasicMaterial({ color: colors.bone, wireframe: true })
+                );
+                rightRib.position.set(1.5 + i * 0.5, -0.1 + i * 0.15, 0.05);
+                rightRib.rotation.z = -Math.PI * 0.25;
+                group.add(rightRib);
+            }
+
+            const legGeom = new THREE.CylinderGeometry(0.06, 0.05, 0.8, 12);
+            const leftLeg = new THREE.Mesh(
+                legGeom,
+                new THREE.MeshBasicMaterial({ color: colors.secondary, wireframe: true })
+            );
+            leftLeg.position.set(-0.3, -1.2, -0.3);
+            leftLeg.rotation.z = 0.2;
+            group.add(leftLeg);
+
+            const rightLeg = new THREE.Mesh(
+                legGeom,
+                new THREE.MeshBasicMaterial({ color: colors.secondary, wireframe: true })
+            );
+            rightLeg.position.set(0.3, -1.2, -0.3);
+            rightLeg.rotation.z = -0.2;
+            group.add(rightLeg);
+
+            const footGeom = new THREE.SphereGeometry(0.08, 12, 12);
+            const leftFoot = new THREE.Mesh(
+                footGeom,
+                new THREE.MeshBasicMaterial({ color: colors.accent, wireframe: true })
+            );
+            leftFoot.position.set(-0.35, -1.6, -0.3);
+            group.add(leftFoot);
+
+            const rightFoot = new THREE.Mesh(
+                footGeom,
+                new THREE.MeshBasicMaterial({ color: colors.accent, wireframe: true })
+            );
+            rightFoot.position.set(0.35, -1.6, -0.3);
+            group.add(rightFoot);
+
+            for (let i = 0; i < 3; i++) {
+                const clawGeom = new THREE.ConeGeometry(0.02, 0.15, 8);
+
+                const leftClaw = new THREE.Mesh(
+                    clawGeom,
+                    new THREE.MeshBasicMaterial({ color: colors.bone, wireframe: true })
+                );
+                leftClaw.position.set(-0.35 + (i - 1) * 0.05, -1.7, -0.25 + i * 0.05);
+                leftClaw.rotation.x = Math.PI;
+                group.add(leftClaw);
+
+                const rightClaw = new THREE.Mesh(
+                    clawGeom,
+                    new THREE.MeshBasicMaterial({ color: colors.bone, wireframe: true })
+                );
+                rightClaw.position.set(0.35 + (i - 1) * 0.05, -1.7, -0.25 + i * 0.05);
+                rightClaw.rotation.x = Math.PI;
+                group.add(rightClaw);
+            }
+
+            for (let i = 0; i < 8; i++) {
+                const tailSegGeom = new THREE.SphereGeometry(0.06 - i * 0.005, 10, 10);
+                const tailSeg = new THREE.Mesh(
+                    tailSegGeom,
+                    new THREE.MeshBasicMaterial({ color: colors.secondary, wireframe: true })
+                );
+                tailSeg.position.set(0, -0.6 - i * 0.05, -1 - i * 0.2);
+                group.add(tailSeg);
+            }
+
+            const tailFinShape = new THREE.Shape();
+            tailFinShape.moveTo(0, 0);
+            tailFinShape.lineTo(0.3, -0.2);
+            tailFinShape.lineTo(0, -0.5);
+            tailFinShape.lineTo(-0.3, -0.2);
+
+            const tailFinGeom = new THREE.ShapeGeometry(tailFinShape);
+            const tailFin = new THREE.Mesh(
+                tailFinGeom,
+                new THREE.MeshBasicMaterial({ color: colors.accent, wireframe: true })
+            );
+            tailFin.position.set(0, -1, -2.5);
+            group.add(tailFin);
+
+            pterosaur = group;
+            scene.add(pterosaur);
+        }
+
+        function onWindowResize() {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+
+            if (window.innerWidth < 768) {
+                camera.position.z = 10;
+                camera.position.y = 0;
+            } else {
+                camera.position.z = 8;
+                camera.position.y = 0;
+            }
+
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+        }
+
+        function animate() {
+            requestAnimationFrame(animate);
+
+            pterosaur.rotation.y += 0.005;
+
+            pterosaur.rotation.x = Math.sin(Date.now() * 0.002) * 0.15;
+            pterosaur.rotation.z = Math.sin(Date.now() * 0.0015) * 0.08;
+
+            pterosaur.position.y = Math.sin(Date.now() * 0.001) * 0.3;
+
+            renderer.render(scene, camera);
+        }
+
+        init();
+        animate();
+    </script>
+</body>
+
+</html>
