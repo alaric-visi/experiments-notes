@@ -1,0 +1,523 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Asteroids - Balls</title>
+    <link rel="icon" href="data:," />
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+            background: #000033;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        #nav {
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background-color: rgba(30, 30, 40, 0.85);
+            color: white;
+            display: flex;
+            justify-content: center;
+            padding: 8px 15px;
+            z-index: 10;
+            border-radius: 50px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+            backdrop-filter: blur(5px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        #nav button {
+            background: linear-gradient(145deg, #4a4a6d, #3a3a5a);
+            color: white;
+            border: none;
+            margin: 0 6px;
+            padding: 10px 20px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            border-radius: 30px;
+            transition: all 0.3s ease;
+            box-shadow: 0 3px 8px rgba(0, 0, 0, 0.2);
+            min-width: 50px;
+        }
+
+        #nav button:hover {
+            background: linear-gradient(145deg, #5a5a8d, #4a4a7a);
+            transform: translateY(-2px);
+            box-shadow: 0 5px 12px rgba(0, 0, 0, 0.3);
+        }
+
+        #nav button.active {
+            background: linear-gradient(145deg, #6a6aad, #5a5a9a);
+            box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.2), 0 3px 8px rgba(0, 0, 0, 0.2);
+        }
+
+        canvas {
+            display: block;
+            background: #000022;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="nav">
+        <button id="btn1" class="active" onclick="startAnimation1()">1</button>
+        <button id="btn2" onclick="startAnimation2()">2</button>
+    </div>
+    <canvas id="p"></canvas>
+
+    <script>
+        const c = document.getElementById("p"),
+            x = c.getContext("2d"),
+            m = Math;
+        let animationFrame;
+        let currentAnimation = 1;
+
+        function resizeCanvas() {
+            c.width = innerWidth * 2;
+            c.height = innerHeight * 2;
+            c.style.width = innerWidth + "px";
+            c.style.height = innerHeight + "px";
+            x.scale(2, 2);
+        }
+
+        function clearCanvas() {
+            cancelAnimationFrame(animationFrame);
+            x.clearRect(0, 0, c.width, c.height);
+        }
+
+        function updateButtonStates() {
+            document.getElementById('btn1').classList.toggle('active', currentAnimation === 1);
+            document.getElementById('btn2').classList.toggle('active', currentAnimation === 2);
+        }
+
+        function animation1() {
+            const f = [],
+                i = [],
+                stars = [];
+            let t = 0;
+
+            class S {
+                constructor() {
+                    this.s = 20;
+                    this.x = m.random() * (c.width / 2 - 100) + 50;
+                    this.y = m.random() * (c.height / 2 - 100) + 50;
+                    this.a = m.random() * m.PI * 2;
+                    this.c = `hsl(${m.random() * 360},100%,50%)`;
+                    this.m = 2 + m.random() * 1;
+                    this.ac = 0.1;
+                    this.t = 0.06;
+                    this.av = 0.05;
+                    this.e = 50;
+                    this.n = 20 + m.random() * 10;
+                    this.z = 0.5;
+                    this.b = 0.05;
+                    this.vx = m.cos(this.a) * this.m;
+                    this.vy = m.sin(this.a) * this.m;
+                    this.p = [];
+                    for (let j = 0; j < this.s; j++) {
+                        this.p.push({
+                            x: this.x - this.vx * j * 0.25,
+                            y: this.y - this.vy * j * 0.25,
+                        });
+                    }
+                    this.g = null;
+                }
+
+                u(asteroids, spaceships) {
+                    const energyDrain = this.b * m.pow(this.z, 2);
+                    this.n -= energyDrain;
+                    if (this.n < 0) this.n = 0;
+                    this.z = 0.25 + (this.n / 100) * 0.75;
+
+                    let target = null,
+                        maxInfluence = -Infinity;
+
+                    for (let asteroid of asteroids) {
+                        const dx = asteroid.x - this.x;
+                        const dy = asteroid.y - this.y;
+                        const distance = m.hypot(dx, dy);
+                        const influence = asteroid.n / distance;
+                        if (influence > maxInfluence) {
+                            maxInfluence = influence;
+                            target = asteroid;
+                        }
+                    }
+
+                    let targetAngle = this.a;
+
+                    if (target) {
+                        this.g = target;
+                        targetAngle = m.atan2(target.y - this.y, target.x - this.x);
+                    }
+
+                    const boundaryAvoidanceAngle = this.ga();
+                    if (boundaryAvoidanceAngle !== null) {
+                        targetAngle = targetAngle * 0.2 + boundaryAvoidanceAngle * 0.8;
+                    }
+
+                    const alignmentAngle = this.aa(spaceships);
+                    if (alignmentAngle !== null) {
+                        targetAngle = targetAngle * 0.8 + alignmentAngle * 0.2;
+                    }
+
+                    let angularDifference = targetAngle - this.a;
+                    angularDifference = ((angularDifference + m.PI) % (m.PI * 2)) - m.PI;
+                    this.a += angularDifference * this.t;
+
+                    const targetVx = m.cos(this.a) * this.m * this.z;
+                    const targetVy = m.sin(this.a) * this.m * this.z;
+                    this.vx += (targetVx - this.vx) * this.ac;
+                    this.vy += (targetVy - this.vy) * this.ac;
+
+                    this.x += this.vx;
+                    this.y += this.vy;
+
+                    if (
+                        this.x < 0 ||
+                        this.x > c.width / 2 ||
+                        this.y < 0 ||
+                        this.y > c.height / 2
+                    ) {
+                        this.n -= 10;
+                        if (this.n < 0) this.n = 0;
+                        this.x = m.max(0, m.min(this.x, c.width / 2));
+                        this.y = m.max(0, m.min(this.y, c.height / 2));
+                    }
+
+                    for (let j = 0; j < this.s; j++) {
+                        if (j === 0) {
+                            this.p[j] = { x: this.x, y: this.y };
+                        } else {
+                            const previousPoint = this.p[j - 1];
+                            const currentPoint = this.p[j];
+                            const dx = previousPoint.x - currentPoint.x;
+                            const dy = previousPoint.y - currentPoint.y;
+                            const distance = m.hypot(dx, dy);
+                            const trailDistance = 10 * this.z;
+                            if (distance > trailDistance) {
+                                currentPoint.x += dx * 0.2;
+                                currentPoint.y += dy * 0.2;
+                            }
+                        }
+                    }
+
+                    if (this.g) {
+                        const dx = this.g.x - this.x;
+                        const dy = this.g.y - this.y;
+                        const distance = m.hypot(dx, dy);
+                        if (distance < 15 * this.z) {
+                            this.n += this.g.n;
+                            if (this.n > 200) this.n = 200;
+                            return this.g;
+                        }
+                    }
+
+                    return null;
+                }
+
+                ga() {
+                    let dx = 0,
+                        dy = 0;
+                    if (this.x < this.e) dx = 1;
+                    else if (this.x > c.width / 2 - this.e) dx = -1;
+                    if (this.y < this.e) dy = 1;
+                    else if (this.y > c.height / 2 - this.e) dy = -1;
+                    return dx !== 0 || dy !== 0 ? m.atan2(dy, dx) : null;
+                }
+
+                aa(spaceships) {
+                    let dx = 0,
+                        dy = 0;
+                    for (let ship of spaceships) {
+                        if (ship === this) continue;
+                        const deltaX = this.x - ship.x;
+                        const deltaY = this.y - ship.y;
+                        const distance = m.hypot(deltaX, deltaY);
+                        if (distance < 50) {
+                            dx += deltaX / distance;
+                            dy += deltaY / distance;
+                        }
+                    }
+                    return dx !== 0 || dy !== 0 ? m.atan2(dy, dx) : null;
+                }
+
+                d() {
+                    x.save();
+                    x.translate(this.x, this.y);
+                    x.rotate(this.a);
+
+                    x.beginPath();
+                    x.moveTo(30 * this.z, 0);
+                    x.lineTo(-30 * this.z, 15 * this.z);
+                    x.lineTo(-30 * this.z, -15 * this.z);
+                    x.closePath();
+                    x.fillStyle = this.c;
+                    x.fill();
+                    x.restore();
+                }
+            }
+
+            class A {
+                constructor() {
+                    this.x = (m.random() * c.width) / 2;
+                    this.y = (m.random() * c.height) / 2;
+                    this.z = 3 + m.random() * 5;
+                    this.vx = (m.random() - 0.5) * 2;
+                    this.vy = (m.random() - 0.5) * 2;
+                    this.c = `rgb(${100 + m.random() * 155},${100 + m.random() * 155},${100 + m.random() * 155
+                        })`;
+                    this.n = this.z * 10;
+                }
+
+                u() {
+                    this.x += this.vx;
+                    this.y += this.vy;
+
+                    if (this.x < 0 || this.x > c.width / 2) this.vx *= -1;
+                    if (this.y < 0 || this.y > c.height / 2) this.vy *= -1;
+                }
+
+                d() {
+                    x.save();
+                    x.translate(this.x, this.y);
+                    x.beginPath();
+                    x.arc(0, 0, this.z, 0, 2 * m.PI);
+                    x.fillStyle = this.c;
+                    x.fill();
+                    x.restore();
+                }
+            }
+
+            class Star {
+                constructor() {
+                    this.x = (m.random() * c.width) / 2;
+                    this.y = (m.random() * c.height) / 2;
+                    this.size = 0.5 + m.random() * 2;
+                    this.color = `rgba(255, 255, 255, 0.7)`;
+                }
+
+                update() {
+                    this.y += 0.5;
+                    if (this.y > c.height / 2) {
+                        this.y = 0;
+                        this.x = (m.random() * c.width) / 2;
+                    }
+                }
+
+                draw() {
+                    x.fillStyle = this.color;
+                    x.beginPath();
+                    x.arc(this.x, this.y, this.size, 0, m.PI * 2);
+                    x.fill();
+                }
+            }
+
+            function init() {
+                resizeCanvas();
+                for (let j = 0; j < 20; j++) f.push(new S());
+                for (let j = 0; j < 50; j++) i.push(new A());
+                for (let j = 0; j < 200; j++) stars.push(new Star());
+            }
+
+            function a() {
+                if (currentAnimation !== 1) return;
+
+                x.clearRect(0, 0, c.width, c.height);
+
+                stars.forEach((star) => {
+                    star.update();
+                    star.draw();
+                });
+
+                f.forEach((ship) => {
+                    let g = ship.u(i, f);
+                    if (g) {
+                        let j = i.indexOf(g);
+                        if (j > -1) i.splice(j, 1);
+                    }
+                    ship.d();
+                });
+
+                i.forEach((asteroid) => {
+                    asteroid.u();
+                    asteroid.d();
+                });
+
+                animationFrame = requestAnimationFrame(a);
+            }
+
+            init();
+            a();
+        }
+
+        function animation2() {
+            class Vector2D {
+                constructor(x, y) {
+                    this.x = x;
+                    this.y = y;
+                }
+
+                add(vector) {
+                    return new Vector2D(this.x + vector.x, this.y + vector.y);
+                }
+
+                multiply(scalar) {
+                    return new Vector2D(this.x * scalar, this.y * scalar);
+                }
+            }
+
+            class Entity {
+                constructor(position, velocity, radius, color) {
+                    this.position = position;
+                    this.velocity = velocity;
+                    this.radius = radius;
+                    this.color = color;
+                }
+
+                update(deltaTime) {
+                    this.position = this.position.add(this.velocity.multiply(deltaTime));
+                }
+
+                draw(ctx) {
+                    ctx.beginPath();
+                    ctx.arc(this.position.x, this.position.y, this.radius, 0, Math.PI * 2);
+                    ctx.fillStyle = this.color;
+                    ctx.fill();
+                    ctx.closePath();
+                }
+
+                checkBoundaryCollision(width, height) {
+                    if (this.position.x - this.radius <= 0 || this.position.x + this.radius >= width) {
+                        this.velocity.x *= -1;
+                    }
+                    if (this.position.y - this.radius <= 0 || this.position.y + this.radius >= height) {
+                        this.velocity.y *= -1;
+                    }
+                }
+            }
+
+            class ParticleSystem {
+                constructor() {
+                    this.entities = [];
+                }
+
+                addEntity(entity) {
+                    this.entities.push(entity);
+                }
+
+                update(deltaTime, width, height) {
+                    for (let i = 0; i < this.entities.length; i++) {
+                        const entity = this.entities[i];
+                        entity.update(deltaTime);
+                        entity.checkBoundaryCollision(width, height);
+
+                        for (let j = i + 1; j < this.entities.length; j++) {
+                            this.resolveCollision(entity, this.entities[j]);
+                        }
+                    }
+                }
+
+                resolveCollision(entity1, entity2) {
+                    const dx = entity2.position.x - entity1.position.x;
+                    const dy = entity2.position.y - entity1.position.y;
+                    const distance = Math.sqrt(dx * dx + dy * dy);
+
+                    if (distance < entity1.radius + entity2.radius) {
+                        const nx = dx / distance;
+                        const ny = dy / distance;
+
+                        const relativeVelocityX = entity2.velocity.x - entity1.velocity.x;
+                        const relativeVelocityY = entity2.velocity.y - entity1.velocity.y;
+
+                        const velocityAlongNormal =
+                            relativeVelocityX * nx + relativeVelocityY * ny;
+
+                        if (velocityAlongNormal > 0) return;
+
+                        const impulse = -2 * velocityAlongNormal;
+                        const massSum =
+                            entity1.radius * entity1.radius +
+                            entity2.radius * entity2.radius;
+
+                        entity1.velocity.x -=
+                            (impulse * entity2.radius * entity2.radius) / massSum * nx;
+                        entity1.velocity.y -=
+                            (impulse * entity2.radius * entity2.radius) / massSum * ny;
+                        entity2.velocity.x +=
+                            (impulse * entity1.radius * entity1.radius) / massSum * nx;
+                        entity2.velocity.y +=
+                            (impulse * entity1.radius * entity1.radius) / massSum * ny;
+                    }
+                }
+
+                draw(ctx) {
+                    this.entities.forEach((entity) => entity.draw(ctx));
+                }
+            }
+
+            const particleSystem = new ParticleSystem();
+            const ctx = c.getContext("2d");
+            resizeCanvas();
+
+            for (let i = 0; i < 15; i++) {
+                const position = new Vector2D(
+                    Math.random() * c.width / 2,
+                    Math.random() * c.height / 2
+                );
+                const velocity = new Vector2D(
+                    (Math.random() - 0.5) * 400,
+                    (Math.random() - 0.5) * 400
+                );
+                const radius = 10 + Math.random() * 20;
+                const color = `hsl(${Math.random() * 360}, 70%, 50%)`;
+                particleSystem.addEntity(
+                    new Entity(position, velocity, radius, color)
+                );
+            }
+
+            function animate(currentTime) {
+                if (currentAnimation !== 2) return;
+
+                ctx.clearRect(0, 0, c.width, c.height);
+                particleSystem.update(0.016, c.width / 2, c.height / 2);
+                particleSystem.draw(ctx);
+                animationFrame = requestAnimationFrame(animate);
+            }
+
+            animate(0);
+        }
+
+        function startAnimation1() {
+            clearCanvas();
+            currentAnimation = 1;
+            updateButtonStates();
+            animation1();
+        }
+
+        function startAnimation2() {
+            clearCanvas();
+            currentAnimation = 2;
+            updateButtonStates();
+            animation2();
+        }
+
+        window.addEventListener('resize', function () {
+            resizeCanvas();
+            if (currentAnimation === 1) {
+                startAnimation1();
+            } else {
+                startAnimation2();
+            }
+        });
+
+        startAnimation1();
+    </script>
+</body>
+
+</html>
