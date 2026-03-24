@@ -1,0 +1,772 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Architectural Wireframes</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', system-ui, -apple-system, sans-serif;
+            background-color: #000000;
+            color: #ffffff;
+            overflow-x: hidden;
+            min-height: 100vh;
+        }
+
+        .container {
+            width: 100%;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .header {
+            padding: 30px 20px 20px;
+            background-color: #000000;
+            border-bottom: 1px solid #333333;
+            position: relative;
+            z-index: 10;
+        }
+
+        .header-content {
+            max-width: 1200px;
+            margin: 0 auto;
+            width: 100%;
+        }
+
+        h1 {
+            margin: 0 0 8px 0;
+            color: #ffffff;
+            font-size: clamp(22px, 4.5vw, 36px);
+            font-weight: 600;
+            letter-spacing: -0.5px;
+        }
+
+        .subtitle {
+            margin: 0 0 30px 0;
+            color: #aaaaaa;
+            font-size: clamp(12px, 2vw, 14px);
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+            font-weight: 400;
+        }
+
+        .house-selector {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+            gap: 16px;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .house-button {
+            padding: 22px 20px;
+            font-size: clamp(14px, 2.5vw, 16px);
+            font-weight: 500;
+            background-color: #111111;
+            color: #ffffff;
+            border: 1px solid #333333;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            font-family: inherit;
+            position: relative;
+            overflow: hidden;
+            transform: translateY(0);
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 8px;
+            text-align: left;
+            isolation: isolate;
+        }
+
+        .house-button::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 0;
+            background: linear-gradient(to bottom, #ffffff 0%, #cccccc 100%);
+            transition: height 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            z-index: -1;
+        }
+
+        .house-button:hover {
+            transform: translateY(-4px);
+            border-color: #ffffff;
+            box-shadow: 0 12px 24px rgba(255, 255, 255, 0.08);
+            color: #000000;
+        }
+
+        .house-button:hover::before {
+            height: 100%;
+        }
+
+        .house-button:hover .design-number,
+        .house-button:hover .house-name,
+        .house-button:hover .house-description {
+            color: #000000;
+        }
+
+        .house-button.selected {
+            background-color: #ffffff;
+            border-color: #ffffff;
+            transform: translateY(-4px);
+            box-shadow: 0 12px 24px rgba(255, 255, 255, 0.15);
+            color: #000000;
+        }
+
+        .house-button.selected::before {
+            height: 100%;
+            background: #ffffff;
+        }
+
+        .house-button .design-number {
+            font-size: clamp(10px, 1.8vw, 11px);
+            opacity: 0.7;
+            letter-spacing: 1.5px;
+            text-transform: uppercase;
+            font-weight: 500;
+            transition: color 0.3s;
+        }
+
+        .house-button .house-name {
+            font-size: clamp(16px, 2.5vw, 18px);
+            font-weight: 600;
+            letter-spacing: -0.2px;
+            transition: color 0.3s;
+        }
+
+        .house-button .house-description {
+            font-size: clamp(11px, 1.8vw, 12px);
+            opacity: 0.8;
+            line-height: 1.5;
+            margin-top: 4px;
+            transition: color 0.3s;
+        }
+
+        .house-button.selected .design-number,
+        .house-button.selected .house-name,
+        .house-button.selected .house-description {
+            color: #000000;
+            opacity: 1;
+        }
+
+        .house-button .indicator {
+            position: absolute;
+            top: 16px;
+            right: 16px;
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background-color: #333333;
+            transition: all 0.3s ease;
+            transform: scale(0.8);
+        }
+
+        .house-button:hover .indicator {
+            background-color: #000000;
+            transform: scale(1);
+        }
+
+        .house-button.selected .indicator {
+            background-color: #000000;
+            transform: scale(1.1);
+            box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.2);
+        }
+
+        .house-button .bottom-line {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background-color: #ffffff;
+            transform: scaleX(0);
+            transform-origin: center;
+            transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .house-button.selected .bottom-line {
+            transform: scaleX(1);
+            background-color: #000000;
+        }
+
+        .canvas-container {
+            flex: 1;
+            width: 100%;
+            min-height: 60vh;
+            background-color: #000000;
+            position: relative;
+        }
+
+        .canvas-container::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 1px;
+            background: linear-gradient(to right, transparent, #333333, transparent);
+        }
+
+        .view-controls {
+            position: absolute;
+            bottom: 20px;
+            right: 20px;
+            display: flex;
+            gap: 12px;
+            z-index: 5;
+        }
+
+        .view-btn {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background-color: rgba(17, 17, 17, 0.9);
+            border: 1px solid #333333;
+            color: #ffffff;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+            transition: all 0.3s;
+        }
+
+        .view-btn:hover {
+            background-color: rgba(255, 255, 255, 0.1);
+            border-color: #ffffff;
+            transform: scale(1.1);
+        }
+
+        .footer {
+            padding: 16px 20px;
+            text-align: center;
+            color: #666666;
+            font-size: 12px;
+            border-top: 1px solid #333333;
+            background-color: #000000;
+        }
+
+        @media (max-width: 768px) {
+            .house-selector {
+                grid-template-columns: 1fr;
+            }
+
+            .header {
+                padding: 20px 16px 16px;
+            }
+
+            .view-controls {
+                bottom: 10px;
+                right: 10px;
+            }
+
+            .view-btn {
+                width: 36px;
+                height: 36px;
+                font-size: 12px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .house-button {
+                padding: 18px 16px;
+            }
+        }
+    </style>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+</head>
+
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="header-content">
+                <p class="subtitle">Monochrome Design Exploration</p>
+                <div class="house-selector">
+                    <button class="house-button selected" data-house="0">
+                        <div class="indicator"></div>
+                        <span class="design-number">Design 1</span>
+                        <span class="house-name">Modern Split-Level</span>
+                        <span class="house-description">Cantilevered volumes with open-plan living</span>
+                        <div class="bottom-line"></div>
+                    </button>
+                    <button class="house-button" data-house="1">
+                        <div class="indicator"></div>
+                        <span class="design-number">Design 2</span>
+                        <span class="house-name">Victorian Townhouse</span>
+                        <span class="house-description">Three-story traditional with pitched roof</span>
+                        <div class="bottom-line"></div>
+                    </button>
+                    <button class="house-button" data-house="2">
+                        <div class="indicator"></div>
+                        <span class="design-number">Design 3</span>
+                        <span class="house-name">Contemporary Multi-Level</span>
+                        <span class="house-description">Irregular geometric forms with glass connectors</span>
+                        <div class="bottom-line"></div>
+                    </button>
+                </div>
+            </div>
+        </div>
+        <div class="canvas-container" id="canvas-container">
+            <div class="view-controls">
+                <button class="view-btn" id="rotate-toggle">⟳</button>
+                <button class="view-btn" id="reset-view">↻</button>
+            </div>
+        </div>
+        <div class="footer">
+            Architectural Wireframe Models
+        </div>
+    </div>
+
+    <script>
+        let scene, camera, renderer;
+        let houses = [];
+        let selectedHouse = 0;
+        let isRotating = true;
+        let cameraAngle = 0;
+        let cameraDistance = 800;
+
+        function init() {
+            const container = document.getElementById("canvas-container");
+
+            scene = new THREE.Scene();
+            scene.background = new THREE.Color(0x000000);
+
+            camera = new THREE.PerspectiveCamera(
+                35,
+                container.clientWidth / container.clientHeight,
+                0.1,
+                10000
+            );
+
+            renderer = new THREE.WebGLRenderer({
+                antialias: true,
+                alpha: true
+            });
+            renderer.setSize(container.clientWidth, container.clientHeight);
+            renderer.setPixelRatio(window.devicePixelRatio);
+            container.appendChild(renderer.domElement);
+
+            const ambientLight = new THREE.AmbientLight(0xffffff, 0.7);
+            scene.add(ambientLight);
+
+            const dirLight = new THREE.DirectionalLight(0xffffff, 0.5);
+            dirLight.position.set(120, 240, 120);
+            scene.add(dirLight);
+
+            const rimLight = new THREE.DirectionalLight(0xffffff, 0.3);
+            rimLight.position.set(-100, 100, -100);
+            scene.add(rimLight);
+
+            createModernHouse();
+            createVictorianHouse();
+            createContemporaryHouse();
+
+            updateHouseVisibility();
+            updateCameraPosition();
+
+            animate();
+
+            window.addEventListener("resize", onWindowResize);
+
+            document.getElementById('rotate-toggle').addEventListener('click', () => {
+                isRotating = !isRotating;
+                document.getElementById('rotate-toggle').textContent = isRotating ? '⟳' : '⏸';
+            });
+
+            document.getElementById('reset-view').addEventListener('click', () => {
+                cameraAngle = 0;
+                updateCameraPosition();
+            });
+        }
+
+        function createEdges(geometry, color = 0xffffff) {
+            const edges = new THREE.EdgesGeometry(geometry);
+            const line = new THREE.LineSegments(
+                edges,
+                new THREE.LineBasicMaterial({
+                    color: color,
+                    linewidth: 1.5,
+                    transparent: true,
+                    opacity: 0.9
+                })
+            );
+            return line;
+        }
+
+        function createWall(
+            width,
+            height,
+            depth,
+            position,
+            rotation = 0,
+            color = 0xffffff
+        ) {
+            const geo = new THREE.BoxGeometry(width, height, depth);
+            const edges = createEdges(geo, color);
+            edges.position.set(position.x, position.y, position.z);
+            if (rotation) edges.rotation.y = rotation;
+            return edges;
+        }
+
+        function createModernHouse() {
+            const modernHouse = new THREE.Group();
+
+            const groundFloor = new THREE.BoxGeometry(240, 96, 192);
+            const groundEdges = createEdges(groundFloor, 0xffffff);
+            groundEdges.position.y = 48;
+            modernHouse.add(groundEdges);
+
+            const upperFloor = new THREE.BoxGeometry(168, 72, 192);
+            const upperEdges = createEdges(upperFloor, 0xffffff);
+            upperEdges.position.set(72, 132, 0);
+            modernHouse.add(upperEdges);
+
+            const cantilever = new THREE.BoxGeometry(96, 60, 144);
+            const cantEdges = createEdges(cantilever, 0xcccccc);
+            cantEdges.position.set(-120, 150, 0);
+            modernHouse.add(cantEdges);
+
+            modernHouse.add(createWall(2.4, 91.2, 192, { x: 0, y: 48, z: 0 }));
+            modernHouse.add(createWall(120, 91.2, 2.4, { x: -60, y: 48, z: -48 }, 0));
+            modernHouse.add(createWall(120, 91.2, 2.4, { x: 60, y: 48, z: 48 }, 0));
+
+            for (let i = 0; i < 12; i++) {
+                const step = new THREE.BoxGeometry(36, 2.4, 7.2);
+                const stepEdge = createEdges(step, 0xcccccc);
+                stepEdge.position.set(-24, 12 + i * 7.2, -72 + i * 6);
+                modernHouse.add(stepEdge);
+            }
+
+            modernHouse.add(createWall(2.4, 67.2, 192, { x: 72, y: 132, z: 0 }));
+            modernHouse.add(createWall(84, 67.2, 2.4, { x: 114, y: 132, z: -48 }, 0));
+            modernHouse.add(createWall(84, 67.2, 2.4, { x: 114, y: 132, z: 48 }, 0));
+
+            for (let i = 0; i < 4; i++) {
+                const windowFrame = new THREE.BoxGeometry(28.8, 36, 1.2);
+                const winEdge = createEdges(windowFrame, 0xaaaaaa);
+                winEdge.position.set(-96 + i * 60, 60, 96.48);
+                modernHouse.add(winEdge);
+
+                const divider1 = new THREE.BoxGeometry(28.8, 1.2, 1.2);
+                const div1Edge = createEdges(divider1, 0xaaaaaa);
+                div1Edge.position.set(-96 + i * 60, 60, 96.48);
+                modernHouse.add(div1Edge);
+
+                const divider2 = new THREE.BoxGeometry(1.2, 36, 1.2);
+                const div2Edge = createEdges(divider2, 0xaaaaaa);
+                div2Edge.position.set(-96 + i * 60, 60, 96.48);
+                modernHouse.add(div2Edge);
+            }
+
+            for (let i = 0; i < 15; i++) {
+                const rail = new THREE.BoxGeometry(1.2, 24, 1.2);
+                const railEdge = createEdges(rail, 0xffffff);
+                railEdge.position.set(0 + i * 16.8, 180, 96);
+                modernHouse.add(railEdge);
+            }
+
+            const door = new THREE.BoxGeometry(24, 52.8, 2.4);
+            const doorEdge = createEdges(door, 0xcccccc);
+            doorEdge.position.set(-72, 26.4, 97.2);
+            modernHouse.add(doorEdge);
+
+            modernHouse.visible = true;
+            houses.push(modernHouse);
+            scene.add(modernHouse);
+        }
+
+        function createVictorianHouse() {
+            const victorianHouse = new THREE.Group();
+
+            const vic1stFloor = new THREE.BoxGeometry(192, 72, 168);
+            const vic1stEdges = createEdges(vic1stFloor, 0xffffff);
+            vic1stEdges.position.y = 36;
+            victorianHouse.add(vic1stEdges);
+
+            const vic2ndFloor = new THREE.BoxGeometry(192, 72, 168);
+            const vic2ndEdges = createEdges(vic2ndFloor, 0xffffff);
+            vic2ndEdges.position.y = 108;
+            victorianHouse.add(vic2ndEdges);
+
+            const vic3rdFloor = new THREE.BoxGeometry(192, 60, 168);
+            const vic3rdEdges = createEdges(vic3rdFloor, 0xffffff);
+            vic3rdEdges.position.y = 174;
+            victorianHouse.add(vic3rdEdges);
+
+            const roofPoints = [];
+            roofPoints.push(new THREE.Vector3(-96, 204, -84));
+            roofPoints.push(new THREE.Vector3(-96, 204, 84));
+            roofPoints.push(new THREE.Vector3(0, 264, 84));
+            roofPoints.push(new THREE.Vector3(0, 264, -84));
+            roofPoints.push(new THREE.Vector3(-96, 204, -84));
+
+            const roofGeometry1 = new THREE.BufferGeometry().setFromPoints(roofPoints);
+            const roofLine1 = new THREE.Line(
+                roofGeometry1,
+                new THREE.LineBasicMaterial({ color: 0xffffff, linewidth: 1.5 })
+            );
+            victorianHouse.add(roofLine1);
+
+            const roofPoints2 = [];
+            roofPoints2.push(new THREE.Vector3(96, 204, -84));
+            roofPoints2.push(new THREE.Vector3(96, 204, 84));
+            roofPoints2.push(new THREE.Vector3(0, 264, 84));
+            roofPoints2.push(new THREE.Vector3(0, 264, -84));
+            roofPoints2.push(new THREE.Vector3(96, 204, -84));
+
+            const roofGeometry2 = new THREE.BufferGeometry().setFromPoints(roofPoints2);
+            const roofLine2 = new THREE.Line(
+                roofGeometry2,
+                new THREE.LineBasicMaterial({ color: 0xffffff, linewidth: 1.5 })
+            );
+            victorianHouse.add(roofLine2);
+
+            victorianHouse.add(createWall(2.4, 67.2, 168, { x: -48, y: 36, z: 0 }));
+            victorianHouse.add(createWall(96, 67.2, 2.4, { x: -48, y: 36, z: -36 }, 0));
+            victorianHouse.add(createWall(72, 67.2, 2.4, { x: 12, y: 36, z: 36 }, 0));
+
+            victorianHouse.add(createWall(2.4, 67.2, 168, { x: 0, y: 108, z: 0 }));
+            victorianHouse.add(createWall(96, 67.2, 2.4, { x: -48, y: 108, z: -48 }, 0));
+            victorianHouse.add(createWall(96, 67.2, 2.4, { x: 48, y: 108, z: 48 }, 0));
+
+            victorianHouse.add(createWall(2.4, 55.2, 168, { x: -36, y: 174, z: 0 }));
+            victorianHouse.add(createWall(2.4, 55.2, 168, { x: 36, y: 174, z: 0 }));
+
+            for (let i = 0; i < 15; i++) {
+                const step = new THREE.BoxGeometry(28.8, 2.4, 6);
+                const stepEdge = createEdges(step, 0xaaaaaa);
+                stepEdge.position.set(72, 7.2 + i * 4.8, -60 + i * 3.6);
+                victorianHouse.add(stepEdge);
+            }
+
+            for (let i = 0; i < 15; i++) {
+                const step = new THREE.BoxGeometry(28.8, 2.4, 6);
+                const stepEdge = createEdges(step, 0xaaaaaa);
+                stepEdge.position.set(72, 79.2 + i * 4.8, -12 + i * 3.6);
+                victorianHouse.add(stepEdge);
+            }
+
+            const floors = [36, 108, 174];
+
+            for (let f = 0; f < floors.length; f++) {
+                for (let i = 0; i < 3; i++) {
+                    const winOuter = new THREE.BoxGeometry(28.8, 43.2, 1.2);
+                    const winOuterEdge = createEdges(winOuter, 0xaaaaaa);
+                    winOuterEdge.position.set(-72 + i * 72, floors[f] + 7.2, 84.48);
+                    victorianHouse.add(winOuterEdge);
+
+                    for (let row = 0; row < 3; row++) {
+                        const pane = new THREE.BoxGeometry(8.4, 12, 1.2);
+                        const paneEdge = createEdges(pane, 0xaaaaaa);
+                        paneEdge.position.set(
+                            -72 + i * 72 - 9.6,
+                            floors[f] + 7.2 - 13.2 + row * 13.2,
+                            84.48
+                        );
+                        victorianHouse.add(paneEdge);
+
+                        const pane2 = new THREE.BoxGeometry(8.4, 12, 1.2);
+                        const pane2Edge = createEdges(pane2, 0xaaaaaa);
+                        pane2Edge.position.set(
+                            -72 + i * 72 + 9.6,
+                            floors[f] + 7.2 - 13.2 + row * 13.2,
+                            84.48
+                        );
+                        victorianHouse.add(pane2Edge);
+                    }
+                }
+            }
+
+            const bayBase = new THREE.BoxGeometry(48, 60, 24);
+            const bayEdge = createEdges(bayBase, 0xaaaaaa);
+            bayEdge.position.set(0, 36, 108);
+            victorianHouse.add(bayEdge);
+
+            const chimney = new THREE.BoxGeometry(19.2, 144, 19.2);
+            const chimEdge = createEdges(chimney, 0xffffff);
+            chimEdge.position.set(-72, 204, 48);
+            victorianHouse.add(chimEdge);
+
+            victorianHouse.visible = false;
+            houses.push(victorianHouse);
+            scene.add(victorianHouse);
+        }
+
+        function createContemporaryHouse() {
+            const contemporaryHouse = new THREE.Group();
+
+            const cont1 = new THREE.BoxGeometry(144, 120, 144);
+            const cont1Edge = createEdges(cont1, 0xffffff);
+            cont1Edge.position.set(0, 60, 0);
+            contemporaryHouse.add(cont1Edge);
+
+            const cont2 = new THREE.BoxGeometry(120, 96, 120);
+            const cont2Edge = createEdges(cont2, 0xffffff);
+            cont2Edge.position.set(120, 96, 0);
+            cont2Edge.rotation.y = Math.PI / 12;
+            contemporaryHouse.add(cont2Edge);
+
+            const cont3 = new THREE.BoxGeometry(96, 72, 96);
+            const cont3Edge = createEdges(cont3, 0xffffff);
+            cont3Edge.position.set(-96, 156, 0);
+            cont3Edge.rotation.y = -Math.PI / 8;
+            contemporaryHouse.add(cont3Edge);
+
+            const connector = new THREE.BoxGeometry(48, 120, 72);
+            const connEdge = createEdges(connector, 0xcccccc);
+            connEdge.position.set(60, 60, 0);
+            contemporaryHouse.add(connEdge);
+            contemporaryHouse.add(createWall(2.4, 115.2, 144, { x: -36, y: 60, z: 0 }));
+            contemporaryHouse.add(
+                createWall(72, 115.2, 2.4, { x: 36, y: 60, z: -48 }, 0)
+            );
+
+            const mezzFloor = new THREE.BoxGeometry(96, 2.4, 96);
+            const mezzEdge = createEdges(mezzFloor, 0xaaaaaa);
+            mezzEdge.position.set(-24, 96, 0);
+            contemporaryHouse.add(mezzEdge);
+
+            for (let i = 0; i < 12; i++) {
+                const rail = new THREE.BoxGeometry(1.2, 28.8, 1.2);
+                const railEdge = createEdges(rail, 0xffffff);
+                railEdge.position.set(-72 + i * 14.4, 110.4, 48);
+                contemporaryHouse.add(railEdge);
+            }
+            contemporaryHouse.add(createWall(2.4, 91.2, 120, { x: 120, y: 96, z: 0 }));
+            contemporaryHouse.add(
+                createWall(60, 91.2, 2.4, { x: 150, y: 96, z: -36 }, 0)
+            );
+
+            for (let i = 0; i < 16; i++) {
+                const step = new THREE.BoxGeometry(43.2, 2.4, 7.2);
+                const stepEdge = createEdges(step, 0xaaaaaa);
+                stepEdge.position.set(24, 12 + i * 6, -48 + i * 4.8);
+                stepEdge.rotation.y = Math.PI / 16;
+                contemporaryHouse.add(stepEdge);
+
+                const cable = new THREE.BufferGeometry().setFromPoints([
+                    new THREE.Vector3(24, 12 + i * 6, -48 + i * 4.8),
+                    new THREE.Vector3(24, 132, -48 + i * 4.8)
+                ]);
+                const cableLine = new THREE.Line(
+                    cable,
+                    new THREE.LineBasicMaterial({ color: 0xffffff })
+                );
+                contemporaryHouse.add(cableLine);
+            }
+
+            for (let i = 0; i < 3; i++) {
+                const largeWin = new THREE.BoxGeometry(36, 108, 1.2);
+                const largeWinEdge = createEdges(largeWin, 0xaaaaaa);
+                largeWinEdge.position.set(-48 + i * 48, 60, 72.48);
+                contemporaryHouse.add(largeWinEdge);
+
+                for (let j = 0; j < 5; j++) {
+                    const div = new THREE.BoxGeometry(36, 1.2, 1.2);
+                    const divEdge = createEdges(div, 0xaaaaaa);
+                    divEdge.position.set(-48 + i * 48, 12 + j * 24, 72.48);
+                    contemporaryHouse.add(divEdge);
+                }
+            }
+
+            const skylightPoints = [
+                new THREE.Vector3(-96, 192, -48),
+                new THREE.Vector3(-96, 192, 48),
+                new THREE.Vector3(-96, 216, 48),
+                new THREE.Vector3(-96, 216, -48),
+                new THREE.Vector3(-96, 192, -48),
+                new THREE.Vector3(-48, 192, -48),
+                new THREE.Vector3(-48, 192, 48),
+                new THREE.Vector3(-96, 192, 48)
+            ];
+            const skylightGeo = new THREE.BufferGeometry().setFromPoints(skylightPoints);
+            const skylightLine = new THREE.Line(
+                skylightGeo,
+                new THREE.LineBasicMaterial({ color: 0xaaaaaa })
+            );
+            contemporaryHouse.add(skylightLine);
+
+            const deck = new THREE.BoxGeometry(120, 2.4, 120);
+            const deckEdge = createEdges(deck, 0xffffff);
+            deckEdge.position.set(120, 144, 0);
+            contemporaryHouse.add(deckEdge);
+
+            contemporaryHouse.visible = false;
+            houses.push(contemporaryHouse);
+            scene.add(contemporaryHouse);
+        }
+
+        function updateHouseVisibility() {
+            houses.forEach((house, index) => {
+                house.visible = index === selectedHouse;
+            });
+        }
+
+        function updateCameraPosition() {
+            const angle = cameraAngle * (Math.PI / 180);
+            camera.position.x = Math.cos(angle) * cameraDistance;
+            camera.position.z = Math.sin(angle) * cameraDistance;
+            camera.position.y = 360;
+            camera.lookAt(0, 72, 0);
+        }
+
+        function animate() {
+            requestAnimationFrame(animate);
+
+            if (isRotating) {
+                cameraAngle += 0.2;
+                updateCameraPosition();
+            }
+
+            houses.forEach((house) => {
+                if (house.visible) {
+                    house.rotation.y += 0.005;
+                }
+            });
+
+            renderer.render(scene, camera);
+        }
+
+        function onWindowResize() {
+            const container = document.getElementById("canvas-container");
+            camera.aspect = container.clientWidth / container.clientHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(container.clientWidth, container.clientHeight);
+        }
+
+        function setupEventListeners() {
+            const buttons = document.querySelectorAll(".house-button");
+
+            buttons.forEach((button) => {
+                button.addEventListener("click", () => {
+                    selectedHouse = parseInt(button.dataset.house);
+
+                    buttons.forEach((btn) => btn.classList.remove("selected"));
+                    button.classList.add("selected");
+
+                    updateHouseVisibility();
+                });
+            });
+        }
+
+        window.addEventListener("DOMContentLoaded", () => {
+            init();
+            setupEventListeners();
+        });
+    </script>
+</body>
+
+</html>

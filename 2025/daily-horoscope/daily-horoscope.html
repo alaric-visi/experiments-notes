@@ -1,0 +1,659 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Daily Horoscope</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background-color: #000000;
+            color: #ffffff;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Inter', sans-serif;
+            line-height: 1.6;
+            min-height: 100vh;
+            padding: 1rem;
+        }
+
+        .page-container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .intro-text {
+            margin-bottom: 3rem;
+            padding-right: 20%;
+        }
+
+        .intro-text h2 {
+            font-size: 1.8rem;
+            font-weight: 500;
+            margin-bottom: 0.75rem;
+            letter-spacing: -0.01em;
+        }
+
+        .intro-text p {
+            color: #b0b0b0;
+            font-size: 1rem;
+            line-height: 1.7;
+        }
+
+        .zodiac-selection {
+            margin-bottom: 2.5rem;
+        }
+
+        .zodiac-selection h3 {
+            font-size: 1.1rem;
+            font-weight: 500;
+            margin-bottom: 1.5rem;
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+            color: #888;
+        }
+
+        .zodiac-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+            gap: 1rem;
+        }
+
+        .zodiac-option {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 12px;
+            padding: 1.25rem 1rem;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+        }
+
+        .zodiac-option::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+        }
+
+        .zodiac-option:hover {
+            background: rgba(255, 255, 255, 0.1);
+            border-color: rgba(255, 255, 255, 0.2);
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.4);
+        }
+
+        .zodiac-option.selected {
+            background: rgba(255, 255, 255, 0.12);
+            border-color: rgba(255, 255, 255, 0.4);
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.5);
+        }
+
+        .zodiac-icon {
+            width: 40px;
+            height: 40px;
+            margin-bottom: 0.75rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #ffffff;
+            font-size: 1.5rem;
+        }
+
+        .zodiac-icon svg {
+            width: 100%;
+            height: 100%;
+        }
+
+        .zodiac-name {
+            font-size: 1rem;
+            font-weight: 500;
+            color: #ffffff;
+            margin-bottom: 0.25rem;
+        }
+
+        .zodiac-dates {
+            font-size: 0.85rem;
+            color: #999;
+            font-weight: 400;
+        }
+
+        .today-display {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 12px;
+            padding: 1rem 1.5rem;
+            margin-bottom: 2rem;
+            max-width: 320px;
+        }
+
+        .today-display .date-label {
+            font-size: 0.85rem;
+            color: #888;
+            margin-bottom: 0.25rem;
+            letter-spacing: 0.5px;
+        }
+
+        .today-display .date-value {
+            font-size: 1.1rem;
+            font-weight: 500;
+            color: #ffffff;
+        }
+
+        .selection-required {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            padding: 1rem 1.5rem;
+            color: #888;
+            margin: 1rem 0;
+            font-weight: 500;
+            display: none;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .selection-required i {
+            color: #aaa;
+        }
+
+        .spring-wrapper {
+            margin: 2.5rem 0 3rem;
+        }
+
+        #generate-btn {
+            display: inline-block;
+            cursor: pointer;
+            padding: 1rem 3rem;
+            font-size: 1rem;
+            font-weight: 500;
+            color: #000000;
+            background: #ffffff;
+            border: none;
+            border-radius: 12px;
+            position: relative;
+            overflow: hidden;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            letter-spacing: 0.5px;
+        }
+
+        #generate-btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(0, 0, 0, 0.1), transparent);
+            transition: left 0.7s ease;
+        }
+
+        #generate-btn:hover::before {
+            left: 100%;
+        }
+
+        #generate-btn:hover {
+            background: #f5f5f5;
+            transform: translateY(-2px);
+            box-shadow: 0 10px 30px rgba(255, 255, 255, 0.15);
+        }
+
+        #generate-btn:active {
+            transform: translateY(0);
+            background: #e0e0e0;
+        }
+
+        #generate-btn:disabled {
+            background: #333;
+            color: #666;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        #generate-btn:disabled:hover::before {
+            left: -100%;
+        }
+
+        .loading {
+            display: none;
+            text-align: left;
+            margin: 3rem 0;
+        }
+
+        .loading-content {
+            display: flex;
+            align-items: center;
+            gap: 1.5rem;
+        }
+
+        .loading-spinner {
+            border: 2px solid rgba(255, 255, 255, 0.1);
+            border-radius: 50%;
+            border-top: 2px solid #ffffff;
+            width: 30px;
+            height: 30px;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% {
+                transform: rotate(0deg);
+            }
+
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+
+        .loading p {
+            color: #aaa;
+            font-size: 1rem;
+        }
+
+        .error-message {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            padding: 2rem;
+            margin: 2rem 0;
+            text-align: left;
+            display: none;
+        }
+
+        .error-message i {
+            font-size: 1.5rem;
+            margin-bottom: 1rem;
+            color: #888;
+        }
+
+        .error-message h3 {
+            font-size: 1.2rem;
+            font-weight: 500;
+            margin-bottom: 0.75rem;
+            color: #ffffff;
+        }
+
+        .error-message p {
+            color: #aaa;
+            line-height: 1.6;
+        }
+
+        #horoscope-result {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 16px;
+            padding: 2.5rem;
+            margin: 3rem 0;
+            display: none;
+            position: relative;
+            overflow: hidden;
+        }
+
+        #horoscope-result::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.4), transparent);
+        }
+
+        .result-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 2rem;
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+
+        .zodiac-result-name {
+            font-size: 1.5rem;
+            font-weight: 500;
+            color: #ffffff;
+            letter-spacing: -0.01em;
+        }
+
+        .horoscope-date {
+            color: #888;
+            font-size: 0.95rem;
+            font-weight: 400;
+        }
+
+        .horoscope-text {
+            font-size: 1.1rem;
+            line-height: 1.8;
+            color: #d0d0d0;
+            font-weight: 400;
+        }
+
+        .horoscope-text::first-letter {
+            font-size: 1.8rem;
+            font-weight: 500;
+            float: left;
+            line-height: 1;
+            margin-right: 0.5rem;
+            margin-top: 0.25rem;
+            color: #ffffff;
+        }
+
+        .zodiac-dates {
+            font-size: 0.8rem;
+            opacity: 0.7;
+        }
+
+        @media (max-width: 768px) {
+            body {
+                padding: 1rem;
+            }
+
+            .intro-text {
+                padding-right: 0;
+                margin-bottom: 2rem;
+            }
+
+            .intro-text h2 {
+                font-size: 1.5rem;
+            }
+
+            .zodiac-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .zodiac-option {
+                padding: 1rem;
+            }
+
+            #horoscope-result {
+                padding: 1.5rem;
+            }
+
+            .horoscope-text {
+                font-size: 1rem;
+            }
+
+            #generate-btn {
+                width: 100%;
+                text-align: center;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .zodiac-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .today-display {
+                max-width: 100%;
+            }
+
+            .result-header {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        .fade-in {
+            animation: fadeIn 0.5s ease-out;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="page-container">
+        <div class="intro-text">
+            <h2>Daily Horoscope</h2>
+            <p>Select your zodiac sign to discover what the stars have in store for you today. Your personalized reading
+                will provide insights into opportunities, challenges, and cosmic influences affecting your day.</p>
+        </div>
+
+        <div class="zodiac-selection">
+            <h3>Select Your Sign</h3>
+            <div class="zodiac-grid" id="zodiac-grid">
+            </div>
+            <div class="selection-required" id="selection-required">
+                <i class="fas fa-exclamation-circle"></i> Please select a zodiac sign to continue
+            </div>
+        </div>
+
+        <div class="today-display">
+            <div class="date-label">Today's Date</div>
+            <div class="date-value" id="today-date">Loading...</div>
+        </div>
+
+        <div class="spring-wrapper">
+            <button id="generate-btn" disabled>Get Today's Horoscope</button>
+        </div>
+
+        <div class="loading" id="loading">
+            <div class="loading-content">
+                <div class="loading-spinner"></div>
+                <p>Consulting the stars...</p>
+            </div>
+        </div>
+
+        <div class="error-message" id="error-message">
+            <i class="fas fa-exclamation-triangle"></i>
+            <h3>Something went wrong</h3>
+            <p id="error-text">We couldn't retrieve your horoscope. Please try again later.</p>
+        </div>
+
+        <div id="horoscope-result">
+            <div class="result-header">
+                <h2 class="zodiac-result-name" id="result-zodiac-name">Aries</h2>
+                <div class="horoscope-date" id="result-date">Today</div>
+            </div>
+            <div class="horoscope-text" id="horoscope-text">
+                Your horoscope will appear here after you select a sign and click the button.
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const zodiacSigns = [
+            { name: "Aries", value: "aries", icon: "fa-fire", dates: "Mar 21 - Apr 19" },
+            { name: "Taurus", value: "taurus", icon: "fa-leaf", dates: "Apr 20 - May 20" },
+            { name: "Gemini", value: "gemini", icon: "fa-gem", dates: "May 21 - Jun 20" },
+            { name: "Cancer", value: "cancer", icon: "fa-water", dates: "Jun 21 - Jul 22" },
+            { name: "Leo", value: "leo", icon: "fa-sun", dates: "Jul 23 - Aug 22" },
+            { name: "Virgo", value: "virgo", icon: "fa-star", dates: "Aug 23 - Sep 22" },
+            { name: "Libra", value: "libra", icon: "fa-balance-scale", dates: "Sep 23 - Oct 22" },
+            { name: "Scorpio", value: "scorpio", icon: "fa-moon", dates: "Oct 23 - Nov 21" },
+            { name: "Sagittarius", value: "sagittarius", icon: "fa-arrow-up", dates: "Nov 22 - Dec 21" },
+            { name: "Capricorn", value: "capricorn", icon: "fa-mountain", dates: "Dec 22 - Jan 19" },
+            { name: "Aquarius", value: "aquarius", icon: "fa-wind", dates: "Jan 20 - Feb 18" },
+            { name: "Pisces", value: "pisces", icon: "fa-fish", dates: "Feb 19 - Mar 20" }
+        ];
+
+        const zodiacGrid = document.getElementById("zodiac-grid");
+        const generateBtn = document.getElementById("generate-btn");
+        const horoscopeResult = document.getElementById("horoscope-result");
+        const loadingIndicator = document.getElementById("loading");
+        const errorMessage = document.getElementById("error-message");
+        const todayDateDisplay = document.getElementById("today-date");
+        const selectionRequired = document.getElementById("selection-required");
+        const resultZodiacName = document.getElementById("result-zodiac-name");
+        const resultDate = document.getElementById("result-date");
+        const horoscopeText = document.getElementById("horoscope-text");
+        const errorText = document.getElementById("error-text");
+
+        let selectedZodiac = null;
+
+        function initApp() {
+            const today = new Date();
+            const formattedDate = today.toLocaleDateString("en-US", {
+                weekday: "long",
+                month: "long",
+                day: "numeric",
+                year: "numeric"
+            });
+            todayDateDisplay.textContent = formattedDate;
+
+            zodiacSigns.forEach((sign) => {
+                const zodiacOption = document.createElement("div");
+                zodiacOption.className = "zodiac-option";
+                zodiacOption.dataset.value = sign.value;
+
+                zodiacOption.innerHTML = `
+          <div class="zodiac-icon">
+            <i class="fas ${sign.icon}"></i>
+          </div>
+          <div class="zodiac-name">${sign.name}</div>
+          <div class="zodiac-dates">${sign.dates}</div>
+        `;
+
+                zodiacOption.addEventListener("click", () => selectZodiac(sign, zodiacOption));
+                zodiacGrid.appendChild(zodiacOption);
+            });
+
+            generateBtn.addEventListener("click", fetchHoroscope);
+        }
+
+        function selectZodiac(sign, element) {
+            document.querySelectorAll(".zodiac-option").forEach((opt) => {
+                opt.classList.remove("selected");
+            });
+
+            element.classList.add("selected");
+
+            selectedZodiac = sign;
+
+            generateBtn.disabled = false;
+
+            selectionRequired.style.display = "none";
+        }
+
+        async function fetchHoroscope() {
+            if (!selectedZodiac) {
+                selectionRequired.style.display = "flex";
+                selectionRequired.scrollIntoView({ behavior: "smooth", block: "center" });
+                return;
+            }
+
+            loadingIndicator.style.display = "block";
+            horoscopeResult.style.display = "none";
+            errorMessage.style.display = "none";
+            generateBtn.disabled = true;
+
+            try {
+                const proxyUrl = "https://corsproxy.io/?";
+                const targetUrl = `https://horoscope-app-api.vercel.app/api/v1/get-horoscope/daily?sign=${selectedZodiac.value}&day=today`;
+                const apiUrl = proxyUrl + encodeURIComponent(targetUrl);
+
+                const response = await fetch(apiUrl);
+
+                if (!response.ok) {
+                    throw new Error(`API returned ${response.status}: ${response.statusText}`);
+                }
+
+                const data = await response.json();
+
+                displayHoroscope(data);
+            } catch (error) {
+                console.error("Error fetching horoscope:", error);
+                showSampleHoroscope();
+            } finally {
+                loadingIndicator.style.display = "none";
+                generateBtn.disabled = false;
+            }
+        }
+
+        function displayHoroscope(data) {
+            resultZodiacName.textContent = selectedZodiac.name;
+
+            const today = new Date();
+            resultDate.textContent = today.toLocaleDateString("en-US", {
+                month: "long",
+                day: "numeric",
+                year: "numeric"
+            });
+
+            if (data && data.data && data.data.horoscope_data) {
+                horoscopeText.textContent = data.data.horoscope_data;
+            } else {
+                showSampleHoroscope();
+                return;
+            }
+
+            horoscopeResult.style.display = "block";
+            horoscopeResult.classList.add("fade-in");
+
+            horoscopeResult.scrollIntoView({ behavior: "smooth", block: "nearest" });
+        }
+
+        function showSampleHoroscope() {
+            resultZodiacName.textContent = selectedZodiac.name;
+
+            const today = new Date();
+            resultDate.textContent = today.toLocaleDateString("en-US", {
+                month: "long",
+                day: "numeric",
+                year: "numeric"
+            });
+
+            const sampleHoroscopes = {
+                aries: "Today, the cosmic energy aligns with your ambitious nature. You'll find yourself with extra motivation to tackle challenging projects. An unexpected opportunity may arise in your professional life—be ready to seize it. Your natural leadership abilities will shine in group settings.",
+                taurus: "The stars suggest a focus on personal relationships today. You may find deeper connections with loved ones or form new bonds with like-minded individuals. Financial matters require careful attention—avoid impulsive decisions. Your practical nature will guide you well.",
+                gemini: "Communication flows effortlessly today. Your ideas will be well-received in meetings or conversations. A chance encounter could lead to valuable networking opportunities. Balance your social energy with moments of reflection to process new information.",
+                cancer: "Emotional clarity emerges today. You'll have insights into personal matters that have been puzzling you. Home and family deserve your attention—small gestures can strengthen bonds. Trust your intuition when making decisions.",
+                leo: "Creative energy peaks today. Your unique perspective will be appreciated by others. Social invitations may come your way—embrace opportunities to connect. Remember to balance generosity with self-care.",
+                virgo: "Attention to detail serves you well today. Your analytical skills will help solve complex problems. Health and wellness routines yield positive results. An organized approach to tasks will maximize your productivity.",
+                libra: "Harmony in relationships takes center stage. Your diplomatic skills will resolve minor conflicts. Aesthetic pursuits bring satisfaction—consider creative expression. Balance your needs with those of others.",
+                scorpio: "Transformative energy surrounds you today. Let go of what no longer serves your growth. Your intensity can be channeled into productive projects. Deep conversations may reveal valuable insights.",
+                sagittarius: "Adventure calls—even in small ways. New perspectives emerge through learning or travel. Optimism will attract positive opportunities. Share your philosophical insights with others.",
+                capricorn: "Discipline and structure lead to success today. Long-term planning yields results. Your reputation for reliability opens doors professionally. Balance ambition with moments of relaxation.",
+                aquarius: "Innovative ideas flow freely today. Your unique perspective can solve problems others overlook. Community connections bring unexpected benefits. Embrace your individuality while collaborating.",
+                pisces: "Intuition guides you effectively today. Creative or spiritual pursuits bring fulfillment. Compassionate actions strengthen relationships. Dreams may contain meaningful messages—pay attention."
+            };
+
+            horoscopeText.textContent = sampleHoroscopes[selectedZodiac.value] ||
+                "The cosmic alignment today brings clarity and opportunity. Trust your instincts as you navigate decisions. Unexpected connections may lead to valuable insights. Balance action with reflection for optimal results.";
+
+            horoscopeResult.style.display = "block";
+            horoscopeResult.classList.add("fade-in");
+            horoscopeResult.scrollIntoView({ behavior: "smooth", block: "nearest" });
+        }
+
+        function showError(message) {
+            errorText.textContent = message;
+            errorMessage.style.display = "block";
+            errorMessage.classList.add("fade-in");
+
+            errorMessage.scrollIntoView({ behavior: "smooth", block: "nearest" });
+        }
+
+        document.addEventListener("DOMContentLoaded", initApp);
+    </script>
+</body>
+
+</html>
