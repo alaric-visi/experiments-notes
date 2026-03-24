@@ -1,12 +1,12 @@
 # ColorMind API Interface
 
 ## Overview
-This project is an interactive tool that leverages the Colormind API to generate harmonious, deep-learning-curated colour palettes. Presented in a refined dark mode UI, the application provides both AI-generated palettes and completely random colour combinations, tailored for integration into design systems and branding exercises.
+This project is a tool that uses the Colormind API to generate colour palettes based on its models, as well as providing completely random colour combinations. It is designed for testing and generating colours for external projects.
 
 ## Core Mechanisms
 
-### Data Fetching and Fallback Configuration
-The application makes asynchronous `POST` requests to the Colormind API to retrieve arrays of RGB sequences. It implements robust error handling: if the API request fails or is blocked by CORS/network issues, it automatically falls back to a gracefully predefined, aesthetically pleasing custom palette, ensuring the application remains functional.
+### Data Fetching and Fallbacks
+The application makes asynchronous `POST` requests to the Colormind API to retrieve arrays of RGB sequences. It implements error handling: if the API request fails or is blocked by network issues, it automatically falls back to a predefined local palette.
 
 ```javascript
 try {
@@ -27,8 +27,8 @@ try {
 }
 ```
 
-### Real-Time Colour Conversion
-The fetched JSON returns RGB arrays which must be converted on the fly to functional hex codes for styling and clipboard operations. A highly optimised bitwise operator function tackles this conversion seamlessly:
+### Colour Conversion
+The fetched JSON returns RGB arrays which must be converted to hex codes for display and clipboard operations. A bitwise operator function performs this conversion:
 
 ```javascript
 function rgbToHex(r, g, b) {
@@ -36,5 +36,5 @@ function rgbToHex(r, g, b) {
 }
 ```
 
-### Interactive DOM Manipulations
-A dynamic grid system injects `color-card` elements populated with the requested colours. Each element acts as a functional widget: clicking on any card instantly copies the hex code to the user's clipboard and triggers a brief notification pop-up. Cards apply staggered CSS transitons during their initial render, forming an appealing cascade animation.
+### DOM Manipulations
+A grid system injects `color-card` elements populated with the requested colours. Clicking on a card copies the hex code to the user's clipboard and displays a notification. Cards use CSS transitons during their initial render to sequence their appearance.

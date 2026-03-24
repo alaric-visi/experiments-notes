@@ -1,12 +1,12 @@
 # Binary Jazz API Interface
 
 ## Overview
-This project provides a sleek, modern interface for interacting with the Binary Jazz API to generate completely random, fictional musical genres. Styled with a dark, minimalist aesthetic, the application allows users to discover bespoke absurd genre names with a single click.
+This project provides an interface for interacting with the Binary Jazz API to generate random, fictional musical genres. The application allows users to discover new genre names with a single click.
 
 ## Core Mechanisms
 
 ### Asynchronous Data Fetching
-The application heavily relies on the Fetch API to asynchronously request genre data from the Binary Jazz external endpoint. Comprehensive error handling ensures that if the endpoint fails to return data, the user is presented with a clear fallback message rather than a broken interface.
+The application uses the Fetch API to asynchronously request genre data from the Binary Jazz external endpoint. Error handling is included so that if the endpoint fails to return data, the user is presented with a fallback message.
 
 ```javascript
 async function fetchGenre() {
@@ -26,8 +26,8 @@ async function fetchGenre() {
 }
 ```
 
-### Dynamic State and UI Feedback
-To enhance the user experience, the application provides immediate visual feedback. A dynamic status indicator pulses to reflect varying states (such as loading, successful retrieval, or error). Button states are managed concurrently to prevent multiple requests whilst a fetch is in progress.
+### State Feedback
+The application provides visual feedback on its current state. A status indicator updates to reflect whether the application is loading, has completed a request, or has encountered an error. Button states are managed to prevent concurrent requests whilst a fetch is in progress.
 
-### Accessibility and Interaction
-The interface captures standard keyboard events (`Enter` or `Space` on the focused button) ensuring fully accessible operability. CSS animations—specifically the `fade-in` transition—are triggered by managing DOM classes between subsequent API loads, providing smooth visual updates as the text swaps out.
+### Interaction
+The interface accepts standard keyboard events (`Enter` or `Space` on the focused button) for operability. CSS transitions are used between subsequent API loads as the text updates.

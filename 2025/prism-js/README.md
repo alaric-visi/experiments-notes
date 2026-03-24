@@ -1,12 +1,12 @@
 # Prism.js Live Theming
 
 ## Overview
-This project serves as a technical showcase for integrating Prism.js syntax highlighting with dynamic, live-theme switching. Aimed at documentation hubs or code-centric blogs, the interface enables users to instantly toggle between distinct syntax themes (such as Default, Okaidia, Dark) and functional plugins (Line Numbers) via an interactive dropdown.
+This project demonstrates dynamic integration with Prism.js syntax highlighting. It allows users to switch between different syntax themes (such as Default, Okaidia, and Dark) as well as functional plugins (such as Line Numbers) using a dropdown menu without reloading the page.
 
 ## Core Mechanisms
 
 ### Dynamic Resource Loading
-To swap themes efficiently without reloading the page, the application uses a bespoke JavaScript loading utility to inject and replace stylesheets and script tags sequentially. The project uses the CDN-hosted Prism.js assets to maintain a lightweight core.
+To swap themes, the application uses JavaScript to inject and replace stylesheets and script tags as needed. The project uses CDN-hosted Prism.js assets rather than local files.
 
 ```javascript
 function loadBundle(bundleId) {
@@ -22,7 +22,7 @@ function loadBundle(bundleId) {
 ```
 
 ### Plug-in Injection Pipeline
-The system can comfortably load complex dependent structures, such as the `line-numbers` plugin. The loader ensures that the overarching Prism core executes before attempting to inject child plugins, avoiding race conditions and undefined references during syntax parsing.
+The script loads dependencies exactly when required, such as the `line-numbers` plugin. The loader ensures that the Prism core executes before injecting child plugins to prevent undefined references during syntax parsing.
 
-### Aesthetics and Presentation
-To present the technical mechanism elegantly, the tool sits atop a glassy dark-mode backdrop featuring radial gradients and a subtle static grid overlay. Code blocks utilise scale and box-shadow hover states (`transform: translateY(-2px)`) alongside the "Fira Code" monospace font to create a satisfying reading experience.
+### Styling
+The application is styled with a dark background and a static grid overlay. Code blocks apply `transform` for hover states alongside the "Fira Code" monospace font for the rendered text.

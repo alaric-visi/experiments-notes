@@ -1,15 +1,15 @@
 # Architectural Wireframes
 
 ## Overview
-This project presents an interactive monochrome design exploration interface, showcasing architectural wireframe models built with Three.js. The application displays three distinct house styles (Modern Split-Level, Victorian Townhouse, and Contemporary Multi-Level) rendered strictly through procedural wireframe geometries, offering an elegant abstract aesthetic.
+This project presents an interactive interface for viewing architectural wireframe models built with Three.js. The application displays three distinct house styles (Modern Split-Level, Victorian Townhouse, and Contemporary Multi-Level) rendered through procedural wireframe geometries.
 
 ## Core Mechanisms
 
 ### Three.js Scene Configuration
-The core of the project relies on a customised Three.js scene featuring ambient and directional lighting to ensure the white wireframe elements stand out clearly against the dark background. The camera employs a spherical rotation system that automatically orbits the selected structure, which users can pause or reset.
+The project is built around a Three.js scene featuring ambient and directional lighting to ensure the white wireframe elements stand out against the dark background. The camera employs a spherical rotation system that automatically orbits the selected structure, which users can pause or reset.
 
 ### Procedural Geometry Construction
-Instead of loading external 3D assets, each house is procedurally generated using primitive geometries such as boxes and custom buffer geometries for complex shapes like roofs and skylights. `THREE.EdgesGeometry` and `THREE.LineSegments` are used to extract and render only the structural edges of the forms:
+Instead of loading external 3D assets, each house is generated using primitive geometries such as boxes, as well as custom buffer geometries for shapes like roofs and skylights. `THREE.EdgesGeometry` and `THREE.LineSegments` are used to extract and render the structural edges:
 
 ```javascript
 function createEdges(geometry, color = 0xffffff) {
@@ -27,5 +27,5 @@ function createEdges(geometry, color = 0xffffff) {
 }
 ```
 
-### Dynamic State Management
-The user interface allows seamless toggling between the three architectural designs via a bespoke control panel. Upon selection, the visibility array is updated instantly, and CSS animations provide visual feedback on the active model choice, creating a robust, fluid browsing experience.
+### State Management
+The user interface provides a control panel for switching between the three architectural designs. Upon selection, the visibility array is updated instantly to display the active model choice.
