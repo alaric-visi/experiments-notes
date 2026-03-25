@@ -9,11 +9,9 @@ A collection of browser-based experiments and utilities produced during 2025. Ea
 | Directory | Description |
 |-----------|-------------|
 | [`apache-game`](./apache-game/) | Vertically-scrolling canyon-flight game with a phosphor-green CRT aesthetic, procedural canyon generation via superimposed sine waves, three enemy types, and a homing missile system |
-| [`asteroids-balls`](./asteroids-balls/) | Canvas-based physics simulation where bouncing balls collide with destructible asteroids |
 | [`asteroids-game`](./asteroids-game/) | Multi-level Asteroids implementation with per-level asteroid silhouette variants, fragmentation trees, and a dual-canvas starfield background |
-| [`maze`](./maze/) | Interactive maze rendered on Canvas, solved using an A* pathfinding algorithm with animated traversal |
-| [`psycho-killer-chicken-dinner`](./psycho-killer-chicken-dinner/) | Canvas game |
 | [`space-invaders`](./space-invaders/) | Canvas implementation of the Space Invaders arcade game with wave-based enemy descents |
+| [`ghost-of-molly-roger`](./ghost-of-molly-roger/) | Canvas-based animated scene |
 | [`tokyo-runner`](./tokyo-runner/) | Cyberpunk-themed text adventure set in a near-future Tokyo |
 
 ---
@@ -41,9 +39,11 @@ A collection of browser-based experiments and utilities produced during 2025. Ea
 | Directory | Description |
 |-----------|-------------|
 | [`after-truth-comes-advertising`](./after-truth-comes-advertising/) | Generative text and visual composition exploring advertising language |
+| [`asteroids-balls`](./asteroids-balls/) | Canvas-based physics simulation where bouncing balls collide with destructible asteroids |
 | [`constants`](./constants/) | Canvas visualisation of mathematical constants rendered as geometric patterns |
 | [`geometries`](./geometries/) | Eight WebGL geometry experiments: two Glome projections, Klein bottle, Lemniscate of Bernoulli, two Quartic Plane Curves, and two Tesseract projections |
-| [`ghost-of-molly-roger`](./ghost-of-molly-roger/) | Canvas-based animated scene |
+| [`maze`](./maze/) | Interactive maze rendered on Canvas, solved using an A* pathfinding algorithm with animated traversal |
+| [`psycho-killer-chicken-dinner`](./psycho-killer-chicken-dinner/) | Canvas game |
 | [`leo`](./leo/) | EchoLogix Terminal — a styled command-line interface for the EchoLogix narrative project |
 | [`mosaic`](./mosaic/) | Canvas mosaic tile generator producing randomised colour grids |
 | [`pocket-tiles`](./pocket-tiles/) | Procedurally-arranged tile grid with configurable colour schemes |
