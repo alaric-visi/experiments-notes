@@ -44,13 +44,10 @@ A collection of browser-based experiments and utilities produced during 2025. Ea
 | [`geometries`](./geometries/) | Eight WebGL geometry experiments: two Glome projections, Klein bottle, Lemniscate of Bernoulli, two Quartic Plane Curves, and two Tesseract projections |
 | [`maze`](./maze/) | Interactive maze rendered on Canvas, solved using an A* pathfinding algorithm with animated traversal |
 | [`psycho-killer-chicken-dinner`](./psycho-killer-chicken-dinner/) | Canvas game |
-| [`leo`](./leo/) | EchoLogix Terminal — a styled command-line interface for the EchoLogix narrative project |
 | [`mosaic`](./mosaic/) | Canvas mosaic tile generator producing randomised colour grids |
 | [`pocket-tiles`](./pocket-tiles/) | Procedurally-arranged tile grid with configurable colour schemes |
-| [`pulse`](./pulse/) | Capital and Subjectivity Terminal — a generative text interface producing critical-theory-inflected output |
 | [`seven-sins`](./seven-sins/) | Visual representation of the seven deadly sins |
 | [`sine-wave-button`](./sine-wave-button/) | UI component experiment in which a button's border traces an animated sine wave |
-| [`strudel-loop`](./strudel-loop/) | Algorithmic music sequencer using the Strudel live coding environment |
 | [`webpage-background`](./webpage-background/) | Canvas fluid-animation background using particle advection, intended for embedding in other pages |
 
 ---
@@ -64,7 +61,6 @@ A collection of browser-based experiments and utilities produced during 2025. Ea
 | [`daily-horoscope`](./daily-horoscope/) | Retrieves and displays a daily horoscope via a public horoscope API |
 | [`hostio-api`](./hostio-api/) | Domain intelligence dashboard querying the Host.io `/api/full/` endpoint, displaying web metadata, DNS records, IP information, and related domains across categorised cards |
 | [`html-to-markdown-jina-ai-api`](./html-to-markdown-jina-ai-api/) | Fetches a remote URL via the Jina AI Reader API and returns its content as Markdown, with a wave-animated canvas background |
-| [`philosphers-on-linkedIn`](./philosphers-on-linkedIn/) | Satirical generator producing LinkedIn-style posts written in the voice of historical philosophers |
 | [`postcodes-io-api`](./postcodes-io-api/) | Queries the Postcodes.io API to retrieve geographic and administrative data for UK postcodes |
 | [`reddit-json-extractor`](./reddit-json-extractor/) | Appends `.json` to Reddit URLs and parses the response to extract and display post and comment data |
 | [`robohash-api`](./robohash-api/) | Generates unique robot avatars via the RoboHash API from arbitrary text input |
@@ -93,3 +89,12 @@ A collection of browser-based experiments and utilities produced during 2025. Ea
 |-----------|-------------|
 | [`colour-palette-generator`](./colour-palette-generator/) | Generates harmonious colour palettes using HSL arithmetic and renders exportable CSS variable sets |
 | [`echologix`](./echologix/) | Multi-page narrative project comprising a main story (`fragments-of-finn.html`), a video archive (`videos.html`), and an editorial layer (`stories.html`) |
+| [`philosphers-on-linkedIn`](./philosphers-on-linkedIn/) | Satirical generator producing LinkedIn-style posts written in the voice of historical philosophers |
+| [`pulse`](./pulse/) | Capital and Subjectivity Terminal — a generative text interface producing critical-theory-inflected output |
+| [`leo`](./leo/) | EchoLogix Terminal — a styled command-line interface for the EchoLogix narrative project |
+
+### Audio
+
+| Directory | Description |
+|-----------|-------------|
+| [`strudel-loop`](./strudel-loop/) | Algorithmic music sequencer using the Strudel live coding environment |
