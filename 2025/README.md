@@ -80,6 +80,7 @@ A collection of browser-based experiments and utilities produced during 2025. Ea
 | [`prism-js`](./prism-js/) | Code syntax highlighting demonstration using the Prism.js library across multiple language grammars |
 | [`semaphore`](./semaphore/) | React 18 application that converts text into animated railway semaphore flag diagrams rendered as SVG |
 | [`url-extractor`](./url-extractor/) | Extracts all URLs from pasted text or HTML source using regular expression matching |
+| [`colour-palette-generator`](./colour-palette-generator/) | Generates harmonious colour palettes using HSL arithmetic and renders exportable CSS variable sets |
 
 ---
 
@@ -87,7 +88,6 @@ A collection of browser-based experiments and utilities produced during 2025. Ea
 
 | Directory | Description |
 |-----------|-------------|
-| [`colour-palette-generator`](./colour-palette-generator/) | Generates harmonious colour palettes using HSL arithmetic and renders exportable CSS variable sets |
 | [`echologix`](./echologix/) | Multi-page narrative project comprising a main story (`fragments-of-finn.html`), a video archive (`videos.html`), and an editorial layer (`stories.html`) |
 | [`philosphers-on-linkedIn`](./philosphers-on-linkedIn/) | Satirical generator producing LinkedIn-style posts written in the voice of historical philosophers |
 | [`pulse`](./pulse/) | Capital and Subjectivity Terminal — a generative text interface producing critical-theory-inflected output |
