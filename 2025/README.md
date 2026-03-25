@@ -93,5 +93,3 @@ A collection of browser-based experiments and utilities produced during 2025. Ea
 |-----------|-------------|
 | [`colour-palette-generator`](./colour-palette-generator/) | Generates harmonious colour palettes using HSL arithmetic and renders exportable CSS variable sets |
 | [`echologix`](./echologix/) | Multi-page narrative project comprising a main story (`fragments-of-finn.html`), a video archive (`videos.html`), and an editorial layer (`stories.html`) |
-| [`html-entity-escaper`](./html-entity-escaper/) | See Text and Data Tools above |
-| [`phases-1-through-4`](./phases-1-through-4/) | See Three.js Visualisations above |
