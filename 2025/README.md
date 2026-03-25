@@ -10,9 +10,9 @@ A collection of browser-based experiments and utilities produced during 2025. Ea
 |-----------|-------------|
 | [`apache-game`](./apache-game/) | Vertically-scrolling canyon-flight game with a phosphor-green CRT aesthetic, procedural canyon generation via superimposed sine waves, three enemy types, and a homing missile system |
 | [`asteroids-game`](./asteroids-game/) | Multi-level Asteroids implementation with per-level asteroid silhouette variants, fragmentation trees, and a dual-canvas starfield background |
-| [`space-invaders`](./space-invaders/) | Canvas implementation of the Space Invaders arcade game with wave-based enemy descents |
-| [`ghost-of-molly-roger`](./ghost-of-molly-roger/) | Canvas-based animated scene |
-| [`tokyo-runner`](./tokyo-runner/) | Cyberpunk-themed text adventure set in a near-future Tokyo |
+| [`space-invaders`](./space-invaders/) | Canvas implementation of the Space Invaders arcade game with wave-based enemy descents and a glitchy, ‘computer error’ based aesthetic |
+| [`ghost-of-molly-roger`](./ghost-of-molly-roger/) | A text adventure, set in Victorian England (SCP Universe) built as a single HTML file and driven by a flat JavaScript object, with relationship tracking and a persistent save mechanism |
+| [`tokyo-runner`](./tokyo-runner/) | A text-based cyberpunk adventure game, presenting a branching narrative where the user navigates through various scenarios, managing resources such as time and credits to achieve multiple distinct endings |
 
 ---
 
