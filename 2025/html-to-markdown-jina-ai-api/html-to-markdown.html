@@ -1,0 +1,685 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, viewport-fit=cover">
+    <title>Jina HTML to Markdown Converter</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+            margin: 0;
+            padding: 0;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            min-height: 100vh;
+            position: relative;
+            overflow-x: hidden;
+            -webkit-text-size-adjust: 100%;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: #000000;
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #ffffff;
+            border-radius: 4px;
+            border: 1px solid rgba(0, 0, 0, 0.1);
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: #f0f0f0;
+            border: 1px solid rgba(0, 0, 0, 0.2);
+        }
+
+        ::-webkit-scrollbar-corner {
+            background: #000000;
+        }
+
+        * {
+            scrollbar-width: thin;
+            scrollbar-color: #ffffff #000000;
+        }
+
+        #waveCanvas {
+            display: block;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            z-index: -1;
+            pointer-events: none;
+        }
+
+        .app-container {
+            position: relative;
+            z-index: 1;
+            max-width: 900px;
+            margin: 1rem auto;
+            padding: 0 1rem;
+            color: #e2e8f0;
+            line-height: 1.5;
+            text-align: left;
+            min-height: 100vh;
+        }
+
+        .card {
+            background: rgba(17, 17, 17, 0.85);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border-radius: 12px;
+            padding: 1.5rem;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+            margin-bottom: 1.5rem;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            width: 100%;
+        }
+
+        .input-group {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+            margin-bottom: 1rem;
+            width: 100%;
+        }
+
+        input {
+            width: 100%;
+            padding: 1rem;
+            border: 2px solid rgba(51, 51, 51, 0.5);
+            border-radius: 8px;
+            font-size: 1rem;
+            transition: all 0.2s;
+            background: rgba(26, 26, 26, 0.8);
+            color: #e2e8f0;
+            min-height: 56px;
+            font-size: 16px;
+        }
+
+        input:focus {
+            outline: none;
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.3);
+        }
+
+        button {
+            background: #3b82f6;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            padding: 1rem 1.5rem;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            backdrop-filter: blur(5px);
+            min-height: 56px;
+            touch-action: manipulation;
+            width: 100%;
+        }
+
+        button:hover,
+        button:active {
+            background: #2563eb;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+        }
+
+        button:active {
+            transform: translateY(0);
+        }
+
+        button:disabled {
+            background: rgba(75, 85, 99, 0.7);
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        button#copyBtn {
+            background: #10b981;
+        }
+
+        button#copyBtn:hover,
+        button#copyBtn:active {
+            background: #059669;
+        }
+
+        button#copyBtn.copied {
+            background: #059669;
+            animation: copyPulse 0.5s ease;
+        }
+
+        .spinner {
+            display: inline-block;
+            width: 1.25rem;
+            height: 1.25rem;
+            border: 3px solid rgba(255, 255, 255, 0.3);
+            border-top-color: #3b82f6;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+            margin-right: 0.5rem;
+            vertical-align: middle;
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        @keyframes copyPulse {
+
+            0%,
+            100% {
+                transform: scale(1);
+            }
+
+            50% {
+                transform: scale(0.95);
+            }
+        }
+
+        .output-container {
+            background: rgba(10, 10, 10, 0.8);
+            backdrop-filter: blur(5px);
+            border-radius: 8px;
+            padding: 1.25rem;
+            margin-top: 1.25rem;
+            border: 1px solid rgba(34, 34, 34, 0.5);
+            position: relative;
+        }
+
+        #output {
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            overflow-wrap: break-word;
+            font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+            font-size: 0.9rem;
+            line-height: 1.6;
+            max-height: 500px;
+            overflow-y: auto;
+            color: #d1d5db;
+            padding-right: 4px;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        .output-header {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+            align-items: stretch;
+            justify-content: space-between;
+            margin-bottom: 1rem;
+        }
+
+        .output-header h3 {
+            color: #f8fafc;
+            margin-bottom: 0;
+            font-size: 1.25rem;
+            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+        }
+
+        .error {
+            background: rgba(31, 31, 31, 0.9);
+            color: #f87171;
+            border-left: 4px solid #dc2626;
+            padding: 1rem;
+            border-radius: 4px;
+            margin-top: 1rem;
+            backdrop-filter: blur(5px);
+            word-break: break-word;
+        }
+
+        #tempTextarea {
+            position: fixed;
+            left: -9999px;
+            top: 0;
+            opacity: 0;
+        }
+
+        ::placeholder {
+            color: rgba(107, 114, 128, 0.7);
+        }
+
+        #output::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        #output::-webkit-scrollbar-track {
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 3px;
+            margin: 4px 0;
+        }
+
+        #output::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.9);
+            border-radius: 3px;
+            border: none;
+        }
+
+        #output::-webkit-scrollbar-thumb:hover {
+            background: rgba(255, 255, 255, 1);
+        }
+
+        #output {
+            scrollbar-width: thin;
+            scrollbar-color: rgba(255, 255, 255, 0.9) rgba(0, 0, 0, 0.3);
+        }
+
+        @media (min-width: 640px) {
+            .app-container {
+                margin: 2rem auto;
+                padding: 0 1.5rem;
+            }
+
+            .card {
+                padding: 2rem;
+            }
+
+            .input-group {
+                flex-direction: row;
+                gap: 0.5rem;
+            }
+
+            input {
+                min-height: auto;
+                padding: 0.75rem 1rem;
+                width: auto;
+                flex: 1;
+            }
+
+            button {
+                min-height: auto;
+                padding: 0.75rem 1.5rem;
+                width: auto;
+                white-space: nowrap;
+            }
+
+            .output-header {
+                flex-direction: row;
+                align-items: center;
+                gap: 1rem;
+            }
+        }
+
+        @media (max-width: 639px) {
+            .app-container {
+                margin: 0.5rem auto;
+                padding: 0 0.75rem;
+            }
+
+            .card {
+                padding: 1rem;
+                margin-bottom: 1rem;
+            }
+
+            #output {
+                max-height: 400px;
+                font-size: 0.85rem;
+            }
+
+            .output-container {
+                padding: 1rem;
+                margin-top: 1rem;
+            }
+
+            button {
+                font-size: 0.95rem;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .app-container {
+                padding: 0 0.5rem;
+            }
+
+            .card {
+                padding: 0.75rem;
+                border-radius: 8px;
+            }
+
+            #output {
+                max-height: 350px;
+                font-size: 0.8rem;
+            }
+
+            input,
+            button {
+                font-size: 15px;
+            }
+        }
+
+        @supports (padding: max(0px)) {
+            .app-container {
+                padding-left: max(0.5rem, env(safe-area-inset-left));
+                padding-right: max(0.5rem, env(safe-area-inset-right));
+            }
+
+            body {
+                padding-top: env(safe-area-inset-top);
+                padding-bottom: env(safe-area-inset-bottom);
+            }
+        }
+
+        input,
+        button,
+        #copyBtn {
+            min-height: 44px;
+        }
+
+        #output,
+        .error,
+        input {
+            overflow-wrap: break-word;
+            word-break: break-word;
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            * {
+                animation-duration: 0.01ms !important;
+                animation-iteration-count: 1 !important;
+                transition-duration: 0.01ms !important;
+            }
+
+            .spinner {
+                animation: none;
+                border: 2px solid #3b82f6;
+                border-right-color: transparent;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <canvas id="waveCanvas"></canvas>
+
+    <div class="app-container">
+        <div class="card">
+            <div class="input-group">
+                <input type="url" id="urlInput" placeholder="https://example.com" required>
+                <button id="convertBtn">Convert to Markdown</button>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="output-header">
+                <h3>Output</h3>
+                <button id="copyBtn" style="display: none;">Copy Markdown</button>
+            </div>
+            <div class="output-container">
+                <div id="output"></div>
+            </div>
+        </div>
+    </div>
+
+    <textarea id="tempTextarea" readonly></textarea>
+
+    <script>
+        const canvas = document.getElementById('waveCanvas');
+        const ctx = canvas.getContext('2d');
+
+        function resize() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        }
+        resize();
+
+        let resizeTimeout;
+        window.addEventListener('resize', () => {
+            clearTimeout(resizeTimeout);
+            resizeTimeout = setTimeout(resize, 250);
+        });
+
+        class Wave {
+            constructor(y, amplitude, frequency, speed, color, opacity) {
+                this.y = y;
+                this.amplitude = amplitude;
+                this.frequency = frequency;
+                this.speed = speed;
+                this.color = color;
+                this.opacity = opacity;
+                this.offset = Math.random() * Math.PI * 2;
+            }
+
+            draw(time) {
+                ctx.beginPath();
+                ctx.moveTo(0, canvas.height);
+
+                const step = window.innerWidth < 768 ? 10 : 5;
+
+                for (let x = 0; x <= canvas.width; x += step) {
+                    const waveY = this.y + Math.sin((x * this.frequency) + (time * this.speed) + this.offset) * this.amplitude;
+                    ctx.lineTo(x, waveY);
+                }
+
+                ctx.lineTo(canvas.width, canvas.height);
+                ctx.closePath();
+
+                const gradient = ctx.createRadialGradient(
+                    canvas.width / 2, this.y, 0,
+                    canvas.width / 2, this.y, canvas.width
+                );
+                gradient.addColorStop(0, this.color.replace(')', `, ${this.opacity})`).replace('rgb', 'rgba'));
+                gradient.addColorStop(1, this.color.replace(')', `, ${this.opacity * 0.3})`).replace('rgb', 'rgba'));
+
+                ctx.fillStyle = gradient;
+                ctx.fill();
+            }
+        }
+
+        const waves = [
+            new Wave(canvas.height * 0.6, 80, 0.003, 0.4, 'rgb(26, 77, 109)', 0.6),
+            new Wave(canvas.height * 0.65, 100, 0.002, 0.5, 'rgb(37, 99, 235)', 0.5),
+            new Wave(canvas.height * 0.75, 120, 0.0025, 0.36, 'rgb(220, 38, 38)', 0.4),
+            new Wave(canvas.height * 0.85, 90, 0.0035, 0.6, 'rgb(234, 88, 12)', 0.5)
+        ];
+
+        let time = 0;
+        let animationId;
+        let lastTime = 0;
+        const fps = 30;
+        const interval = 1000 / fps;
+
+        function animate(currentTime) {
+            if (currentTime - lastTime > interval) {
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+                const bgGradient = ctx.createLinearGradient(0, 0, canvas.width, canvas.height);
+                bgGradient.addColorStop(0, '#1a4d6d');
+                bgGradient.addColorStop(0.4, '#2563eb');
+                bgGradient.addColorStop(0.7, '#dc2626');
+                bgGradient.addColorStop(1, '#ea580c');
+                ctx.fillStyle = bgGradient;
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+                waves.forEach(wave => wave.draw(time));
+                time += 0.01;
+                lastTime = currentTime;
+            }
+
+            animationId = requestAnimationFrame(animate);
+        }
+
+        animate();
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const urlInput = document.getElementById('urlInput');
+            const convertBtn = document.getElementById('convertBtn');
+            const copyBtn = document.getElementById('copyBtn');
+            const outputDiv = document.getElementById('output');
+            const tempTextarea = document.getElementById('tempTextarea');
+            let currentMarkdown = '';
+
+            async function convertToMarkdown() {
+                const url = urlInput.value.trim();
+                if (!url) {
+                    showError('Please enter a valid URL.');
+                    return;
+                }
+
+                try {
+                    new URL(url);
+                } catch {
+                    showError('Invalid URL format. Please enter a full URL including http:// or https://.');
+                    return;
+                }
+
+                setLoading(true);
+                clearOutput();
+                hideCopyButton();
+
+                const apiUrl = `https://r.jina.ai/${encodeURIComponent(url)}`;
+
+                try {
+                    const fetchFn = window.proxyFetch || window.fetch;
+
+                    const response = await fetchFn(apiUrl, {
+                        method: 'GET',
+                        headers: {
+                            'Authorization': 'Bearer {{JINA_API_KEY}}',
+                            'X-Return-Format': 'markdown',
+                            'Accept': 'text/plain'
+                        }
+                    });
+
+                    if (!response.ok) {
+                        throw new Error(`API request failed: ${response.status} ${response.statusText}`);
+                    }
+
+                    currentMarkdown = await response.text();
+                    showMarkdown(currentMarkdown);
+                    showCopyButton();
+                } catch (error) {
+                    showError(error.message);
+                    hideCopyButton();
+                } finally {
+                    setLoading(false);
+                }
+            }
+
+            function copyToClipboard() {
+                if (!currentMarkdown) return;
+
+                try {
+                    if (navigator.clipboard && navigator.clipboard.writeText) {
+                        navigator.clipboard.writeText(currentMarkdown)
+                            .then(() => {
+                                showCopySuccess();
+                            })
+                            .catch(() => {
+                                fallbackCopyText();
+                            });
+                    } else {
+                        fallbackCopyText();
+                    }
+                } catch (error) {
+                    fallbackCopyText();
+                }
+            }
+
+            function fallbackCopyText() {
+                tempTextarea.value = currentMarkdown;
+                tempTextarea.style.display = 'block';
+                tempTextarea.select();
+                tempTextarea.setSelectionRange(0, 99999);
+
+                try {
+                    const successful = document.execCommand('copy');
+                    if (successful) {
+                        showCopySuccess();
+                    } else {
+                        showError('Failed to copy. Please select and copy the text manually.');
+                    }
+                } catch (err) {
+                    console.error('Fallback copy error:', err);
+                    showError('Failed to copy. Please select and copy the text manually.');
+                } finally {
+                    tempTextarea.style.display = 'none';
+                    tempTextarea.blur();
+                }
+            }
+
+            function showCopySuccess() {
+                const originalText = copyBtn.textContent;
+                copyBtn.textContent = 'Copied!';
+                copyBtn.classList.add('copied');
+
+                setTimeout(() => {
+                    copyBtn.textContent = originalText;
+                    copyBtn.classList.remove('copied');
+                }, 2000);
+            }
+
+            function setLoading(isLoading) {
+                convertBtn.disabled = isLoading;
+                convertBtn.innerHTML = isLoading
+                    ? '<span class="spinner"></span>Converting…'
+                    : 'Convert to Markdown';
+            }
+
+            function clearOutput() {
+                outputDiv.innerHTML = '';
+                outputDiv.className = '';
+            }
+
+            function showMarkdown(markdown) {
+                outputDiv.textContent = markdown || '(No content returned)';
+                outputDiv.className = '';
+            }
+
+            function showCopyButton() {
+                copyBtn.style.display = 'block';
+            }
+
+            function hideCopyButton() {
+                copyBtn.style.display = 'none';
+            }
+
+            function showError(message) {
+                outputDiv.innerHTML = `<div class="error"><strong>Error:</strong> ${escapeHtml(message)}</div>`;
+                outputDiv.className = '';
+            }
+
+            function escapeHtml(text) {
+                const div = document.createElement('div');
+                div.textContent = text;
+                return div.innerHTML;
+            }
+
+            convertBtn.addEventListener('click', convertToMarkdown);
+            copyBtn.addEventListener('click', copyToClipboard);
+
+            urlInput.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') convertToMarkdown();
+            });
+
+            document.querySelector('form')?.addEventListener('submit', (e) => {
+                e.preventDefault();
+                convertToMarkdown();
+            });
+
+            urlInput.value = 'https://example.com';
+
+            urlInput.addEventListener('focus', () => {
+                urlInput.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            });
+        });
+    </script>
+</body>
+
+</html>

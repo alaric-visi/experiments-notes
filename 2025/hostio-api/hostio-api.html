@@ -1,0 +1,1034 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Host.io API</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            background-color: #000000;
+            color: #ffffff;
+            min-height: 100vh;
+            overflow-x: hidden;
+            font-size: 14px;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        .container {
+            max-width: 1600px;
+            margin: 0 auto;
+            padding: 12px;
+        }
+
+        header {
+            background: linear-gradient(135deg, #000000 0%, #0a0a0a 100%);
+            border-bottom: 1px solid #1a1a1a;
+            padding: 10px 0;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+        }
+
+        .header-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+
+        .domain-input-container {
+            flex-grow: 1;
+            min-width: 0;
+        }
+
+        .input-group {
+            display: flex;
+            background-color: #111111;
+            border-radius: 8px;
+            overflow: hidden;
+            border: 1px solid #2a2a2a;
+        }
+
+        .input-group:focus-within {
+            border-color: #00d4aa;
+            box-shadow: 0 0 0 2px rgba(0, 212, 170, 0.2);
+        }
+
+        .input-group input {
+            flex-grow: 1;
+            background: transparent;
+            border: none;
+            padding: 12px 15px;
+            color: #ffffff;
+            font-size: 15px;
+            outline: none;
+            min-width: 0;
+        }
+
+        .input-group button {
+            background-color: #00d4aa;
+            color: #000000;
+            border: none;
+            padding: 0 16px;
+            font-weight: 600;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            white-space: nowrap;
+            flex-shrink: 0;
+        }
+
+        .input-group button:hover {
+            background-color: #00b894;
+        }
+
+        .input-group button:disabled {
+            background-color: #444444;
+            cursor: not-allowed;
+        }
+
+        .dashboard {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(min(100%, 350px), 1fr));
+            gap: 14px;
+            margin-top: 16px;
+        }
+
+        .card {
+            background-color: #111111;
+            border-radius: 10px;
+            border: 1px solid #222222;
+            overflow: hidden;
+        }
+
+        .card-header {
+            padding: 14px 16px;
+            border-bottom: 1px solid #222222;
+            background-color: rgba(0, 0, 0, 0.3);
+        }
+
+        .card-header h2 {
+            font-size: 15px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .card-header i {
+            color: #00d4aa;
+            font-size: 14px;
+        }
+
+        .card-content {
+            padding: 16px;
+        }
+
+        .data-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 10px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            flex-wrap: wrap;
+            gap: 4px;
+        }
+
+        .data-row:last-child {
+            border-bottom: none;
+        }
+
+        .data-label {
+            color: #aaaaaa;
+            font-weight: 500;
+            font-size: 13px;
+            flex-shrink: 0;
+        }
+
+        .data-value {
+            color: #ffffff;
+            font-weight: 400;
+            text-align: right;
+            max-width: 65%;
+            word-break: break-word;
+            font-size: 13px;
+            flex: 1;
+            min-width: 0;
+        }
+
+        .data-value a {
+            color: #00d4aa;
+            text-decoration: none;
+            word-break: break-all;
+        }
+
+        .data-value a:hover {
+            text-decoration: underline;
+        }
+
+        .list-item {
+            padding: 6px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            font-size: 13px;
+            word-break: break-word;
+        }
+
+        .list-item:last-child {
+            border-bottom: none;
+        }
+
+        .count-badge {
+            background-color: #00d4aa;
+            color: #000000;
+            padding: 3px 8px;
+            border-radius: 12px;
+            font-size: 11px;
+            font-weight: 600;
+            margin-left: 5px;
+            display: inline-block;
+            line-height: 1;
+        }
+
+        .loading {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 30px 12px;
+            text-align: center;
+        }
+
+        .spinner {
+            width: 28px;
+            height: 28px;
+            border: 3px solid rgba(0, 212, 170, 0.2);
+            border-top: 3px solid #00d4aa;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-bottom: 12px;
+        }
+
+        @keyframes spin {
+            0% {
+                transform: rotate(0deg);
+            }
+
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+
+        .error {
+            background-color: rgba(255, 118, 117, 0.1);
+            border-left: 3px solid #ff7675;
+            padding: 12px;
+            margin: 8px 0;
+            border-radius: 4px;
+            font-size: 13px;
+        }
+
+        .related-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(min(140px, 100%), 1fr));
+            gap: 10px;
+        }
+
+        .related-item {
+            background-color: rgba(0, 212, 170, 0.1);
+            border: 1px solid rgba(0, 212, 170, 0.2);
+            border-radius: 6px;
+            padding: 12px;
+            font-size: 12px;
+            word-break: break-word;
+        }
+
+        #initialState {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+            padding: 30px 0;
+            text-align: left;
+            max-width: 800px;
+        }
+
+        .example-buttons {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+            gap: 10px;
+            width: 100%;
+            max-width: 100%;
+            margin-top: 10px;
+        }
+
+        .example-btn {
+            background-color: rgba(0, 212, 170, 0.1);
+            border: 1px solid #00d4aa;
+            color: #00d4aa;
+            padding: 10px 12px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 500;
+            font-size: 13px;
+            transition: all 0.2s ease;
+            text-align: center;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            min-height: 44px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 100%;
+            box-sizing: border-box;
+        }
+
+        .example-btn:hover {
+            background-color: rgba(0, 212, 170, 0.2);
+        }
+
+        .status-message {
+            padding: 10px 12px;
+            margin: 8px 0;
+            border-radius: 6px;
+            font-size: 13px;
+            display: none;
+            word-break: break-word;
+        }
+
+        .status-success {
+            background-color: rgba(0, 212, 170, 0.1);
+            border-left: 3px solid #00d4aa;
+        }
+
+        .status-error {
+            background-color: rgba(255, 118, 117, 0.1);
+            border-left: 3px solid #ff7675;
+        }
+
+        ::-webkit-scrollbar {
+            width: 4px;
+            height: 4px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: #111111;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #00d4aa;
+            border-radius: 2px;
+        }
+
+        @media (max-width: 768px) {
+            body {
+                font-size: 13px;
+            }
+
+            .container {
+                padding: 10px;
+            }
+
+            header {
+                padding: 8px 0;
+            }
+
+            .input-group input {
+                padding: 10px 12px;
+                font-size: 14px;
+            }
+
+            .input-group button {
+                padding: 0 14px;
+                font-size: 13px;
+            }
+
+            .dashboard {
+                gap: 12px;
+                margin-top: 14px;
+            }
+
+            .card {
+                border-radius: 8px;
+            }
+
+            .card-header {
+                padding: 12px 14px;
+            }
+
+            .card-header h2 {
+                font-size: 14px;
+            }
+
+            .card-content {
+                padding: 14px;
+            }
+
+            .data-row {
+                padding: 8px 0;
+            }
+
+            .data-label {
+                font-size: 12px;
+            }
+
+            .data-value {
+                font-size: 12px;
+                max-width: 70%;
+            }
+
+            .loading {
+                padding: 20px 10px;
+            }
+
+            .spinner {
+                width: 24px;
+                height: 24px;
+            }
+
+            #initialState {
+                padding: 20px 0;
+            }
+
+            .example-buttons {
+                grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+                gap: 8px;
+            }
+
+            .example-btn {
+                font-size: 12px;
+                padding: 8px 10px;
+                min-height: 40px;
+            }
+
+            .related-grid {
+                grid-template-columns: repeat(auto-fill, minmax(min(120px, 100%), 1fr));
+                gap: 8px;
+            }
+
+            .related-item {
+                padding: 10px;
+                font-size: 11px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .container {
+                padding: 8px;
+            }
+
+            .input-group {
+                flex-direction: column;
+                border-radius: 8px;
+                overflow: hidden;
+            }
+
+            .input-group input {
+                padding: 12px;
+                width: 100%;
+                border-bottom: 1px solid #2a2a2a;
+            }
+
+            .input-group button {
+                padding: 12px;
+                width: 100%;
+            }
+
+            .dashboard {
+                gap: 10px;
+            }
+
+            .card-header {
+                padding: 10px 12px;
+            }
+
+            .card-content {
+                padding: 12px;
+            }
+
+            .data-row {
+                flex-direction: column;
+                gap: 2px;
+                padding: 8px 0;
+            }
+
+            .data-label,
+            .data-value {
+                text-align: left;
+                max-width: 100%;
+            }
+
+            .data-value {
+                margin-top: 2px;
+            }
+
+            .related-grid {
+                grid-template-columns: 1fr;
+                gap: 8px;
+            }
+
+            .example-buttons {
+                grid-template-columns: repeat(2, 1fr);
+                gap: 8px;
+            }
+
+            .example-btn {
+                font-size: 11px;
+                padding: 8px 6px;
+                min-height: 38px;
+                white-space: nowrap;
+                overflow: hidden;
+                text-overflow: ellipsis;
+                max-width: 100%;
+            }
+        }
+
+        @media (max-width: 360px) {
+            .example-buttons {
+                grid-template-columns: 1fr;
+                gap: 6px;
+            }
+
+            .example-btn {
+                font-size: 12px;
+                padding: 10px 8px;
+                min-height: 42px;
+            }
+
+            .container {
+                padding: 6px;
+            }
+        }
+
+        html,
+        body {
+            max-width: 100%;
+            overflow-x: hidden;
+        }
+
+        button,
+        .example-btn,
+        .input-group button {
+            min-height: 44px;
+            min-width: 44px;
+        }
+
+        .dashboard,
+        .card {
+            will-change: transform;
+        }
+    </style>
+</head>
+
+<body>
+    <header>
+        <div class="container">
+            <div class="domain-input-container">
+                <div class="input-group">
+                    <input type="text" id="domainInput" placeholder="Enter domain (e.g., google.com, bbc.co.uk)"
+                        value="example.com">
+                    <button id="fetchBtn">
+                        <i class="fas fa-search"></i> Analyse Domain
+                    </button>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <main class="container">
+        <div id="statusContainer" class="status-message"></div>
+
+        <div id="loading" class="loading" style="display: none;">
+            <div class="spinner"></div>
+            <h3>Fetching domain intelligence data...</h3>
+        </div>
+
+        <div id="dashboard" class="dashboard" style="display: none;">
+            <!-- Web Metadata Card -->
+            <div class="card">
+                <div class="card-header">
+                    <h2><i class="fas fa-browser"></i> Web Metadata</h2>
+                </div>
+                <div class="card-content" id="webData">
+                    <div class="loading">
+                        <div class="spinner" style="width: 20px; height: 20px;"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- DNS Records Card -->
+            <div class="card">
+                <div class="card-header">
+                    <h2><i class="fas fa-server"></i> DNS Records</h2>
+                </div>
+                <div class="card-content" id="dnsData">
+                    <div class="loading">
+                        <div class="spinner" style="width: 20px; height: 20px;"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- IP Information Card -->
+            <div class="card">
+                <div class="card-header">
+                    <h2><i class="fas fa-network-wired"></i> IP Information</h2>
+                </div>
+                <div class="card-content" id="ipData">
+                    <div class="loading">
+                        <div class="spinner" style="width: 20px; height: 20px;"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Related Domains Card -->
+            <div class="card">
+                <div class="card-header">
+                    <h2><i class="fas fa-sitemap"></i> Related Domains</h2>
+                </div>
+                <div class="card-content" id="relatedData">
+                    <div class="loading">
+                        <div class="spinner" style="width: 20px; height: 20px;"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Extended Data Card -->
+            <div class="card" id="extendedCard">
+                <div class="card-header">
+                    <h2><i class="fas fa-chart-network"></i> Extended Intelligence</h2>
+                </div>
+                <div class="card-content" id="extendedData">
+                    <div class="loading">
+                        <div class="spinner" style="width: 20px; height: 20px;"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="initialState" class="loading">
+            <h3 style="margin-bottom: 10px; text-align: left;">Enter a domain to analyse</h3>
+            <p style="margin-bottom: 20px; color: #aaaaaa; text-align: left;">Obtain comprehensive domain intelligence
+                including web metadata, DNS records, IP information, and related domains.</p>
+            <div class="example-buttons">
+                <button class="example-btn" data-domain="google.com">google.com</button>
+                <button class="example-btn" data-domain="facebook.com">facebook.com</button>
+                <button class="example-btn" data-domain="github.com">github.com</button>
+                <button class="example-btn" data-domain="bbc.co.uk">bbc.co.uk</button>
+                <button class="example-btn" data-domain="gov.uk">gov.uk</button>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        const domainInput = document.getElementById('domainInput');
+        const fetchBtn = document.getElementById('fetchBtn');
+        const loading = document.getElementById('loading');
+        const statusContainer = document.getElementById('statusContainer');
+        const dashboard = document.getElementById('dashboard');
+        const initialState = document.getElementById('initialState');
+        const exampleBtns = document.querySelectorAll('.example-btn');
+
+        const webData = document.getElementById('webData');
+        const dnsData = document.getElementById('dnsData');
+        const ipData = document.getElementById('ipData');
+        const relatedData = document.getElementById('relatedData');
+        const extendedData = document.getElementById('extendedData');
+        const extendedCard = document.getElementById('extendedCard');
+
+        const API_BASE = 'https://host.io';
+        const TOKEN_PLACEHOLDER = '{{HOST_TOKEN}}';
+
+        function formatDate(dateString) {
+            if (!dateString) return 'N/A';
+            const date = new Date(dateString);
+            return date.toLocaleDateString('en-GB') + ' ' + date.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
+        }
+
+        function showStatus(message, type = 'success') {
+            statusContainer.textContent = message;
+            statusContainer.className = `status-message status-${type}`;
+            statusContainer.style.display = 'block';
+
+            if (type === 'success') {
+                setTimeout(() => {
+                    statusContainer.style.display = 'none';
+                }, 3000);
+            }
+        }
+
+        function createDataRow(label, value) {
+            const row = document.createElement('div');
+            row.className = 'data-row';
+
+            const labelSpan = document.createElement('span');
+            labelSpan.className = 'data-label';
+            labelSpan.textContent = label;
+
+            const valueSpan = document.createElement('span');
+            valueSpan.className = 'data-value';
+
+            if (Array.isArray(value)) {
+                if (value.length === 0) {
+                    valueSpan.textContent = 'None';
+                } else {
+                    const fragment = document.createDocumentFragment();
+                    value.forEach((item, index) => {
+                        const div = document.createElement('div');
+                        div.className = 'list-item';
+                        div.textContent = item;
+                        fragment.appendChild(div);
+                    });
+                    valueSpan.appendChild(fragment);
+                }
+            } else if (typeof value === 'object' && value !== null) {
+                const fragment = document.createDocumentFragment();
+                Object.entries(value).forEach(([key, val]) => {
+                    const div = document.createElement('div');
+                    div.className = 'list-item';
+                    div.innerHTML = `<strong>${key}:</strong> ${val}`;
+                    fragment.appendChild(div);
+                });
+                valueSpan.appendChild(fragment);
+            } else {
+                valueSpan.textContent = value || 'N/A';
+            }
+
+            row.appendChild(labelSpan);
+            row.appendChild(valueSpan);
+            return row;
+        }
+
+        async function fetchHostIOData(endpoint) {
+            const url = `${API_BASE}${endpoint}`;
+            const headers = {
+                'Content-Type': 'application/json',
+                'Accept': 'application/json',
+                'Authorization': `Bearer ${TOKEN_PLACEHOLDER}`
+            };
+
+            try {
+                const response = await window.proxyFetch(url, {
+                    method: 'GET',
+                    headers: headers
+                });
+
+                if (!response.ok) {
+                    if (response.status === 404) {
+                        const errorData = await response.json();
+                        throw new Error(errorData.error || 'Domain not found');
+                    } else if (response.status === 400) {
+                        throw new Error('Authentication failed');
+                    } else {
+                        throw new Error(`HTTP ${response.status}`);
+                    }
+                }
+
+                return await response.json();
+            } catch (error) {
+                throw new Error(`Failed to fetch data: ${error.message}`);
+            }
+        }
+
+        function renderWebData(data) {
+            if (!data || data.error) {
+                webData.innerHTML = '<div class="error">No web metadata available</div>';
+                return;
+            }
+
+            const fragment = document.createDocumentFragment();
+
+            fragment.appendChild(createDataRow('Domain', data.domain));
+            if (data.rank) fragment.appendChild(createDataRow('Global Rank', `#${data.rank}`));
+            fragment.appendChild(createDataRow('URL', data.url));
+            fragment.appendChild(createDataRow('IP Address', data.ip));
+            fragment.appendChild(createDataRow('Last Scraped', formatDate(data.date)));
+            if (data.length) fragment.appendChild(createDataRow('Content Size', `${Math.round(data.length / 1024)} KB`));
+            fragment.appendChild(createDataRow('Encoding', data.encoding));
+            fragment.appendChild(createDataRow('Title', data.title));
+            fragment.appendChild(createDataRow('Description', data.description));
+            if (data.copyright) fragment.appendChild(createDataRow('Copyright', data.copyright));
+            if (data.server) fragment.appendChild(createDataRow('Server', data.server));
+            if (data.links && data.links.length > 0) {
+                fragment.appendChild(createDataRow('External Links', data.links));
+            }
+
+            webData.innerHTML = '';
+            webData.appendChild(fragment);
+        }
+
+        function renderDNSData(data) {
+            if (!data || data.error) {
+                dnsData.innerHTML = '<div class="error">No DNS records available</div>';
+                return;
+            }
+
+            const fragment = document.createDocumentFragment();
+
+            fragment.appendChild(createDataRow('Domain', data.domain));
+
+            if (data.a && data.a.length > 0) {
+                fragment.appendChild(createDataRow('A Records (IPv4)', data.a));
+            }
+
+            if (data.aaaa && data.aaaa.length > 0) {
+                fragment.appendChild(createDataRow('AAAA Records (IPv6)', data.aaaa));
+            }
+
+            if (data.mx && data.mx.length > 0) {
+                fragment.appendChild(createDataRow('MX Records (Mail)', data.mx));
+            }
+
+            if (data.ns && data.ns.length > 0) {
+                fragment.appendChild(createDataRow('NS Records (Nameservers)', data.ns));
+            }
+
+            dnsData.innerHTML = '';
+            dnsData.appendChild(fragment);
+        }
+
+        function renderIPData(ipinfo) {
+            if (!ipinfo || Object.keys(ipinfo).length === 0) {
+                ipData.innerHTML = '<div class="error">No IP information available</div>';
+                return;
+            }
+
+            const fragment = document.createDocumentFragment();
+
+            for (const [ip, info] of Object.entries(ipinfo)) {
+                const ipSection = document.createElement('div');
+                ipSection.style.marginBottom = '12px';
+                ipSection.style.paddingBottom = '10px';
+                ipSection.style.borderBottom = '1px solid #222222';
+
+                const ipHeader = document.createElement('h4');
+                ipHeader.style.color = '#00d4aa';
+                ipHeader.style.marginBottom = '8px';
+                ipHeader.style.fontSize = '13px';
+                ipHeader.textContent = ip;
+                ipSection.appendChild(ipHeader);
+
+                if (info.city) ipSection.appendChild(createDataRow('City', info.city));
+                if (info.region) ipSection.appendChild(createDataRow('Region', info.region));
+                if (info.country) ipSection.appendChild(createDataRow('Country', info.country));
+                if (info.loc) ipSection.appendChild(createDataRow('Location', info.loc));
+                if (info.timezone) ipSection.appendChild(createDataRow('Timezone', info.timezone));
+
+                if (info.asn) {
+                    const asnSection = document.createElement('div');
+                    asnSection.style.marginTop = '8px';
+                    asnSection.style.padding = '8px';
+                    asnSection.style.backgroundColor = 'rgba(0,0,0,0.3)';
+                    asnSection.style.borderRadius = '4px';
+
+                    const asnHeader = document.createElement('h5');
+                    asnHeader.style.color = '#aaaaaa';
+                    asnHeader.style.marginBottom = '6px';
+                    asnHeader.style.fontSize = '12px';
+                    asnHeader.textContent = 'ASN Information';
+                    asnSection.appendChild(asnHeader);
+
+                    if (info.asn.asn) asnSection.appendChild(createDataRow('ASN', info.asn.asn));
+                    if (info.asn.name) asnSection.appendChild(createDataRow('Name', info.asn.name));
+                    if (info.asn.domain) asnSection.appendChild(createDataRow('Domain', info.asn.domain));
+                    if (info.asn.route) asnSection.appendChild(createDataRow('Route', info.asn.route));
+
+                    ipSection.appendChild(asnSection);
+                }
+
+                fragment.appendChild(ipSection);
+            }
+
+            ipData.innerHTML = '';
+            ipData.appendChild(fragment);
+        }
+
+        function renderRelatedData(data) {
+            if (!data || Object.keys(data).length === 0) {
+                relatedData.innerHTML = '<div class="error">No related domain data available</div>';
+                return;
+            }
+
+            const fragment = document.createDocumentFragment();
+
+            for (const [field, items] of Object.entries(data)) {
+                if (items && items.length > 0) {
+                    const fieldHeader = document.createElement('h4');
+                    fieldHeader.style.color = '#00d4aa';
+                    fieldHeader.style.margin = '10px 0 8px 0';
+                    fieldHeader.style.fontSize = '13px';
+                    fieldHeader.style.textTransform = 'capitalize';
+                    fieldHeader.textContent = field.replace('backlinks', 'Back Links');
+                    fragment.appendChild(fieldHeader);
+
+                    items.forEach(item => {
+                        const itemDiv = document.createElement('div');
+                        itemDiv.className = 'related-item';
+
+                        const valueDiv = document.createElement('div');
+                        valueDiv.style.fontWeight = '600';
+                        valueDiv.style.marginBottom = '4px';
+                        valueDiv.textContent = item.value;
+
+                        const countDiv = document.createElement('div');
+                        countDiv.textContent = 'Related: ';
+
+                        const badge = document.createElement('span');
+                        badge.className = 'count-badge';
+                        badge.textContent = item.count.toLocaleString();
+
+                        countDiv.appendChild(badge);
+                        itemDiv.appendChild(valueDiv);
+                        itemDiv.appendChild(countDiv);
+                        fragment.appendChild(itemDiv);
+                    });
+                }
+            }
+
+            relatedData.innerHTML = '';
+            const gridContainer = document.createElement('div');
+            gridContainer.className = 'related-grid';
+            gridContainer.appendChild(fragment);
+            relatedData.appendChild(gridContainer);
+        }
+
+        function renderExtendedData(fullData) {
+            if (!fullData) {
+                extendedData.innerHTML = '<div class="error">No extended data available</div>';
+                return;
+            }
+
+            const fragment = document.createDocumentFragment();
+
+            const coverageDiv = document.createElement('div');
+            coverageDiv.style.display = 'grid';
+            coverageDiv.style.gridTemplateColumns = 'repeat(auto-fill, minmax(180px, 1fr))';
+            coverageDiv.style.gap = '10px';
+
+            const dataPoints = [
+                { name: 'Web Metadata', has: !!fullData.web },
+                { name: 'DNS Records', has: !!fullData.dns },
+                { name: 'IP Information', has: !!fullData.ipinfo && Object.keys(fullData.ipinfo).length > 0 },
+                { name: 'Related Domains', has: !!fullData.related && Object.keys(fullData.related).length > 0 }
+            ];
+
+            dataPoints.forEach(point => {
+                const pointDiv = document.createElement('div');
+                pointDiv.style.padding = '8px';
+                pointDiv.style.border = '1px solid #222222';
+                pointDiv.style.borderRadius = '4px';
+                pointDiv.style.fontSize = '12px';
+
+                const nameSpan = document.createElement('span');
+                nameSpan.style.color = '#aaaaaa';
+                nameSpan.textContent = point.name;
+
+                const statusSpan = document.createElement('span');
+                statusSpan.style.float = 'right';
+                statusSpan.style.color = point.has ? '#00d4aa' : '#ff7675';
+                statusSpan.innerHTML = `<i class="fas fa-${point.has ? 'check' : 'times'}"></i>`;
+
+                pointDiv.appendChild(nameSpan);
+                pointDiv.appendChild(statusSpan);
+                coverageDiv.appendChild(pointDiv);
+            });
+
+            fragment.appendChild(coverageDiv);
+
+            extendedData.innerHTML = '';
+            extendedData.appendChild(fragment);
+        }
+
+        async function fetchDomainData(domain) {
+            if (!domain || !domain.trim()) {
+                showStatus('Please enter a valid domain', 'error');
+                return;
+            }
+
+            let cleanDomain = domain.trim().toLowerCase();
+            if (cleanDomain.startsWith('http://')) cleanDomain = cleanDomain.replace('http://', '');
+            if (cleanDomain.startsWith('https://')) cleanDomain = cleanDomain.replace('https://', '');
+            if (cleanDomain.startsWith('www.')) cleanDomain = cleanDomain.replace('www.', '');
+            cleanDomain = cleanDomain.replace(/\/$/, '');
+
+            loading.style.display = 'flex';
+            dashboard.style.display = 'none';
+            initialState.style.display = 'none';
+
+            fetchBtn.disabled = true;
+            fetchBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Analysing...';
+
+            try {
+                const fullData = await fetchHostIOData(`/api/full/${cleanDomain}`);
+
+                renderWebData(fullData.web);
+                renderDNSData(fullData.dns);
+                renderIPData(fullData.ipinfo);
+                renderRelatedData(fullData.related);
+                renderExtendedData(fullData);
+
+                loading.style.display = 'none';
+                dashboard.style.display = 'grid';
+
+                document.title = `${cleanDomain} - Domain Intelligence`;
+                showStatus(`Successfully analysed ${cleanDomain}`);
+
+            } catch (error) {
+                console.error('Error:', error);
+                showStatus(error.message, 'error');
+
+                loading.style.display = 'none';
+                initialState.style.display = 'flex';
+            } finally {
+                fetchBtn.disabled = false;
+                fetchBtn.innerHTML = '<i class="fas fa-search"></i> Analyse Domain';
+            }
+        }
+
+        fetchBtn.addEventListener('click', () => {
+            fetchDomainData(domainInput.value);
+        });
+
+        domainInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                fetchDomainData(domainInput.value);
+            }
+        });
+
+        exampleBtns.forEach(btn => {
+            btn.addEventListener('click', () => {
+                const domain = btn.getAttribute('data-domain');
+                domainInput.value = domain;
+                fetchDomainData(domain);
+            });
+        });
+
+        window.addEventListener('DOMContentLoaded', () => {
+            domainInput.focus();
+        });
+
+        function adjustLayout() {
+            if (window.innerWidth <= 768) {
+                extendedCard.style.gridColumn = 'span 1';
+            } else {
+                extendedCard.style.gridColumn = 'span 2';
+            }
+        }
+
+        adjustLayout();
+
+        window.addEventListener('resize', adjustLayout);
+    </script>
+</body>
+
+</html>

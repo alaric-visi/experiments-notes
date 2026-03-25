@@ -1,0 +1,1462 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Apache Game</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+            -webkit-touch-callout: none;
+            -webkit-user-select: none;
+            user-select: none;
+        }
+
+        body {
+            background: #0a0a0a;
+            color: #00ff00;
+            font-family: 'Courier New', monospace;
+            overflow: hidden;
+            width: 100vw;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background-image:
+                linear-gradient(rgba(0, 255, 0, 0.05) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(0, 255, 0, 0.05) 1px, transparent 1px);
+            background-size: 40px 40px;
+            touch-action: none;
+            position: relative;
+        }
+
+        #gameContainer {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            max-width: 1200px;
+            display: flex;
+            border: 1px solid #00ff00;
+            box-shadow: 0 0 30px rgba(0, 255, 0, 0.1);
+            overflow: hidden;
+        }
+
+        #leftPanel,
+        #rightPanel {
+            background: rgba(10, 10, 10, 0.95);
+            padding: clamp(8px, 2vh, 20px);
+            display: flex;
+            flex-direction: column;
+            gap: clamp(12px, 2vh, 20px);
+            font-size: clamp(10px, 1.6vh, 16px);
+            border: 1px solid #00ff00;
+            min-width: 0;
+            flex-shrink: 0;
+        }
+
+        #leftPanel {
+            border-right: none;
+        }
+
+        #rightPanel {
+            border-left: none;
+        }
+
+        .panel-section {
+            border-bottom: 1px solid #00ff00;
+            padding-bottom: clamp(8px, 1.5vh, 15px);
+            min-height: 0;
+            overflow: hidden;
+        }
+
+        .stat-label {
+            color: #00ff00;
+            font-size: clamp(8px, 1.2vh, 12px);
+            letter-spacing: 0.05em;
+            margin-bottom: 4px;
+            text-transform: uppercase;
+            opacity: 0.7;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .stat-value {
+            color: #00ff00;
+            font-size: clamp(16px, 2.5vh, 24px);
+            font-weight: bold;
+            text-shadow: 0 0 10px rgba(0, 255, 0, 0.5);
+            letter-spacing: 0.05em;
+            line-height: 1.2;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .bar-container {
+            width: 100%;
+            height: clamp(60px, 15vh, 120px);
+            border: 1px solid #00ff00;
+            position: relative;
+            margin-top: 8px;
+            background: rgba(0, 0, 0, 0.5);
+            overflow: hidden;
+            min-height: 0;
+        }
+
+        .bar-fill {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: linear-gradient(to top, #00ff00, #008800);
+            transition: height 0.3s ease;
+        }
+
+        .bar-grid {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-image:
+                linear-gradient(to bottom, rgba(0, 255, 0, 0.1) 1px, transparent 1px);
+            background-size: 100% 10%;
+        }
+
+        .bar-value {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: clamp(10px, 1.6vh, 16px);
+            font-weight: bold;
+            color: #00ff00;
+            text-shadow: 0 0 5px #00ff00;
+            white-space: nowrap;
+        }
+
+        #gameCanvas {
+            flex: 1;
+            min-width: 0;
+            background: #000;
+            border-left: 1px solid #00ff00;
+            border-right: 1px solid #00ff00;
+            touch-action: none;
+            display: block;
+        }
+
+        #message {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: clamp(20px, 4vh, 32px);
+            color: #00ff00;
+            text-align: center;
+            text-shadow: 0 0 20px #00ff00;
+            display: none;
+            z-index: 10;
+            background: rgba(10, 10, 10, 0.95);
+            padding: clamp(16px, 4vh, 32px);
+            border: 2px solid #00ff00;
+            box-shadow: 0 0 40px rgba(0, 255, 0, 0.3);
+            max-width: 90vw;
+            max-height: 90vh;
+            overflow: auto;
+        }
+
+        .title-screen {
+            text-align: center;
+            line-height: 1.5;
+        }
+
+        .controls-hint {
+            position: absolute;
+            bottom: clamp(8px, 2vh, 16px);
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: clamp(10px, 1.4vh, 14px);
+            color: #00ff00;
+            text-align: center;
+            letter-spacing: 0.05em;
+            background: rgba(10, 10, 10, 0.95);
+            padding: clamp(6px, 1vh, 10px) clamp(12px, 2vh, 16px);
+            border: 1px solid #00ff00;
+            opacity: 0.8;
+            max-width: 90vw;
+            white-space: normal;
+            line-height: 1.4;
+        }
+
+        .mobile-warning {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: #0a0a0a;
+            z-index: 1000;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+            text-align: center;
+            border: 3px solid #00ff00;
+            box-shadow: 0 0 50px rgba(0, 255, 0, 0.5) inset;
+        }
+
+        .warning-content {
+            max-width: 800px;
+            width: 90%;
+            padding: 40px;
+            background: rgba(10, 10, 10, 0.95);
+            border: 2px solid #00ff00;
+            box-shadow: 0 0 40px rgba(0, 255, 0, 0.3);
+        }
+
+        .warning-title {
+            font-size: clamp(24px, 5vh, 48px);
+            color: #00ff00;
+            margin-bottom: 30px;
+            text-shadow: 0 0 20px #00ff00;
+            letter-spacing: 0.1em;
+            line-height: 1.3;
+        }
+
+        .warning-message {
+            font-size: clamp(16px, 3vh, 24px);
+            color: #00ff00;
+            margin-bottom: 40px;
+            line-height: 1.6;
+            opacity: 0.9;
+        }
+
+        .warning-subtitle {
+            font-size: clamp(14px, 2.5vh, 20px);
+            color: #00ff00;
+            margin-top: 40px;
+            opacity: 0.7;
+            border-top: 1px solid #00ff00;
+            padding-top: 20px;
+        }
+
+        .scan-effect {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 2px;
+            background: rgba(0, 255, 0, 0.5);
+            box-shadow: 0 0 10px #00ff00;
+            animation: scan 3s linear infinite;
+        }
+
+        @keyframes scan {
+            0% {
+                top: 0;
+                opacity: 1;
+            }
+
+            50% {
+                opacity: 0.7;
+            }
+
+            100% {
+                top: 100%;
+                opacity: 1;
+            }
+        }
+
+        .grid-overlay-warning {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-image:
+                linear-gradient(rgba(0, 255, 0, 0.03) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(0, 255, 0, 0.03) 1px, transparent 1px);
+            background-size: 30px 30px;
+            pointer-events: none;
+        }
+
+        .version-label {
+            position: absolute;
+            top: clamp(8px, 2vh, 16px);
+            right: clamp(8px, 2vw, 16px);
+            font-size: clamp(8px, 1.2vh, 12px);
+            color: #00ff00;
+            opacity: 0.5;
+            letter-spacing: 0.05em;
+        }
+
+        .scan-line {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 1px;
+            background: rgba(0, 255, 0, 0.3);
+            box-shadow: 0 0 10px rgba(0, 255, 0, 0.5);
+            animation: scan 4s linear infinite;
+            z-index: 1;
+            display: none;
+        }
+
+        .data-readout {
+            font-family: 'Courier New', monospace;
+            font-size: clamp(8px, 1.2vh, 12px);
+            color: #00ff00;
+            opacity: 0.7;
+            letter-spacing: 0.05em;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .grid-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-image:
+                linear-gradient(rgba(0, 255, 0, 0.03) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(0, 255, 0, 0.03) 1px, transparent 1px);
+            background-size: 20px 20px;
+            pointer-events: none;
+            z-index: 1;
+        }
+
+        @media (orientation: landscape) and (min-width: 768px) {
+            #gameContainer {
+                flex-direction: row;
+            }
+
+            #leftPanel,
+            #rightPanel {
+                width: clamp(120px, 15vw, 200px);
+                height: 100%;
+            }
+
+            .controls-hint {
+                width: auto;
+            }
+        }
+
+        @media (orientation: landscape) and (max-width: 767px) {
+            #gameContainer {
+                flex-direction: row;
+            }
+
+            #leftPanel,
+            #rightPanel {
+                width: clamp(80px, 18vw, 150px);
+                height: 100%;
+                padding: clamp(6px, 1.5vh, 12px);
+            }
+
+            .stat-value {
+                font-size: clamp(12px, 2vh, 18px);
+            }
+
+            .bar-container {
+                height: clamp(50px, 12vh, 80px);
+            }
+        }
+
+        @media (orientation: portrait) {
+            #gameContainer {
+                flex-direction: column;
+                max-width: 100%;
+            }
+
+            #leftPanel,
+            #rightPanel {
+                width: 100%;
+                height: auto;
+                flex-direction: row;
+                flex-wrap: wrap;
+                gap: clamp(8px, 1.5vh, 12px);
+                padding: clamp(6px, 1.5vh, 12px);
+                justify-content: space-between;
+            }
+
+            .panel-section {
+                flex: 1;
+                min-width: 45%;
+                max-width: 48%;
+                border-right: 1px solid #00ff00;
+                border-bottom: none;
+                padding-right: clamp(8px, 1.5vh, 12px);
+                margin-right: clamp(8px, 1.5vh, 12px);
+            }
+
+            .panel-section:last-child {
+                border-right: none;
+                margin-right: 0;
+            }
+
+            .stat-value {
+                font-size: clamp(14px, 2.2vh, 20px);
+            }
+
+            .bar-container {
+                height: clamp(40px, 8vh, 60px);
+                margin-top: 4px;
+            }
+
+            #gameCanvas {
+                order: 1;
+                flex: 1;
+                min-height: 50vh;
+            }
+
+            .controls-hint {
+                font-size: clamp(9px, 1.2vh, 11px);
+                bottom: clamp(4px, 1vh, 8px);
+                width: 95%;
+            }
+        }
+
+        @media (max-width: 320px) {
+            .panel-section {
+                min-width: 100%;
+                max-width: 100%;
+                border-right: none;
+                margin-right: 0;
+            }
+
+            .stat-label {
+                font-size: 10px;
+            }
+
+            .stat-value {
+                font-size: 14px;
+            }
+        }
+
+        @media (orientation: landscape) and (max-height: 400px) {
+
+            #leftPanel,
+            #rightPanel {
+                display: none;
+            }
+
+            #gameCanvas {
+                border-left: 1px solid #00ff00;
+                border-right: 1px solid #00ff00;
+            }
+        }
+
+        body.mobile-active #gameContainer {
+            display: none !important;
+        }
+
+        body.mobile-active .mobile-warning {
+            display: flex !important;
+        }
+    </style>
+</head>
+
+<body>
+    <!-- FULL-SCREEN MOBILE WARNING -->
+    <div class="mobile-warning" id="mobileWarning">
+        <div class="grid-overlay-warning"></div>
+        <div class="scan-effect"></div>
+        <div class="warning-content">
+            <div class="warning-title">
+                APACHE//CAN.YON<br>
+                VER 3.0GB
+            </div>
+
+            <div class="warning-message">
+                <div style="margin-bottom: 20px; color: #ff0000; text-shadow: 0 0 10px #ff0000;">
+                    ⚠️ DESKTOP KEYBOARD REQUIRED ⚠️
+                </div>
+
+                <div style="margin-bottom: 30px;">
+                    This simulation requires physical keyboard controls<br>
+                    and cannot be played on mobile devices.
+                </div>
+
+                <div style="font-size: 0.9em; opacity: 0.8;">
+                    REQUIRED CONTROLS:<br>
+                    [Z]: FIRE WEAPON<br>
+                    [X]: LAUNCH MISSILE<br>
+                    [←] [→]: NAVIGATE CANYON<br>
+                    [SPACE]: START/PAUSE
+                </div>
+            </div>
+
+            <div class="warning-subtitle">
+                Please use a desktop or laptop computer<br>
+                with a keyboard to play this game.
+            </div>
+        </div>
+    </div>
+
+    <div id="gameContainer">
+        <div class="grid-overlay"></div>
+        <div class="scan-line"></div>
+        <div class="version-label">VER 3.0GB</div>
+
+        <div id="leftPanel">
+            <div class="panel-section">
+                <div class="stat-label">HI-SCORE</div>
+                <div class="stat-value" id="hiscore">000000</div>
+                <div class="data-readout">MAX: 999999</div>
+            </div>
+            <div class="panel-section">
+                <div class="stat-label">SCORE</div>
+                <div class="stat-value" id="score">000000</div>
+                <div class="data-readout">RUNNING...</div>
+            </div>
+            <div class="panel-section">
+                <div class="stat-label">LIVES</div>
+                <div class="stat-value" id="lives">03</div>
+                <div class="data-readout">STATUS: ACTIVE</div>
+            </div>
+            <div class="panel-section">
+                <div class="stat-label">SHIELDS</div>
+                <div class="bar-container">
+                    <div class="bar-grid"></div>
+                    <div class="bar-fill" id="shieldsBar"></div>
+                    <div class="bar-value" id="shieldsValue">100%</div>
+                </div>
+                <div class="data-readout">1.8V/10S</div>
+            </div>
+        </div>
+
+        <canvas id="gameCanvas"></canvas>
+
+        <div id="rightPanel">
+            <div class="panel-section">
+                <div class="stat-label">TIME</div>
+                <div class="stat-value" id="time">000</div>
+                <div class="data-readout">SECONDS</div>
+            </div>
+            <div class="panel-section">
+                <div class="stat-label">MISSILES</div>
+                <div class="stat-value" id="missiles">10</div>
+                <div class="data-readout">5G/6V/12</div>
+            </div>
+            <div class="panel-section">
+                <div class="stat-label">SPEED</div>
+                <div class="stat-value" id="speed">2.5</div>
+                <div class="data-readout">M/S</div>
+            </div>
+            <div class="panel-section">
+                <div class="stat-label">FUEL</div>
+                <div class="bar-container">
+                    <div class="bar-grid"></div>
+                    <div class="bar-fill" id="fuelBar"></div>
+                    <div class="bar-value" id="fuelValue">100%</div>
+                </div>
+                <div class="data-readout">SYSTEM: ONLINE</div>
+            </div>
+        </div>
+
+        <div id="message"></div>
+        <div class="controls-hint">[Z]: FIRE | [X]: MISSILE | [<]: LEFT | [>]: RIGHT | [SPACE]: START/PAUSE</div>
+    </div>
+
+    <script>
+        const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+        const mobileWarning = document.getElementById('mobileWarning');
+        const body = document.body;
+
+        if (isMobile) {
+            body.classList.add('mobile-active');
+        }
+
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+
+        function resizeCanvas() {
+            if (isMobile) return;
+
+            const container = document.getElementById('gameContainer');
+            const leftPanel = document.getElementById('leftPanel');
+            const rightPanel = document.getElementById('rightPanel');
+
+            const containerRect = container.getBoundingClientRect();
+
+            let leftPanelWidth = 0;
+            let rightPanelWidth = 0;
+
+            if (leftPanel && leftPanel.offsetParent !== null) {
+                leftPanelWidth = leftPanel.getBoundingClientRect().width;
+            }
+
+            if (rightPanel && rightPanel.offsetParent !== null) {
+                rightPanelWidth = rightPanel.getBoundingClientRect().width;
+            }
+
+            canvas.width = containerRect.width - leftPanelWidth - rightPanelWidth;
+            canvas.height = containerRect.height;
+
+            if (canvas.width < 100) canvas.width = 100;
+            if (canvas.height < 100) canvas.height = 100;
+
+            if (game && game.player) {
+                game.player.x = Math.max(10, Math.min(canvas.width - game.player.width - 10, game.player.x));
+                game.player.y = canvas.height * 0.7;
+            }
+
+            if (game && game.canyon && game.canyon.leftWall.length > 0) {
+                const oldCanyon = [...game.canyon.leftWall];
+                game.canyon.leftWall = [];
+                game.canyon.rightWall = [];
+                game.canyon.segmentCounter = 0;
+
+                for (let i = 0; i < 200; i++) {
+                    const y = -i * 4;
+                    addCanyonSegment(y);
+                }
+            }
+        }
+
+        window.addEventListener('load', () => {
+            if (!isMobile) {
+                setTimeout(resizeCanvas, 100);
+                setTimeout(resizeCanvas, 500);
+            }
+        });
+
+        let resizeTimeout;
+        window.addEventListener('resize', () => {
+            if (isMobile) return;
+            clearTimeout(resizeTimeout);
+            resizeTimeout = setTimeout(resizeCanvas, 100);
+        });
+
+        let game = {
+            state: 'start',
+            score: 0,
+            hiscore: 0,
+            fuel: 100,
+            shields: 100,
+            missiles: 10,
+            lives: 3,
+            scrollSpeed: 2.5,
+            time: 0,
+            frame: 0,
+            canyon: {
+                leftWall: [],
+                rightWall: [],
+                width: 300,
+                segmentCounter: 0
+            },
+            player: {
+                x: 0,
+                y: 0,
+                width: 16,
+                height: 16,
+                speed: 4
+            },
+            bullets: [],
+            playerMissiles: [],
+            enemies: [],
+            powerups: [],
+            forceFields: [],
+            particles: [],
+            keys: {},
+            enemySpawnTimer: 0,
+            powerupSpawnTimer: 0
+        };
+
+        if (!isMobile) {
+            function initCanyon() {
+                game.canyon.leftWall = [];
+                game.canyon.rightWall = [];
+                game.canyon.segmentCounter = 0;
+
+                for (let i = 0; i < 200; i++) {
+                    const y = -i * 4;
+                    addCanyonSegment(y);
+                }
+            }
+
+            function addCanyonSegment(y) {
+                const centerX = canvas.width / 2;
+                const t = game.canyon.segmentCounter;
+
+                const variation = Math.sin(t * 0.0234) * 70 +
+                    Math.cos(t * 0.0431) * 55 +
+                    Math.sin(t * 0.0627) * 40 +
+                    Math.cos(t * 0.0089) * 60 +
+                    Math.sin(t * 0.0153) * 35;
+
+                const narrowing = Math.sin(t * 0.0179) * 55 +
+                    Math.cos(t * 0.0347) * 45 +
+                    Math.sin(t * 0.0521) * 30;
+
+                const leftX = centerX - game.canyon.width / 2 + variation - narrowing;
+                const rightX = centerX + game.canyon.width / 2 + variation + narrowing;
+
+                game.canyon.leftWall.push({ x: leftX, y: y });
+                game.canyon.rightWall.push({ x: rightX, y: y });
+                game.canyon.segmentCounter++;
+            }
+
+            function updateCanyon() {
+                game.canyon.width = Math.min(300, canvas.width * 0.7);
+
+                game.canyon.leftWall.forEach(p => p.y += game.scrollSpeed);
+                game.canyon.rightWall.forEach(p => p.y += game.scrollSpeed);
+
+                while (game.canyon.leftWall[0] && game.canyon.leftWall[0].y > canvas.height + 50) {
+                    game.canyon.leftWall.shift();
+                    game.canyon.rightWall.shift();
+                }
+
+                while (game.canyon.leftWall.length < canvas.height / 4 + 100) {
+                    const lastY = game.canyon.leftWall[game.canyon.leftWall.length - 1].y;
+                    const newY = lastY - 4;
+                    addCanyonSegment(newY);
+                }
+            }
+
+            function drawCanyon() {
+                ctx.fillStyle = '#000';
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+                ctx.strokeStyle = '#00ff00';
+                ctx.lineWidth = Math.max(1, canvas.width / 800);
+
+                ctx.beginPath();
+                for (let i = 0; i < game.canyon.leftWall.length; i++) {
+                    if (i % 2 === 0) {
+                        const p = game.canyon.leftWall[i];
+                        if (i === 0) {
+                            ctx.moveTo(p.x, p.y);
+                        } else {
+                            ctx.lineTo(p.x, p.y);
+                        }
+                    }
+                }
+                ctx.stroke();
+
+                ctx.beginPath();
+                for (let i = 0; i < game.canyon.rightWall.length; i++) {
+                    if (i % 2 === 0) {
+                        const p = game.canyon.rightWall[i];
+                        if (i === 0) {
+                            ctx.moveTo(p.x, p.y);
+                        } else {
+                            ctx.lineTo(p.x, p.y);
+                        }
+                    }
+                }
+                ctx.stroke();
+
+                ctx.strokeStyle = 'rgba(0, 255, 0, 0.1)';
+                const gridStep = Math.max(10, Math.floor(canvas.height / 40));
+                for (let i = 0; i < game.canyon.leftWall.length; i += gridStep) {
+                    if (game.canyon.leftWall[i] && game.canyon.rightWall[i]) {
+                        ctx.beginPath();
+                        ctx.moveTo(game.canyon.leftWall[i].x, game.canyon.leftWall[i].y);
+                        ctx.lineTo(game.canyon.rightWall[i].x, game.canyon.rightWall[i].y);
+                        ctx.stroke();
+                    }
+                }
+
+                ctx.strokeStyle = 'rgba(0, 255, 0, 0.05)';
+                ctx.lineWidth = 0.5;
+                const gridSize = Math.max(30, canvas.width / 20);
+                for (let x = gridSize; x < canvas.width; x += gridSize) {
+                    ctx.beginPath();
+                    ctx.moveTo(x, 0);
+                    ctx.lineTo(x, canvas.height);
+                    ctx.stroke();
+                }
+                for (let y = gridSize; y < canvas.height; y += gridSize) {
+                    ctx.beginPath();
+                    ctx.moveTo(0, y);
+                    ctx.lineTo(canvas.width, y);
+                    ctx.stroke();
+                }
+            }
+
+            function drawPlayer() {
+                const p = game.player;
+                const scale = Math.max(1, canvas.width / 800);
+                const x = Math.floor(p.x);
+                const y = Math.floor(p.y);
+
+                ctx.fillStyle = '#00ff00';
+
+                const scaledWidth = game.player.width * scale;
+                const scaledHeight = game.player.height * scale;
+
+                const rotorPhase = Math.floor(game.frame / 3) % 2;
+                if (rotorPhase === 0) {
+                    ctx.fillRect(x - 6 * scale, y + 2 * scale, 28 * scale, 2 * scale);
+                } else {
+                    ctx.fillRect(x + 6 * scale, y, 2 * scale, 6 * scale);
+                }
+
+                ctx.fillRect(x + 4 * scale, y + 6 * scale, 8 * scale, 6 * scale);
+
+                ctx.fillRect(x + 2 * scale, y + 8 * scale, 12 * scale, 4 * scale);
+
+                ctx.fillRect(x + 12 * scale, y + 9 * scale, 4 * scale, 2 * scale);
+
+                ctx.fillRect(x + 15 * scale, y + 7 * scale, 2 * scale, 6 * scale);
+
+                ctx.fillRect(x + 2 * scale, y + 12 * scale, 2 * scale, 2 * scale);
+                ctx.fillRect(x + 10 * scale, y + 12 * scale, 2 * scale, 2 * scale);
+            }
+
+            function spawnEnemy() {
+                const wallIndex = Math.min(60, Math.floor(game.canyon.leftWall.length * 0.3));
+                if (wallIndex >= game.canyon.leftWall.length) return;
+
+                const leftBound = game.canyon.leftWall[wallIndex].x + 15;
+                const rightBound = game.canyon.rightWall[wallIndex].x - 30;
+                const types = ['drone', 'uav', 'mine'];
+                const type = types[Math.floor(Math.random() * types.length)];
+
+                game.enemies.push({
+                    x: leftBound + Math.random() * (rightBound - leftBound),
+                    y: -20,
+                    vx: (Math.random() - 0.5) * 1.5,
+                    vy: type === 'mine' ? 0.5 : 1.5,
+                    width: 16,
+                    height: 16,
+                    type: type,
+                    health: type === 'mine' ? 1 : (type === 'uav' ? 3 : 2),
+                    shootTimer: 60 + Math.random() * 60
+                });
+            }
+
+            function spawnPowerup(type) {
+                const wallIndex = Math.min(60, Math.floor(game.canyon.leftWall.length * 0.3));
+                if (wallIndex >= game.canyon.leftWall.length) return;
+
+                const leftBound = game.canyon.leftWall[wallIndex].x + 15;
+                const rightBound = game.canyon.rightWall[wallIndex].x - 30;
+
+                game.powerups.push({
+                    x: leftBound + Math.random() * (rightBound - leftBound),
+                    y: -20,
+                    width: 12,
+                    height: 12,
+                    type: type,
+                    vy: 1.5,
+                    rotation: 0
+                });
+            }
+
+            function spawnForceField() {
+                const wallIndex = Math.min(60, Math.floor(game.canyon.leftWall.length * 0.3));
+                if (wallIndex >= game.canyon.leftWall.length) return;
+
+                const leftBound = game.canyon.leftWall[wallIndex].x + 15;
+                const rightBound = game.canyon.rightWall[wallIndex].x - 50;
+
+                game.forceFields.push({
+                    x: leftBound + Math.random() * (rightBound - leftBound),
+                    y: -30,
+                    width: Math.min(40, canvas.width * 0.1),
+                    height: 80,
+                    health: 6,
+                    vy: 1,
+                    pulse: 0
+                });
+            }
+
+            function createExplosion(x, y) {
+                for (let i = 0; i < 12; i++) {
+                    const angle = (i * Math.PI * 2) / 12;
+                    game.particles.push({
+                        x: x,
+                        y: y,
+                        vx: Math.cos(angle) * 3,
+                        vy: Math.sin(angle) * 3,
+                        life: 30,
+                        size: 3
+                    });
+                }
+            }
+
+            function update() {
+                if (game.state !== 'playing') return;
+
+                game.frame++;
+                if (game.frame % 60 === 0) game.time++;
+
+                updateCanyon();
+
+                const p = game.player;
+
+                if (game.keys[','] || game.keys['<']) {
+                    p.x -= p.speed;
+                }
+                if (game.keys['.'] || game.keys['>']) {
+                    p.x += p.speed;
+                }
+
+                let playerCenterY = 0;
+                let minDist = Infinity;
+                for (let i = 0; i < game.canyon.leftWall.length; i++) {
+                    const dist = Math.abs(game.canyon.leftWall[i].y - game.player.y);
+                    if (dist < minDist) {
+                        minDist = dist;
+                        playerCenterY = i;
+                    }
+                }
+
+                if (playerCenterY < game.canyon.leftWall.length) {
+                    const leftBound = game.canyon.leftWall[playerCenterY].x + 10;
+                    const rightBound = game.canyon.rightWall[playerCenterY].x - p.width - 10;
+                    p.x = Math.max(leftBound, Math.min(rightBound, p.x));
+                }
+
+                if (playerCenterY < game.canyon.leftWall.length) {
+                    const leftBound = game.canyon.leftWall[playerCenterY].x + 10;
+                    const rightBound = game.canyon.rightWall[playerCenterY].x - p.width - 10;
+                    if (p.x <= leftBound + 2 || p.x >= rightBound - 2) {
+                        game.shields -= 0.5;
+                        if (game.shields <= 0) {
+                            loseLife();
+                        }
+                    }
+                }
+
+                if (game.keys['z'] && game.frame % 6 === 0) {
+                    game.bullets.push({
+                        x: p.x + p.width / 2 - 1,
+                        y: p.y,
+                        vy: -8,
+                        width: 2,
+                        height: 8
+                    });
+                }
+
+                if (game.keys['x'] && !game.keys['x_fired'] && game.missiles > 0) {
+                    game.missiles--;
+                    let target = game.enemies[0];
+                    game.playerMissiles.push({
+                        x: p.x + p.width / 2 - 2,
+                        y: p.y,
+                        vx: 0,
+                        vy: -6,
+                        target: target,
+                        width: 4,
+                        height: 12
+                    });
+                    game.keys['x_fired'] = true;
+                }
+                if (!game.keys['x']) game.keys['x_fired'] = false;
+
+                game.bullets = game.bullets.filter(b => {
+                    b.y += b.vy;
+                    return b.y > -10;
+                });
+
+                game.playerMissiles = game.playerMissiles.filter(m => {
+                    if (m.target && game.enemies.includes(m.target)) {
+                        const dx = m.target.x - m.x;
+                        const dy = m.target.y - m.y;
+                        const dist = Math.sqrt(dx * dx + dy * dy);
+                        if (dist > 0) {
+                            m.vx += (dx / dist) * 0.5;
+                            m.vy += (dy / dist) * 0.5;
+                        }
+                    }
+                    m.x += m.vx;
+                    m.y += m.vy;
+                    const speed = Math.sqrt(m.vx * m.vx + m.vy * m.vy);
+                    if (speed > 8) {
+                        m.vx = (m.vx / speed) * 8;
+                        m.vy = (m.vy / speed) * 8;
+                    }
+                    return m.y > -10 && m.y < canvas.height;
+                });
+
+                game.enemySpawnTimer++;
+                if (game.enemySpawnTimer > 80 && game.enemies.length < 6) {
+                    spawnEnemy();
+                    game.enemySpawnTimer = 0;
+
+                    if (Math.random() < 0.15) {
+                        spawnForceField();
+                    }
+                }
+
+                game.powerupSpawnTimer++;
+                if (game.powerupSpawnTimer > 240) {
+                    const rand = Math.random();
+                    if (rand < 0.4) spawnPowerup('fuel');
+                    else if (rand < 0.7) spawnPowerup('shield');
+                    else spawnPowerup('missile');
+                    game.powerupSpawnTimer = 0;
+                }
+
+                game.enemies = game.enemies.filter(e => {
+                    e.x += e.vx;
+                    e.y += e.vy;
+
+                    for (let i = game.bullets.length - 1; i >= 0; i--) {
+                        const b = game.bullets[i];
+                        if (b.x >= e.x && b.x <= e.x + e.width &&
+                            b.y >= e.y && b.y <= e.y + e.height) {
+                            e.health--;
+                            game.bullets.splice(i, 1);
+                            if (e.health <= 0) {
+                                createExplosion(e.x + e.width / 2, e.y + e.height / 2);
+                                game.score += e.type === 'uav' ? 300 : (e.type === 'mine' ? 100 : 200);
+                                if (game.score > game.hiscore) game.hiscore = game.score;
+                                return false;
+                            }
+                            break;
+                        }
+                    }
+
+                    for (let i = game.playerMissiles.length - 1; i >= 0; i--) {
+                        const m = game.playerMissiles[i];
+                        if (m.x >= e.x && m.x <= e.x + e.width &&
+                            m.y >= e.y && m.y <= e.y + e.height) {
+                            createExplosion(e.x + e.width / 2, e.y + e.height / 2);
+                            game.playerMissiles.splice(i, 1);
+                            game.score += e.type === 'uav' ? 300 : (e.type === 'mine' ? 100 : 200);
+                            if (game.score > game.hiscore) game.hiscore = game.score;
+                            return false;
+                        }
+                    }
+
+                    if (e.x < p.x + p.width && e.x + e.width > p.x &&
+                        e.y < p.y + p.height && e.y + e.height > p.y) {
+                        game.shields -= 25;
+                        createExplosion(e.x + e.width / 2, e.y + e.height / 2);
+                        if (game.shields <= 0) {
+                            loseLife();
+                        }
+                        return false;
+                    }
+
+                    return e.y < canvas.height + 20;
+                });
+
+                game.powerups = game.powerups.filter(pw => {
+                    pw.y += pw.vy;
+                    pw.rotation += 0.1;
+
+                    if (pw.x < p.x + p.width && pw.x + pw.width > p.x &&
+                        pw.y < p.y + p.height && pw.y + pw.height > p.y) {
+                        if (pw.type === 'fuel') {
+                            game.fuel = Math.min(100, game.fuel + 30);
+                        } else if (pw.type === 'shield') {
+                            game.shields = Math.min(100, game.shields + 40);
+                        } else if (pw.type === 'missile') {
+                            game.missiles = Math.min(99, game.missiles + 5);
+                        }
+                        return false;
+                    }
+
+                    return pw.y < canvas.height;
+                });
+
+                game.forceFields.forEach(f => {
+                    f.y += f.vy;
+                    f.pulse = (f.pulse + 0.1) % (Math.PI * 2);
+                });
+
+                game.forceFields = game.forceFields.filter(f => {
+                    for (let i = game.bullets.length - 1; i >= 0; i--) {
+                        const b = game.bullets[i];
+                        if (b.x >= f.x && b.x <= f.x + f.width &&
+                            b.y >= f.y && b.y <= f.y + f.height) {
+                            f.health--;
+                            game.bullets.splice(i, 1);
+                            if (f.health <= 0) {
+                                createExplosion(f.x + f.width / 2, f.y + f.height / 2);
+                                game.score += 400;
+                                if (game.score > game.hiscore) game.hiscore = game.score;
+                                return false;
+                            }
+                            break;
+                        }
+                    }
+
+                    for (let i = game.playerMissiles.length - 1; i >= 0; i--) {
+                        const m = game.playerMissiles[i];
+                        if (m.x >= f.x && m.x <= f.x + f.width &&
+                            m.y >= f.y && m.y <= f.y + f.height) {
+                            f.health -= 2;
+                            game.playerMissiles.splice(i, 1);
+                            createExplosion(f.x + f.width / 2, f.y + f.height / 2);
+                            if (f.health <= 0) {
+                                game.score += 400;
+                                if (game.score > game.hiscore) game.hiscore = game.score;
+                                return false;
+                            }
+                            break;
+                        }
+                    }
+
+                    if (f.x < p.x + p.width && f.x + f.width > p.x &&
+                        f.y < p.y + p.height && f.y + f.height > p.y) {
+                        game.shields -= 30;
+                        createExplosion(p.x + p.width / 2, p.y + p.height / 2);
+                        if (game.shields <= 0) {
+                            loseLife();
+                        }
+                        return false;
+                    }
+
+                    return f.y < canvas.height;
+                });
+
+                game.particles = game.particles.filter(pt => {
+                    pt.x += pt.vx;
+                    pt.y += pt.vy;
+                    pt.life--;
+                    pt.size *= 0.95;
+                    return pt.life > 0 && pt.size > 0.5;
+                });
+
+                game.fuel -= 0.03;
+                if (game.fuel <= 0) {
+                    loseLife();
+                }
+
+                if (game.frame % 900 === 0) {
+                    game.scrollSpeed = Math.min(4.5, game.scrollSpeed + 0.2);
+                }
+
+                updateHUD();
+            }
+
+            function drawEnemies() {
+                game.enemies.forEach(e => {
+                    const x = Math.floor(e.x);
+                    const y = Math.floor(e.y);
+
+                    ctx.strokeStyle = '#00ff00';
+                    ctx.lineWidth = 1;
+                    ctx.fillStyle = 'rgba(0, 255, 0, 0.1)';
+
+                    if (e.type === 'drone') {
+                        ctx.fillRect(x, y, e.width, e.height);
+                        ctx.strokeRect(x, y, e.width, e.height);
+                        ctx.beginPath();
+                        ctx.moveTo(x, y);
+                        ctx.lineTo(x + e.width, y + e.height);
+                        ctx.moveTo(x + e.width, y);
+                        ctx.lineTo(x, y + e.height);
+                        ctx.stroke();
+                    } else if (e.type === 'uav') {
+                        ctx.beginPath();
+                        for (let i = 0; i < 6; i++) {
+                            const angle = (i * Math.PI) / 3;
+                            const px = x + e.width / 2 + Math.cos(angle) * e.width / 2;
+                            const py = y + e.height / 2 + Math.sin(angle) * e.height / 2;
+                            if (i === 0) ctx.moveTo(px, py);
+                            else ctx.lineTo(px, py);
+                        }
+                        ctx.closePath();
+                        ctx.fill();
+                        ctx.stroke();
+                    } else {
+                        ctx.beginPath();
+                        ctx.arc(x + e.width / 2, y + e.height / 2, e.width / 2, 0, Math.PI * 2);
+                        ctx.fill();
+                        ctx.stroke();
+                        ctx.fillStyle = '#00ff00';
+                        ctx.beginPath();
+                        ctx.arc(x + e.width / 2, y + e.height / 2, 2, 0, Math.PI * 2);
+                        ctx.fill();
+                    }
+
+                    const healthRatio = e.health / (e.type === 'uav' ? 3 : (e.type === 'mine' ? 1 : 2));
+                    ctx.fillStyle = healthRatio > 0.5 ? '#00ff00' : healthRatio > 0.2 ? '#ffff00' : '#ff0000';
+                    ctx.fillRect(x, y - 4, e.width * healthRatio, 2);
+                });
+            }
+
+            function drawPowerups() {
+                game.powerups.forEach(pw => {
+                    const x = Math.floor(pw.x);
+                    const y = Math.floor(pw.y);
+
+                    ctx.save();
+                    ctx.translate(x + pw.width / 2, y + pw.height / 2);
+                    ctx.rotate(pw.rotation);
+
+                    ctx.strokeStyle = '#00ff00';
+                    ctx.lineWidth = 1;
+                    ctx.fillStyle = 'rgba(0, 255, 0, 0.2)';
+
+                    ctx.beginPath();
+                    ctx.moveTo(0, -pw.height / 2);
+                    ctx.lineTo(pw.width / 2, 0);
+                    ctx.lineTo(0, pw.height / 2);
+                    ctx.lineTo(-pw.width / 2, 0);
+                    ctx.closePath();
+                    ctx.fill();
+                    ctx.stroke();
+
+                    ctx.fillStyle = '#00ff00';
+                    ctx.font = '8px monospace';
+                    ctx.textAlign = 'center';
+                    ctx.textBaseline = 'middle';
+
+                    if (pw.type === 'fuel') ctx.fillText('F', 0, 0);
+                    else if (pw.type === 'shield') ctx.fillText('S', 0, 0);
+                    else ctx.fillText('M', 0, 0);
+
+                    ctx.restore();
+                });
+            }
+
+            function draw() {
+                if (canvas.width <= 0 || canvas.height <= 0) {
+                    resizeCanvas();
+                    return;
+                }
+
+                drawCanyon();
+
+                game.forceFields.forEach(f => {
+                    const x = Math.floor(f.x);
+                    const y = Math.floor(f.y);
+
+                    ctx.strokeStyle = '#00ff00';
+                    ctx.lineWidth = 2;
+                    ctx.globalAlpha = 0.3 + Math.sin(f.pulse) * 0.2;
+
+                    for (let i = 0; i < f.width; i += 8) {
+                        const offset = Math.sin(f.pulse + i * 0.2) * 4;
+                        ctx.beginPath();
+                        ctx.moveTo(x + i, y);
+                        ctx.lineTo(x + i + offset, y + f.height);
+                        ctx.stroke();
+                    }
+
+                    ctx.globalAlpha = 1;
+                    ctx.strokeRect(x, y, f.width, f.height);
+
+                    for (let i = 0; i < 3; i++) {
+                        for (let j = 0; j < 6; j++) {
+                            const sparkX = x + (i + 1) * f.width / 4;
+                            const sparkY = y + (j + 1) * f.height / 7;
+                            const pulse = Math.sin(f.pulse + i + j) * 2;
+                            ctx.fillStyle = '#00ff00';
+                            ctx.fillRect(sparkX + pulse, sparkY + pulse, 2, 2);
+                        }
+                    }
+                });
+
+                drawPowerups();
+                drawEnemies();
+
+                game.bullets.forEach(b => {
+                    ctx.fillStyle = '#00ff00';
+                    ctx.fillRect(Math.floor(b.x), Math.floor(b.y), b.width, b.height);
+                    ctx.fillStyle = 'rgba(0, 255, 0, 0.3)';
+                    ctx.fillRect(Math.floor(b.x) - 1, Math.floor(b.y) - 1, b.width + 2, b.height + 2);
+                });
+
+                game.playerMissiles.forEach(m => {
+                    ctx.fillStyle = '#00ff00';
+                    ctx.fillRect(Math.floor(m.x), Math.floor(m.y), m.width, m.height);
+                    for (let i = 0; i < 3; i++) {
+                        ctx.fillStyle = `rgba(0, 255, 0, ${0.5 - i * 0.15})`;
+                        ctx.fillRect(Math.floor(m.x), Math.floor(m.y) + m.height + i * 3, m.width, 2);
+                    }
+                });
+
+                game.particles.forEach(pt => {
+                    ctx.fillStyle = `rgba(0, 255, 0, ${pt.life / 30})`;
+                    ctx.fillRect(Math.floor(pt.x), Math.floor(pt.y), pt.size, pt.size);
+                });
+
+                drawPlayer();
+
+                if (game.state === 'start') {
+                    ctx.fillStyle = 'rgba(10, 10, 10, 0.95)';
+                    ctx.fillRect(0, 0, canvas.width, canvas.height);
+                    ctx.fillStyle = '#00ff00';
+                    ctx.font = `bold ${Math.min(48, canvas.width / 15)}px monospace`;
+                    ctx.textAlign = 'center';
+                    ctx.fillText('APACHE//CAN.YON', canvas.width / 2, canvas.height / 2 - 60);
+                    ctx.font = `${Math.min(24, canvas.width / 25)}px monospace`;
+                    ctx.fillText('SYSTEM BOOT...', canvas.width / 2, canvas.height / 2 - 10);
+                    ctx.fillText('VER 3.0GB', canvas.width / 2, canvas.height / 2 + 20);
+                    ctx.font = `${Math.min(16, canvas.width / 35)}px monospace`;
+                    ctx.fillText('INITIATE SEQUENCE [SPACE]', canvas.width / 2, canvas.height / 2 + 60);
+
+                    const loadWidth = Math.min(300, canvas.width * 0.7);
+                    const loadProgress = (game.frame % 120) / 120;
+                    ctx.strokeStyle = '#00ff00';
+                    ctx.strokeRect(canvas.width / 2 - loadWidth / 2, canvas.height / 2 + 90, loadWidth, 4);
+                    ctx.fillStyle = '#00ff00';
+                    ctx.fillRect(canvas.width / 2 - loadWidth / 2, canvas.height / 2 + 90, loadWidth * loadProgress, 4);
+                }
+            }
+
+            function updateHUD() {
+                document.getElementById('score').textContent = game.score.toString().padStart(6, '0');
+                document.getElementById('hiscore').textContent = game.hiscore.toString().padStart(6, '0');
+                document.getElementById('lives').textContent = game.lives.toString().padStart(2, '0');
+                document.getElementById('missiles').textContent = game.missiles.toString().padStart(2, '0');
+                document.getElementById('time').textContent = game.time.toString().padStart(3, '0');
+                document.getElementById('speed').textContent = game.scrollSpeed.toFixed(1);
+
+                const fuelBar = document.getElementById('fuelBar');
+                const shieldsBar = document.getElementById('shieldsBar');
+                const fuelValue = document.getElementById('fuelValue');
+                const shieldsValue = document.getElementById('shieldsValue');
+
+                fuelBar.style.height = game.fuel + '%';
+                shieldsBar.style.height = game.shields + '%';
+
+                fuelValue.textContent = Math.floor(game.fuel) + '%';
+                shieldsValue.textContent = Math.floor(game.shields) + '%';
+
+                if (game.fuel < 30) {
+                    fuelBar.style.background = 'linear-gradient(to top, #ff0000, #880000)';
+                    fuelValue.style.color = '#ff0000';
+                } else {
+                    fuelBar.style.background = 'linear-gradient(to top, #00ff00, #008800)';
+                    fuelValue.style.color = '#00ff00';
+                }
+
+                if (game.shields < 30) {
+                    shieldsBar.style.background = 'linear-gradient(to top, #ff0000, #880000)';
+                    shieldsValue.style.color = '#ff0000';
+                } else {
+                    shieldsBar.style.background = 'linear-gradient(to top, #00ff00, #008800)';
+                    shieldsValue.style.color = '#00ff00';
+                }
+
+                const scanLine = document.querySelector('.scan-line');
+                if (game.state === 'playing') {
+                    scanLine.style.display = 'block';
+                } else {
+                    scanLine.style.display = 'none';
+                }
+            }
+
+            function loseLife() {
+                game.lives--;
+                if (game.lives <= 0) {
+                    gameOver();
+                } else {
+                    game.shields = 100;
+                    game.fuel = 100;
+                    game.player.x = canvas.width / 2 - game.player.width / 2;
+                    game.enemies = [];
+                    game.bullets = [];
+                    game.playerMissiles = [];
+                }
+            }
+
+            function gameOver() {
+                game.state = 'gameover';
+                const msg = document.getElementById('message');
+                msg.innerHTML = `<div class="title-screen">
+                    <div style="font-size: clamp(20px, 32px, 4vh); margin-bottom: 20px;">SYSTEM FAILURE</div>
+                    <div>MISSION TERMINATED</div>
+                    <div style="margin: 20px 0; font-size: clamp(16px, 24px, 3vh);">SCORE: ${game.score.toString().padStart(6, '0')}</div>
+                    <div>TIME: ${game.time.toString().padStart(3, '0')} SECONDS</div>
+                    <div style="margin-top: 30px; font-size: clamp(12px, 16px, 2vh);">[SPACE] TO REBOOT</div>
+                </div>`;
+                msg.style.display = 'block';
+            }
+
+            function restart() {
+                game.score = 0;
+                game.fuel = 100;
+                game.shields = 100;
+                game.missiles = 10;
+                game.lives = 3;
+                game.scrollSpeed = 2.5;
+                game.time = 0;
+                game.frame = 0;
+                game.bullets = [];
+                game.playerMissiles = [];
+                game.enemies = [];
+                game.powerups = [];
+                game.forceFields = [];
+                game.particles = [];
+                game.enemySpawnTimer = 0;
+                game.powerupSpawnTimer = 0;
+                game.player.x = canvas.width / 2 - game.player.width / 2;
+                game.player.y = canvas.height * 0.7;
+
+                initCanyon();
+
+                document.getElementById('message').style.display = 'none';
+                game.state = 'playing';
+            }
+
+            function gameLoop() {
+                update();
+                draw();
+                requestAnimationFrame(gameLoop);
+            }
+
+            document.addEventListener('keydown', e => {
+                game.keys[e.key.toLowerCase()] = true;
+
+                if (e.key === ' ') {
+                    e.preventDefault();
+                    if (game.state === 'start' || game.state === 'gameover') {
+                        restart();
+                    } else if (game.state === 'playing') {
+                        game.state = 'paused';
+                        document.getElementById('message').innerHTML = `<div class="title-screen">
+                            <div style="font-size: clamp(20px, 32px, 4vh); margin-bottom: 20px;">SYSTEM PAUSED</div>
+                            <div>[SPACE] TO RESUME</div>
+                        </div>`;
+                        document.getElementById('message').style.display = 'block';
+                    } else if (game.state === 'paused') {
+                        game.state = 'playing';
+                        document.getElementById('message').style.display = 'none';
+                    }
+                }
+
+                if (e.key === 'Escape') {
+                    if (game.state === 'playing') {
+                        game.state = 'paused';
+                        document.getElementById('message').innerHTML = `<div class="title-screen">
+                            <div style="font-size: clamp(20px, 32px, 4vh); margin-bottom: 20px;">SYSTEM PAUSED</div>
+                            <div>[SPACE] TO RESUME</div>
+                        </div>`;
+                        document.getElementById('message').style.display = 'block';
+                    }
+                }
+            });
+
+            document.addEventListener('keyup', e => {
+                game.keys[e.key.toLowerCase()] = false;
+            });
+
+            window.addEventListener('load', () => {
+                setTimeout(() => {
+                    game.player.x = canvas.width / 2 - game.player.width / 2;
+                    game.player.y = canvas.height * 0.7;
+                    initCanyon();
+                    updateHUD();
+                    gameLoop();
+                }, 500);
+            });
+        }
+
+        document.addEventListener('contextmenu', e => {
+            e.preventDefault();
+        });
+    </script>
+</body>
+
+</html>
